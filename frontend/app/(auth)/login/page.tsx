@@ -38,7 +38,7 @@ function LoginForm() {
     });
   };
 
-  const handleOAuth = (provider: "google" | "kakao") => {
+  const handleOAuth = (provider: "google") => {
     startTransition(async () => {
       await loginWithOAuth(provider);
     });
@@ -88,18 +88,17 @@ function LoginForm() {
           </svg>
           Google로 계속하기
         </Button>
-        <Button
-          type="button"
-          variant="outline"
-          className="w-full gap-2"
-          onClick={() => handleOAuth("kakao")}
-          disabled={isPending}
-        >
-          <svg className="h-4 w-4" viewBox="0 0 24 24" fill="#3C1E1E">
-            <path d="M12 3C6.48 3 2 6.36 2 10.44c0 2.62 1.75 4.93 4.38 6.24l-1.12 4.16c-.1.35.3.64.6.44l4.84-3.2c.42.04.86.06 1.3.06 5.52 0 10-3.36 10-7.7S17.52 3 12 3z" />
-          </svg>
-          카카오로 계속하기
-        </Button>
+        <p className="text-center text-xs text-foreground-muted">
+          계속하면{" "}
+          <Link href="/terms" className="underline hover:text-foreground-secondary" target="_blank">
+            이용약관
+          </Link>
+          {" 및 "}
+          <Link href="/privacy" className="underline hover:text-foreground-secondary" target="_blank">
+            개인정보처리방침
+          </Link>
+          에 동의하게 됩니다
+        </p>
       </div>
 
       {/* 구분선 */}
@@ -142,17 +141,9 @@ function LoginForm() {
           )}
         </div>
         <div>
-          <div className="mb-1.5 flex items-center justify-between">
-            <label htmlFor="password" className="block text-sm font-medium">
-              비밀번호
-            </label>
-            <Link
-              href="/forgot-password"
-              className="text-xs text-primary-500 hover:text-primary-600"
-            >
-              비밀번호 찾기
-            </Link>
-          </div>
+          <label htmlFor="password" className="mb-1.5 block text-sm font-medium">
+            비밀번호
+          </label>
           <Input
             id="password"
             type="password"
@@ -167,6 +158,26 @@ function LoginForm() {
             </p>
           )}
         </div>
+        {/* 로그인 상태 유지 + 비밀번호 찾기 */}
+        <div className="flex items-center justify-between">
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              defaultChecked
+              className="h-4 w-4 rounded border-border accent-primary-500"
+            />
+            <span className="text-sm text-foreground-secondary">
+              로그인 상태 유지
+            </span>
+          </label>
+          <Link
+            href="/forgot-password"
+            className="text-sm text-primary-500 hover:text-primary-600"
+          >
+            비밀번호 찾기
+          </Link>
+        </div>
+
         <Button type="submit" className="mt-2 w-full" disabled={isPending}>
           {isPending ? "로그인 중..." : "로그인"}
         </Button>
