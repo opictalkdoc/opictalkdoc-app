@@ -9,16 +9,16 @@
   --font-display: var(--font-jua);
 
   /* Primary - 민트 */
-  --color-primary-50: #e6faf7;
-  --color-primary-100: #b3f0e8;
-  --color-primary-200: #80e6d9;
-  --color-primary-300: #4ddcca;
-  --color-primary-400: #26d4be;
-  --color-primary-500: #00CBB3;
-  --color-primary-600: #00b8a2;
-  --color-primary-700: #009f8c;
-  --color-primary-800: #008676;
-  --color-primary-900: #005e53;
+  --color-primary-50: #F0FDFA;
+  --color-primary-100: #CCFBF1;
+  --color-primary-200: #99F6E4;
+  --color-primary-300: #5EEAD4;
+  --color-primary-400: #2DD4BF;
+  --color-primary-500: #0D9488;
+  --color-primary-600: #0F766E;
+  --color-primary-700: #115E59;
+  --color-primary-800: #134E4A;
+  --color-primary-900: #042F2E;
 
   /* Secondary - 골드 */
   --color-secondary-50: #fff9e6;
@@ -73,12 +73,16 @@
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
+  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.04);
+  --shadow-card-hover: 0 8px 32px rgba(0, 0, 0, 0.08);
+  --shadow-primary: 0 8px 32px rgba(13, 148, 136, 0.19);
 
   /* Radius */
   --radius-sm: 0.375rem;
   --radius-md: 0.5rem;
   --radius-lg: 0.75rem;
   --radius-xl: 1rem;
+  --radius-2xl: 1.25rem;
   --radius-full: 9999px;
 }
 
@@ -90,27 +94,99 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* 섹션 라벨 (FEATURES, HOW IT WORKS 등) */
+.section-label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: var(--color-primary-500);
+}
+
+/* Hero 메시 그라디언트 배경 */
+.hero-gradient {
+  background:
+    radial-gradient(ellipse 80% 60% at 20% 40%, var(--color-primary-100) 0%, transparent 70%),
+    radial-gradient(ellipse 60% 50% at 80% 30%, var(--color-secondary-100) 0%, transparent 70%),
+    radial-gradient(ellipse 70% 40% at 50% 80%, var(--color-primary-50) 0%, transparent 70%),
+    var(--color-background);
+}
+
+/* CTA 그라디언트 배경 */
+.cta-gradient {
+  background: linear-gradient(180deg, #F0FDFA 0%, #CCFBF1 50%, #F0FDFA 100%);
+}
+
+/* 모던 카드 */
+.card-modern {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--shadow-card);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.card-modern:hover {
+  box-shadow: var(--shadow-card-hover);
+  transform: translateY(-2px);
+}
+
+/* 아이콘 컨테이너 */
+.icon-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3.25rem;
+  height: 3.25rem;
+  border-radius: 0.875rem;
+  flex-shrink: 0;
+}
+
+/* 스텝 넘버 */
+.step-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: var(--radius-full);
+  background: linear-gradient(180deg, var(--color-primary-500), var(--color-primary-600));
+  color: white;
+  font-size: 1.125rem;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(13, 148, 136, 0.3);
+}
+
+/* 프라이싱 하이라이트 카드 */
+.pricing-highlight {
+  background-color: var(--color-primary-50);
+  border: 2px solid var(--color-primary-500);
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--shadow-primary);
+}
+
 /* FAQ 아코디언 */
 details.faq-item {
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-xl);
   background-color: var(--color-surface);
-  transition: box-shadow 0.2s;
+  transition: box-shadow 0.2s, border-color 0.2s;
 }
 
 details.faq-item:hover {
-  box-shadow: var(--shadow-sm);
+  border-color: var(--color-border-hover);
+  box-shadow: var(--shadow-card);
 }
 
 details.faq-item[open] {
+  border-color: var(--color-primary-200);
   box-shadow: var(--shadow-md);
 }
 
 details.faq-item summary {
   cursor: pointer;
-  padding: 1rem 1.25rem;
+  padding: 1.25rem 1.5rem;
   font-weight: 600;
-  font-size: 0.9375rem;
+  font-size: 1rem;
   list-style: none;
   display: flex;
   align-items: center;
@@ -129,15 +205,39 @@ details.faq-item summary::after {
   color: var(--color-foreground-muted);
   transition: transform 0.2s;
   flex-shrink: 0;
+  width: 1.5rem;
+  height: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  background-color: var(--color-surface-secondary);
 }
 
 details.faq-item[open] summary::after {
-  content: "−";
+  content: "\2212";
+  background-color: var(--color-primary-50);
+  color: var(--color-primary-500);
 }
 
 details.faq-item .faq-answer {
-  padding: 0 1.25rem 1rem;
-  font-size: 0.875rem;
-  line-height: 1.625;
+  padding: 0 1.5rem 1.25rem;
+  font-size: 0.9375rem;
+  line-height: 1.7;
   color: var(--color-foreground-secondary);
+}
+
+/* 다크 풋터 */
+.footer-dark {
+  background-color: #1B2B48;
+  color: #8F9BB3;
+}
+
+.footer-dark a {
+  color: #8F9BB3;
+  transition: color 0.15s;
+}
+
+.footer-dark a:hover {
+  color: #CCFBF1;
 }
