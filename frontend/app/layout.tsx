@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Jua } from "next/font/google";
+import { Inter, Jua, Fraunces } from "next/font/google";
 import "./globals.css";
 
 const inter = Inter({
@@ -13,6 +13,12 @@ const jua = Jua({
   subsets: ["latin"],
   display: "swap",
   variable: "--font-jua",
+});
+
+const fraunces = Fraunces({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-fraunces",
 });
 
 export const metadata: Metadata = {
@@ -39,7 +45,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ko" className={`${inter.variable} ${jua.variable}`}>
+    <html lang="ko" className={`${inter.variable} ${jua.variable} ${fraunces.variable}`}>
       <head>
         <link
           rel="stylesheet"

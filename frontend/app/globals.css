@@ -7,6 +7,7 @@
     "Noto Sans KR", "Malgun Gothic", "Apple Color Emoji", "Segoe UI Emoji",
     "Segoe UI Symbol", sans-serif;
   --font-display: var(--font-jua);
+  --font-serif: var(--font-fraunces);
 
   /* Primary - 민트 */
   --color-primary-50: #F0FDFA;
@@ -102,13 +103,35 @@ body {
   color: var(--color-primary-500);
 }
 
-/* Hero 메시 그라디언트 배경 */
+/* Hero 대기감 그라디언트 배경 (v4 Nudge 스타일) */
 .hero-gradient {
-  background:
-    radial-gradient(ellipse 80% 60% at 20% 40%, var(--color-primary-100) 0%, transparent 70%),
-    radial-gradient(ellipse 60% 50% at 80% 30%, var(--color-secondary-100) 0%, transparent 70%),
-    radial-gradient(ellipse 70% 40% at 50% 80%, var(--color-primary-50) 0%, transparent 70%),
-    var(--color-background);
+  background: linear-gradient(
+    180deg,
+    #E0F7F3 0%,
+    #C4EDE6 25%,
+    #A8D8CF 50%,
+    #DCEEF8 75%,
+    #FCFBF8 100%
+  );
+}
+
+/* 브라우저 목업 */
+.browser-mockup {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 1rem;
+  box-shadow: 0 24px 64px -8px rgba(0, 0, 0, 0.09);
+  overflow: hidden;
+}
+
+.browser-mockup-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 16px;
+  height: 44px;
+  background: #F9FAFB;
+  border-bottom: 1px solid var(--color-border);
 }
 
 /* CTA 그라디언트 배경 */

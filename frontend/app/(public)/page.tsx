@@ -1,73 +1,76 @@
 import Link from "next/link";
-import { Badge } from "@/components/ui/badge";
+import {
+  Stethoscope,
+  Heart,
+  Zap,
+  Check,
+  ArrowRight,
+  Plus,
+  FileText,
+} from "lucide-react";
 
-const opicGrades = [
-  { label: "AL", variant: "al" as const, desc: "Advanced Low" },
-  { label: "IH", variant: "ih" as const, desc: "Intermediate High" },
-  { label: "IM1", variant: "im1" as const, desc: "Intermediate Mid 1" },
-  { label: "IM2", variant: "im2" as const, desc: "Intermediate Mid 2" },
-  { label: "IM3", variant: "im3" as const, desc: "Intermediate Mid 3" },
-  { label: "IL", variant: "il" as const, desc: "Intermediate Low" },
-  { label: "NH", variant: "nh" as const, desc: "Novice High" },
-  { label: "NM", variant: "nm" as const, desc: "Novice Mid" },
+/* ── 데이터 ── */
+
+const trustStats = [
+  { value: "10,000+", label: "학습자" },
+  { value: "4.8/5.0", label: "평균 만족도" },
+  { value: "92%", label: "목표 등급 달성률" },
 ];
 
+/* 3T 시스템 기반 Features */
 const features = [
   {
-    title: "모의고사",
-    desc: "실제 OPIc 시험과 동일한 환경에서 연습하고, AI가 즉시 등급을 예측해 드립니다.",
-    icon: (
-      <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25z" />
-      </svg>
-    ),
+    icon: Stethoscope,
     iconBg: "bg-primary-50 text-primary-500",
+    badge: "Talk-Doc",
+    title: "네 실력을 정확히 진단해 줄게",
+    desc: "AI 레벨 테스트, 발음·억양 분석, 문법 교정까지. 똑똑한 AI 주치의가 당신의 스피킹을 정밀 진단합니다.",
+    imageBg: "bg-primary-50",
+    imageAlt: "AI 스피킹 진단",
   },
   {
-    title: "AI 훈련소",
-    desc: "AI가 실시간으로 발음, 문법, 표현을 분석하고 맞춤 피드백을 제공합니다.",
-    icon: (
-      <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
-      </svg>
-    ),
-    iconBg: "bg-blue-50 text-blue-500",
+    icon: Heart,
+    iconBg: "bg-accent-50 text-accent-500",
+    badge: "Todak",
+    title: "틀려도 괜찮아, 다시 해보자",
+    desc: "칭찬 피드백과 멘탈 케어 메시지로 지친 수험생을 토닥여줍니다. 공부인데 부담 없는, 따뜻한 학습 경험.",
+    imageBg: "bg-accent-50",
+    imageAlt: "따뜻한 학습 경험",
+    reverse: true,
   },
   {
-    title: "쉐도잉",
-    desc: "원어민 발화를 따라하며 발음과 억양을 자연스럽게 개선하세요.",
-    icon: (
-      <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75z" />
-      </svg>
-    ),
-    iconBg: "bg-amber-50 text-amber-500",
+    icon: Zap,
+    iconBg: "bg-secondary-50 text-secondary-600",
+    badge: "Ttuk-Tak",
+    title: "고민할 시간에 답을 줄게",
+    desc: "키워드만 넣으면 스크립트가 뚝딱. 내 경험을 영어로 변환하고, 예상 질문까지 적중시켜 드립니다.",
+    imageBg: "bg-secondary-50",
+    imageAlt: "AI 스크립트 생성",
   },
 ];
 
 const steps = [
   {
-    step: "01",
-    title: "회원가입",
-    desc: "이메일 또는 소셜 로그인으로 30초 만에 시작하세요.",
+    num: "1",
+    title: "간편 가입",
+    desc: "30초면 끝. 구글 계정으로\n바로 시작하세요.",
   },
   {
-    step: "02",
-    title: "레벨 테스트",
-    desc: "AI가 현재 실력을 분석하고 목표 등급에 맞는 학습 계획을 세워줍니다.",
+    num: "2",
+    title: "AI가 진단",
+    desc: "톡닥이가 현재 실력을 진단하고\n맞춤 처방전을 만들어 줍니다.",
   },
   {
-    step: "03",
-    title: "AI 학습 시작",
-    desc: "모의고사, 훈련소, 쉐도잉으로 매일 꾸준히 실력을 키우세요.",
+    num: "3",
+    title: "뚝딱 학습",
+    desc: "스크립트 생성, 모의고사, 쉐도잉.\n오픽이 더 이상 아프지 않아요.",
   },
 ];
 
 const plans = [
   {
     name: "무료",
-    price: "0",
-    period: "",
+    price: "₩0",
     description: "OPIc 학습을 체험해 보세요",
     features: [
       "모의고사 월 1회",
@@ -81,7 +84,7 @@ const plans = [
   },
   {
     name: "베이직",
-    price: "9,900",
+    price: "₩9,900",
     period: "/월",
     description: "본격적인 OPIc 준비를 시작하세요",
     features: [
@@ -97,16 +100,15 @@ const plans = [
   },
   {
     name: "프리미엄",
-    price: "19,900",
+    price: "₩19,900",
     period: "/월",
     description: "목표 등급 달성을 위한 최고의 선택",
     features: [
-      "베이직 전체 기능",
+      "베이직 전체 기능 포함",
       "AI 1:1 맞춤 코칭",
       "취약점 집중 훈련",
       "실전 모의고사 (강화판)",
-      "우선 고객 지원",
-      "학습 데이터 분석",
+      "학습 데이터 분석 대시보드",
     ],
     cta: "프리미엄 시작하기",
     href: "/signup",
@@ -120,16 +122,16 @@ const faqs = [
     a: "AI 기반 OPIc 영어 말하기 학습 플랫폼입니다. 모의고사, AI 훈련소, 쉐도잉 등 체계적인 학습 시스템으로 원하는 등급을 효과적으로 준비할 수 있습니다.",
   },
   {
-    q: "무료로도 이용할 수 있나요?",
-    a: "네, 무료 플랜으로 모의고사 월 1회, AI 훈련소 일 3회 등 핵심 기능을 체험할 수 있습니다. 유료 플랜은 7일 무료 체험을 제공합니다.",
+    q: "무료 체험은 어떻게 이용하나요?",
+    a: "회원가입만 하면 무료 플랜이 자동 적용됩니다. 모의고사 월 1회, AI 훈련소 일 3회 등 핵심 기능을 바로 이용할 수 있습니다. 유료 플랜은 7일 무료 체험을 제공합니다.",
   },
   {
-    q: "AI 피드백은 얼마나 정확한가요?",
-    a: "최신 AI 음성 분석 기술을 활용하여 발음, 문법, 유창성 등을 분석합니다. 실제 OPIc 시험 등급과 높은 상관관계를 보이지만, AI 예측 등급은 참고용입니다.",
+    q: "AI가 실제로 OPIc 점수 향상에 도움이 되나요?",
+    a: "최신 AI 음성 분석 기술을 활용하여 발음, 문법, 유창성 등을 분석합니다. 학습자의 92%가 목표 등급을 달성했습니다.",
   },
   {
-    q: "결제 후 환불이 가능한가요?",
-    a: "결제일로부터 7일 이내에 환불을 요청할 수 있습니다. 자세한 내용은 환불 규정 페이지를 참고해 주세요.",
+    q: "언제든지 해지할 수 있나요?",
+    a: "네, 유료 플랜은 언제든지 해지할 수 있으며 다음 결제일부터 적용됩니다. 결제일로부터 7일 이내에는 전액 환불도 가능합니다.",
   },
   {
     q: "모바일에서도 이용할 수 있나요?",
@@ -137,106 +139,198 @@ const faqs = [
   },
 ];
 
-function CheckIcon() {
+/* ── 섹션 라벨 컴포넌트 ── */
+function SectionPill({ children }: { children: React.ReactNode }) {
   return (
-    <svg className="mt-0.5 h-4 w-4 flex-shrink-0 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-    </svg>
+    <span className="inline-flex items-center rounded-full border border-primary-100 bg-primary-50 px-4 py-1.5 text-[13px] font-semibold text-primary-600">
+      {children}
+    </span>
   );
 }
 
+/* ── 페이지 ── */
 export default function HomePage() {
   return (
     <>
-      {/* 1. Hero */}
+      {/* ━━━ Hero ━━━ */}
       <section className="hero-gradient">
-        <div className="mx-auto flex max-w-6xl flex-col items-center px-4 py-24 text-center sm:px-6 sm:py-32">
-          <Badge variant="default" className="mb-6">
-            AI 기반 OPIc 학습 플랫폼
-          </Badge>
-          <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl md:text-[3.5rem] md:leading-[1.1]">
-            OPIc 목표 등급,
+        <div className="mx-auto flex max-w-6xl flex-col items-center px-4 pt-20 text-center sm:px-6 sm:pt-28">
+          {/* 뱃지 */}
+          <span className="inline-flex items-center gap-2 rounded-full border border-white bg-white/50 px-4 py-1.5 text-[13px] font-medium text-[#1f1e30] backdrop-blur-sm">
+            <span className="h-2 w-2 rounded-full bg-primary-500" />
+            오픽 스피킹 클리닉
+          </span>
+
+          {/* 헤드라인 — 마스터플랜 메인 슬로건 */}
+          <h1 className="mt-8 font-serif text-4xl font-semibold italic leading-[1.2] tracking-tight text-[#1f1e30] sm:text-5xl md:text-[3.5rem]">
+            막막한 스크립트는 뚝딱,
             <br />
-            <span className="text-primary-500">AI와 함께 달성하세요</span>
+            긴장된 마음은 톡닥.
           </h1>
-          <p className="mt-6 max-w-xl text-lg leading-relaxed text-foreground-secondary">
-            모의고사, AI 훈련소, 쉐도잉까지. 체계적인 학습 시스템으로
-            원하는 등급을 효과적으로 준비하세요.
+
+          {/* 서브카피 — 브랜드 철학 기반 */}
+          <p className="mt-6 max-w-[540px] text-[17px] leading-[1.7] text-[#52525B]">
+            영어를 몰라서가 아니라, 무슨 말을 해야 할지 몰라서 아팠죠?
+            <br className="hidden sm:block" />
+            말하기가 아플 땐, 처방전 톡닥.
           </p>
+
+          {/* CTA 버튼 */}
           <div className="mt-10 flex flex-col gap-3 sm:flex-row">
             <Link
               href="/signup"
-              className="inline-flex h-12 items-center justify-center rounded-[var(--radius-xl)] bg-primary-500 px-7 text-base font-semibold text-white shadow-[var(--shadow-primary)] transition-all hover:bg-primary-600 hover:shadow-lg"
+              className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-[#1f1e30] px-7 text-[15px] font-semibold text-white transition-colors hover:bg-[#2d2c3e]"
             >
               무료로 시작하기
+              <ArrowRight className="h-4 w-4" />
             </Link>
             <Link
               href="/pricing"
-              className="inline-flex h-12 items-center justify-center gap-2 rounded-[var(--radius-xl)] border border-border bg-surface px-7 text-base font-semibold text-foreground-secondary transition-colors hover:bg-surface-secondary"
+              className="inline-flex h-12 items-center justify-center rounded-full border border-[#E4E4E7] bg-white px-7 text-[15px] font-medium text-[#1f1e30] transition-colors hover:bg-gray-50"
             >
               요금제 보기
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-              </svg>
             </Link>
           </div>
-          <div className="mt-8 flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm font-medium text-foreground-muted">
-            <span>&#10003; 무료 체험 가능</span>
-            <span>&#10003; 신용카드 불필요</span>
-            <span>&#10003; 언제든 해지 가능</span>
-          </div>
-        </div>
-      </section>
 
-      {/* 2. Features */}
-      <section id="features" className="bg-surface py-20 sm:py-24">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <div className="text-center">
-            <span className="section-label">FEATURES</span>
-            <h2 className="mt-3 text-3xl font-extrabold tracking-tight sm:text-4xl">
-              핵심 학습 기능
-            </h2>
-            <p className="mx-auto mt-4 max-w-lg text-foreground-secondary">
-              AI 기술로 실전처럼 준비하고, 약점을 정확히 파악하세요
-            </p>
-          </div>
-          <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {features.map((f) => (
-              <div key={f.title} className="card-modern p-8">
-                <div className={`icon-container ${f.iconBg}`}>
-                  {f.icon}
+          {/* 브라우저 목업 */}
+          <div className="mt-16 w-full max-w-[960px] pb-20">
+            <div className="browser-mockup">
+              <div className="browser-mockup-bar">
+                <span className="h-2.5 w-2.5 rounded-full bg-[#FF605C]" />
+                <span className="h-2.5 w-2.5 rounded-full bg-[#FFBD44]" />
+                <span className="h-2.5 w-2.5 rounded-full bg-[#00CA4E]" />
+                <div className="ml-4 flex h-7 items-center justify-center rounded-lg border border-[#E4E4E7] bg-white px-4">
+                  <span className="text-xs text-[#A1A1AA]">
+                    opictalkdoc.com
+                  </span>
                 </div>
-                <h3 className="mt-5 text-xl font-bold">{f.title}</h3>
-                <p className="mt-3 text-[0.9375rem] leading-relaxed text-foreground-secondary">
-                  {f.desc}
-                </p>
               </div>
-            ))}
+              {/* 스크린 영역 — 추후 실제 스크린샷으로 교체 */}
+              <div className="flex h-[320px] items-center justify-center bg-primary-50 sm:h-[400px] md:h-[520px]">
+                <div className="text-center">
+                  <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-primary-100">
+                    <Stethoscope className="h-8 w-8 text-primary-500" />
+                  </div>
+                  <p className="mt-4 text-sm font-medium text-primary-600">
+                    말하기가 아플 땐? 오픽 톡닥.
+                  </p>
+                  <p className="mt-1 text-xs text-primary-400">
+                    제품 스크린샷이 여기에 들어갑니다
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* 3. How it works */}
-      <section className="py-20 sm:py-24">
+      {/* ━━━ Trust Bar ━━━ */}
+      <section className="border-y border-[#F4F4F5] bg-[#FCFBF8]">
+        <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-center gap-12 px-4 py-12 sm:gap-16">
+          {trustStats.map((stat) => (
+            <div key={stat.label} className="text-center">
+              <div className="font-serif text-[28px] font-bold italic text-[#1f1e30]">
+                {stat.value}
+              </div>
+              <div className="mt-1 text-sm text-[#A1A1AA]">{stat.label}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ━━━ Features ━━━ */}
+      <section id="features" className="bg-[#FCFBF8] py-20 sm:py-28">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <div className="text-center">
-            <span className="section-label">HOW IT WORKS</span>
-            <h2 className="mt-3 text-3xl font-extrabold tracking-tight sm:text-4xl">
-              이렇게 시작하세요
+          {/* 섹션 헤더 — 3T 시스템 */}
+          <div className="flex flex-col items-center text-center">
+            <SectionPill>The 3T System</SectionPill>
+            <h2 className="mt-5 font-serif text-3xl font-semibold italic leading-[1.25] tracking-tight text-[#1f1e30] sm:text-[40px]">
+              진단하고, 위로하고,
+              <br />해결합니다
             </h2>
-            <p className="mt-4 text-foreground-secondary">
-              3단계로 간편하게 학습을 시작할 수 있습니다
+            <p className="mt-4 max-w-[520px] text-base leading-relaxed text-[#71717A]">
+              공부는 쉬워야 하고, 결과는 빨라야 하며, 과정은 따뜻해야 합니다.
             </p>
           </div>
-          <div className="mt-14 grid gap-8 sm:grid-cols-3">
+
+          {/* 피처 행 */}
+          <div className="mt-16 flex flex-col gap-20 sm:gap-24">
+            {features.map((f) => {
+              const Icon = f.icon;
+              return (
+                <div
+                  key={f.title}
+                  className={`flex flex-col items-center gap-10 lg:gap-16 ${
+                    f.reverse
+                      ? "lg:flex-row-reverse"
+                      : "lg:flex-row"
+                  }`}
+                >
+                  {/* 텍스트 */}
+                  <div className="flex-1 text-center lg:text-left">
+                    <div className="flex items-center gap-3 max-lg:justify-center">
+                      <div
+                        className={`inline-flex h-12 w-12 items-center justify-center rounded-[14px] ${f.iconBg}`}
+                      >
+                        <Icon className="h-6 w-6" />
+                      </div>
+                      <span className="rounded-full bg-[#F4F4F5] px-3 py-1 text-xs font-semibold text-[#52525B]">
+                        {f.badge}
+                      </span>
+                    </div>
+                    <h3 className="mt-5 font-serif text-[28px] font-semibold italic tracking-tight text-[#1f1e30]">
+                      {f.title}
+                    </h3>
+                    <p className="mt-4 max-w-[400px] text-[15px] leading-[1.7] text-[#71717A] lg:max-w-none">
+                      {f.desc}
+                    </p>
+                  </div>
+
+                  {/* 비주얼 */}
+                  <div
+                    className={`flex h-[280px] w-full max-w-[540px] items-center justify-center rounded-2xl sm:h-[360px] ${f.imageBg}`}
+                    style={{
+                      boxShadow:
+                        "0 8px 32px -4px rgba(13, 148, 136, 0.07)",
+                    }}
+                  >
+                    <div className="text-center">
+                      <Icon className="mx-auto h-10 w-10 text-[#A1A1AA]" />
+                      <p className="mt-3 text-sm text-[#A1A1AA]">
+                        {f.imageAlt}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* ━━━ How it Works ━━━ */}
+      <section className="border-y border-[#F4F4F5] bg-[#FAFAFA] py-20 sm:py-28">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+          <div className="flex flex-col items-center text-center">
+            <SectionPill>이용 방법</SectionPill>
+            <h2 className="mt-5 font-serif text-3xl font-semibold italic tracking-tight text-[#1f1e30] sm:text-[40px]">
+              3단계로 시작하세요
+            </h2>
+          </div>
+
+          <div className="mt-14 grid gap-6 sm:grid-cols-3">
             {steps.map((s) => (
               <div
-                key={s.step}
-                className="card-modern flex flex-col items-center p-8 text-center"
+                key={s.num}
+                className="flex flex-col items-center rounded-[20px] border border-[#F4F4F5] bg-white p-8 text-center"
               >
-                <div className="step-number">{s.step}</div>
-                <h3 className="mt-5 text-lg font-bold">{s.title}</h3>
-                <p className="mt-2 text-[0.9375rem] leading-relaxed text-foreground-secondary">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-b from-primary-500 to-primary-600 text-lg font-bold text-white shadow-[0_4px_12px_rgba(13,148,136,0.3)]">
+                  {s.num}
+                </div>
+                <h3 className="mt-5 text-lg font-bold text-[#1f1e30]">
+                  {s.title}
+                </h3>
+                <p className="mt-2 whitespace-pre-line text-sm leading-[1.7] text-[#71717A]">
                   {s.desc}
                 </p>
               </div>
@@ -245,96 +339,106 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 4. OPIc 등급 */}
-      <section className="bg-surface py-20 sm:py-24">
+      {/* ━━━ Pricing ━━━ */}
+      <section id="pricing" className="bg-[#FCFBF8] py-20 sm:py-28">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <div className="text-center">
-            <span className="section-label">OPIC LEVELS</span>
-            <h2 className="mt-3 text-3xl font-extrabold tracking-tight sm:text-4xl">
-              OPIc 등급 체계
+          <div className="flex flex-col items-center text-center">
+            <SectionPill>요금제</SectionPill>
+            <h2 className="mt-5 font-serif text-3xl font-semibold italic tracking-tight text-[#1f1e30] sm:text-[40px]">
+              나에게 맞는 플랜을 선택하세요
             </h2>
-            <p className="mt-4 text-foreground-secondary">
-              목표 등급을 설정하고 맞춤 학습을 시작하세요
+            <p className="mt-4 text-base text-[#71717A]">
+              7일 무료 체험 후 결제가 시작됩니다. 언제든 해지 가능합니다.
             </p>
           </div>
-          <div className="mt-14 flex flex-wrap items-center justify-center gap-4">
-            {opicGrades.map((g) => (
-              <div
-                key={g.label}
-                className="card-modern flex flex-col items-center gap-2 px-5 py-4"
-              >
-                <Badge variant={g.variant} className="px-3 py-1 text-sm">
-                  {g.label}
-                </Badge>
-                <span className="text-xs text-foreground-muted">
-                  {g.desc}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
 
-      {/* 5. Pricing */}
-      <section id="pricing" className="py-20 sm:py-24">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <div className="text-center">
-            <span className="section-label">PRICING</span>
-            <h2 className="mt-3 text-3xl font-extrabold tracking-tight sm:text-4xl">
-              합리적인 요금제
-            </h2>
-            <p className="mt-4 text-foreground-secondary">
-              7일 무료 체험 후 결제가 시작됩니다. 언제든 해지 가능.
-            </p>
-          </div>
           <div className="mt-14 grid gap-6 lg:grid-cols-3">
             {plans.map((plan) => (
               <div
                 key={plan.name}
-                className={`relative flex flex-col rounded-[var(--radius-2xl)] p-8 ${
+                className={`relative flex flex-col rounded-[20px] p-8 ${
                   plan.highlight
-                    ? "pricing-highlight"
-                    : "card-modern"
+                    ? "bg-[#1f1e30] text-white shadow-[0_16px_48px_-8px_rgba(0,0,0,0.12)]"
+                    : "border border-[#F4F4F5] bg-white"
                 }`}
               >
+                {/* 인기 뱃지 */}
                 {plan.highlight && (
-                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-[var(--radius-full)] bg-primary-500 px-3.5 py-1 text-xs font-semibold text-white">
+                  <span className="mb-4 inline-flex w-fit rounded-full bg-primary-500 px-3 py-1 text-xs font-semibold text-white">
                     인기
                   </span>
                 )}
-                <span className="text-sm font-semibold text-foreground-secondary">
+
+                {/* 플랜명 & 가격 */}
+                <span
+                  className={`text-base font-semibold ${
+                    plan.highlight ? "text-[#A1A1AA]" : "text-[#71717A]"
+                  }`}
+                >
                   {plan.name}
                 </span>
-                <div className="mt-3 flex items-baseline gap-1">
-                  {plan.price === "0" ? (
-                    <span className="text-4xl font-extrabold tracking-tight">
-                      &#8361;0
+                <div className="mt-2 flex items-baseline gap-1">
+                  <span
+                    className={`font-serif text-[40px] font-bold italic ${
+                      plan.highlight ? "text-white" : "text-[#1f1e30]"
+                    }`}
+                  >
+                    {plan.price}
+                  </span>
+                  {plan.period && (
+                    <span
+                      className={`text-sm ${
+                        plan.highlight ? "text-[#71717A]" : "text-[#A1A1AA]"
+                      }`}
+                    >
+                      {plan.period}
                     </span>
-                  ) : (
-                    <>
-                      <span className="text-4xl font-extrabold tracking-tight">
-                        &#8361;{plan.price}
-                      </span>
-                      <span className="text-sm text-foreground-muted">
-                        {plan.period}
-                      </span>
-                    </>
                   )}
                 </div>
-                <ul className="mt-6 flex-1 space-y-3">
-                  {plan.features.map((f) => (
-                    <li key={f} className="flex items-start gap-2.5 text-[0.9375rem] text-foreground-secondary">
-                      <CheckIcon />
-                      {f}
+                <p
+                  className={`mt-1 text-sm ${
+                    plan.highlight ? "text-[#71717A]" : "text-[#A1A1AA]"
+                  }`}
+                >
+                  {plan.description}
+                </p>
+
+                {/* 구분선 */}
+                <div
+                  className={`my-6 h-px ${
+                    plan.highlight ? "bg-[#3f3e50]" : "bg-[#F4F4F5]"
+                  }`}
+                />
+
+                {/* 기능 목록 */}
+                <ul className="flex-1 space-y-3">
+                  {plan.features.map((feature) => (
+                    <li key={feature} className="flex items-center gap-2.5">
+                      <Check
+                        className={`h-4 w-4 flex-shrink-0 ${
+                          plan.highlight
+                            ? "text-primary-300"
+                            : "text-primary-500"
+                        }`}
+                      />
+                      <span
+                        className={`text-sm ${
+                          plan.highlight ? "text-[#D4D4D8]" : "text-[#52525B]"
+                        }`}
+                      >
+                        {feature}
+                      </span>
                     </li>
                   ))}
                 </ul>
+
+                {/* CTA 버튼 */}
                 <Link
                   href={plan.href}
-                  className={`mt-8 inline-flex h-11 items-center justify-center rounded-[var(--radius-xl)] text-sm font-semibold transition-all ${
+                  className={`mt-8 flex h-12 items-center justify-center rounded-full text-[15px] font-semibold transition-colors ${
                     plan.highlight
-                      ? "bg-primary-500 text-white shadow-[var(--shadow-primary)] hover:bg-primary-600"
-                      : "border border-border bg-surface text-foreground hover:bg-surface-secondary"
+                      ? "bg-primary-500 text-white shadow-[0_4px_16px_rgba(13,148,136,0.25)] hover:bg-primary-600"
+                      : "border border-[#E4E4E7] text-[#1f1e30] hover:bg-gray-50"
                   }`}
                 >
                   {plan.cta}
@@ -342,6 +446,7 @@ export default function HomePage() {
               </div>
             ))}
           </div>
+
           <div className="mt-10 text-center">
             <Link
               href="/pricing"
@@ -353,49 +458,67 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 6. FAQ */}
-      <section className="bg-surface py-20 sm:py-24">
-        <div className="mx-auto max-w-3xl px-4 sm:px-6">
-          <div className="text-center">
-            <span className="section-label">FAQ</span>
-            <h2 className="mt-3 text-3xl font-extrabold tracking-tight sm:text-4xl">
-              자주 묻는 질문
+      {/* ━━━ FAQ ━━━ */}
+      <section className="border-y border-[#F4F4F5] bg-[#FCFBF8] py-20 sm:py-28">
+        <div className="mx-auto max-w-[720px] px-4 sm:px-6">
+          <div className="flex flex-col items-center text-center">
+            <SectionPill>자주 묻는 질문</SectionPill>
+            <h2 className="mt-5 font-serif text-3xl font-semibold italic tracking-tight text-[#1f1e30] sm:text-[40px]">
+              궁금한 점이 있으신가요?
             </h2>
           </div>
-          <div className="mt-12 space-y-3">
+
+          <div className="mt-12">
             {faqs.map((faq) => (
-              <details key={faq.q} className="faq-item">
-                <summary>{faq.q}</summary>
-                <div className="faq-answer">{faq.a}</div>
+              <details key={faq.q} className="group border-b border-[#F4F4F5]">
+                <summary className="flex cursor-pointer items-center justify-between py-5 text-base font-semibold text-[#1f1e30] [&::-webkit-details-marker]:hidden">
+                  {faq.q}
+                  <Plus className="h-5 w-5 flex-shrink-0 text-[#A1A1AA] transition-transform group-open:rotate-45" />
+                </summary>
+                <div className="pb-5 text-[15px] leading-[1.7] text-[#71717A]">
+                  {faq.a}
+                </div>
               </details>
             ))}
           </div>
         </div>
       </section>
 
-      {/* 7. Final CTA */}
-      <section className="cta-gradient py-24 sm:py-28">
+      {/* ━━━ Final CTA ━━━ */}
+      <section
+        className="py-24 sm:py-32"
+        style={{
+          background:
+            "linear-gradient(180deg, #FCFBF8 0%, #E0F7F3 30%, #C4EDE6 60%, #E0F7F3 100%)",
+        }}
+      >
         <div className="mx-auto max-w-2xl px-4 text-center sm:px-6">
-          <h2 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
-            지금 바로 OPIc 학습을 시작하세요
+          <h2 className="font-serif text-3xl font-semibold italic tracking-tight text-[#1f1e30] sm:text-[44px] sm:leading-[1.2]">
+            당신의 오픽,
+            <br />
+            뚝딱 완성해 드릴게요.
           </h2>
-          <p className="mt-4 text-lg text-foreground-secondary">
-            AI와 함께하는 체계적인 학습으로 목표 등급을 달성할 수 있습니다.
+          <p className="mt-5 text-[17px] leading-relaxed text-[#52525B]">
+            공부는 쉬워야 하고, 결과는 빨라야 하며, 과정은 따뜻해야 합니다.
           </p>
           <div className="mt-10 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
             <Link
               href="/signup"
-              className="inline-flex h-12 items-center justify-center rounded-[var(--radius-xl)] bg-primary-500 px-8 text-base font-semibold text-white shadow-[var(--shadow-primary)] transition-all hover:bg-primary-600 hover:shadow-lg"
+              className="inline-flex h-[52px] items-center justify-center gap-2 rounded-full bg-[#1f1e30] px-8 text-base font-semibold text-white shadow-[0_4px_16px_rgba(31,30,48,0.12)] transition-colors hover:bg-[#2d2c3e]"
             >
               무료로 시작하기
+              <ArrowRight className="h-[18px] w-[18px]" />
             </Link>
             <Link
               href="/pricing"
-              className="inline-flex h-12 items-center justify-center rounded-[var(--radius-xl)] border border-border bg-surface px-8 text-base font-semibold text-foreground-secondary transition-colors hover:bg-surface-secondary"
+              className="inline-flex h-[52px] items-center justify-center rounded-full border border-[#E4E4E7] bg-white px-8 text-base font-medium text-[#1f1e30] transition-colors hover:bg-gray-50"
             >
-              요금제 살펴보기
+              요금제 보기
             </Link>
           </div>
+          <p className="mt-6 text-[13px] text-[#A1A1AA]">
+            카드 등록 없이 무료로 시작 · 언제든 해지 가능
+          </p>
         </div>
       </section>
     </>
