@@ -1,10 +1,16 @@
-import { createServerClient } from '@supabase/ssr'
-import { NextResponse, type NextRequest } from 'next/server'
+import { createServerClient } from "@supabase/ssr";
+import { NextResponse, type NextRequest } from "next/server";
+
+// 인증이 필요한 보호 라우트
+const protectedRoutes = ["/dashboard", "/profile"];
+
+// 인증된 사용자가 접근하면 리다이렉트할 라우트
+const authRoutes = ["/login", "/signup"];
 
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
-  })
+  });
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -12,31 +18,50 @@ export async function middleware(request: NextRequest) {
     {
       cookies: {
         getAll() {
-          return request.cookies.getAll()
+          return request.cookies.getAll();
         },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value)
-          )
+          );
           supabaseResponse = NextResponse.next({
             request,
-          })
+          });
           cookiesToSet.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, options)
-          )
+          );
         },
       },
     }
-  )
+  );
 
   // 세션 갱신
-  await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  return supabaseResponse
+  const { pathname } = request.nextUrl;
+
+  // 보호 라우트: 비인증 사용자 → /login 리다이렉트
+  if (!user && protectedRoutes.some((route) => pathname.startsWith(route))) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/login";
+    url.searchParams.set("redirect", pathname);
+    return NextResponse.redirect(url);
+  }
+
+  // 인증 라우트: 인증된 사용자 → /dashboard 리다이렉트
+  if (user && authRoutes.some((route) => pathname.startsWith(route))) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/dashboard";
+    return NextResponse.redirect(url);
+  }
+
+  return supabaseResponse;
 }
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
-}
+};
