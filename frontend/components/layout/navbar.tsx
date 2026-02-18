@@ -27,7 +27,7 @@ export async function Navbar() {
             학습 기능
           </Link>
           <Link
-            href="/#pricing"
+            href="/pricing"
             className="text-sm text-foreground-secondary transition-colors hover:text-foreground"
           >
             요금제

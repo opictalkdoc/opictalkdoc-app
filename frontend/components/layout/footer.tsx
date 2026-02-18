@@ -16,7 +16,7 @@ export function Footer() {
           </div>
 
           {/* 링크 */}
-          <div className="flex gap-8 text-sm">
+          <div className="flex flex-wrap gap-x-8 gap-y-2 text-sm">
             <Link
               href="/terms"
               className="text-foreground-secondary transition-colors hover:text-foreground"
@@ -30,17 +30,45 @@ export function Footer() {
               개인정보처리방침
             </Link>
             <Link
-              href="/contact"
+              href="/refund"
               className="text-foreground-secondary transition-colors hover:text-foreground"
             >
-              문의하기
+              환불 규정
+            </Link>
+            <Link
+              href="/pricing"
+              className="text-foreground-secondary transition-colors hover:text-foreground"
+            >
+              요금제
             </Link>
           </div>
         </div>
 
-        {/* 사업자 정보 + 저작권 */}
-        <div className="mt-8 border-t border-border pt-6 text-xs text-foreground-muted">
-          <p>&copy; {new Date().getFullYear()} OPIcTalkDoc. All rights reserved.</p>
+        {/* 사업자 정보 */}
+        <div className="mt-8 border-t border-border pt-6 text-xs leading-relaxed text-foreground-muted">
+          <p>
+            상호: 스투스 OPIc &nbsp;|&nbsp; 대표자: 전다영 &nbsp;|&nbsp;
+            사업자등록번호: 757-18-02318
+          </p>
+          <p className="mt-1">
+            소재지: 경상북도 구미시 해마루공원로 80, 104동 1903호
+          </p>
+          <p className="mt-1">
+            업태: 정보통신업 / 응용 소프트웨어 개발 및 공급업
+          </p>
+          <p className="mt-1">
+            통신판매업 신고번호: 준비 중 &nbsp;|&nbsp;
+            이메일:{" "}
+            <a
+              href="mailto:opictalkdoc@gmail.com"
+              className="text-foreground-secondary hover:text-foreground"
+            >
+              opictalkdoc@gmail.com
+            </a>
+          </p>
+          <p className="mt-3">
+            &copy; {new Date().getFullYear()} OPIcTalkDoc. All rights reserved.
+          </p>
         </div>
       </div>
     </footer>
