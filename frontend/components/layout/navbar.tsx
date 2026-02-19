@@ -14,7 +14,7 @@ export async function Navbar() {
         {/* 로고 */}
         <Link href="/" className="flex items-center gap-2">
           <span className="font-display text-xl text-primary-500">
-            OPIcTalkDoc
+            오픽톡닥
           </span>
         </Link>
 

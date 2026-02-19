@@ -6,23 +6,16 @@ import {
   Check,
   ArrowRight,
   Plus,
-  FileText,
 } from "lucide-react";
 
 /* ── 데이터 ── */
-
-const trustStats = [
-  { value: "10,000+", label: "학습자" },
-  { value: "4.8/5.0", label: "평균 만족도" },
-  { value: "92%", label: "목표 등급 달성률" },
-];
 
 /* 3T 시스템 기반 Features */
 const features = [
   {
     icon: Stethoscope,
     iconBg: "bg-primary-50 text-primary-500",
-    badge: "Talk-Doc",
+    badge: "톡닥이",
     title: "네 실력을 정확히 진단해 줄게",
     desc: "AI 레벨 테스트, 발음·억양 분석, 문법 교정까지. 똑똑한 AI 주치의가 당신의 스피킹을 정밀 진단합니다.",
     imageBg: "bg-primary-50",
@@ -31,7 +24,7 @@ const features = [
   {
     icon: Heart,
     iconBg: "bg-accent-50 text-accent-500",
-    badge: "Todak",
+    badge: "토닥이",
     title: "틀려도 괜찮아, 다시 해보자",
     desc: "칭찬 피드백과 멘탈 케어 메시지로 지친 수험생을 토닥여줍니다. 공부인데 부담 없는, 따뜻한 학습 경험.",
     imageBg: "bg-accent-50",
@@ -41,7 +34,7 @@ const features = [
   {
     icon: Zap,
     iconBg: "bg-secondary-50 text-secondary-600",
-    badge: "Ttuk-Tak",
+    badge: "뚝딱이",
     title: "고민할 시간에 답을 줄게",
     desc: "키워드만 넣으면 스크립트가 뚝딱. 내 경험을 영어로 변환하고, 예상 질문까지 적중시켜 드립니다.",
     imageBg: "bg-secondary-50",
@@ -69,14 +62,13 @@ const steps = [
 
 const plans = [
   {
-    name: "무료",
+    name: "체험",
     price: "₩0",
-    description: "OPIc 학습을 체험해 보세요",
+    description: "OPIc이 어떤 시험인지 경험해 보세요",
     features: [
-      "모의고사 월 1회",
-      "AI 훈련소 일 3회",
-      "쉐도잉 기본 콘텐츠",
-      "학습 리포트 요약",
+      "샘플 모의고사 1회 (고정문제)",
+      "AI 진단 · 튜터링 무료",
+      "체화 · 쉐도잉 훈련 무제한",
     ],
     cta: "무료로 시작하기",
     href: "/signup",
@@ -84,50 +76,54 @@ const plans = [
   },
   {
     name: "베이직",
-    price: "₩9,900",
-    period: "/월",
-    description: "본격적인 OPIc 준비를 시작하세요",
+    price: "₩19,900",
+    period: " / 3회권",
+    description: "본격적인 실전 감각을 키우세요",
+    sub: "1개월 이용",
     features: [
-      "모의고사 무제한",
-      "AI 훈련소 무제한",
-      "쉐도잉 전체 콘텐츠",
-      "상세 학습 리포트",
-      "등급별 맞춤 학습",
+      "실전 모의고사 3회",
+      "스크립트 패키지 생성 30회",
+      "AI 진단 · 튜터링 무료",
+      "체화 · 쉐도잉 훈련 무제한",
+      "성적 진단 리포트",
     ],
-    cta: "베이직 시작하기",
-    href: "/signup",
+    cta: "준비 중",
+    href: "#",
     highlight: true,
+    comingSoon: true,
   },
   {
     name: "프리미엄",
-    price: "₩19,900",
-    period: "/월",
-    description: "목표 등급 달성을 위한 최고의 선택",
+    price: "₩49,900",
+    period: " / 10회권",
+    description: "목표 등급 달성을 위한 완벽 준비",
+    sub: "2개월 이용",
     features: [
-      "베이직 전체 기능 포함",
-      "AI 1:1 맞춤 코칭",
-      "취약점 집중 훈련",
-      "실전 모의고사 (강화판)",
-      "학습 데이터 분석 대시보드",
+      "실전 모의고사 10회",
+      "스크립트 패키지 생성 100회",
+      "AI 진단 · 튜터링 무료",
+      "체화 · 쉐도잉 훈련 무제한",
+      "성장 데이터 리포트",
     ],
-    cta: "프리미엄 시작하기",
-    href: "/signup",
+    cta: "준비 중",
+    href: "#",
     highlight: false,
+    comingSoon: true,
   },
 ];
 
 const faqs = [
   {
-    q: "OPIcTalkDoc은 어떤 서비스인가요?",
+    q: "오픽톡닥은 어떤 서비스인가요?",
     a: "AI 기반 OPIc 영어 말하기 학습 플랫폼입니다. 모의고사, AI 훈련소, 쉐도잉 등 체계적인 학습 시스템으로 원하는 등급을 효과적으로 준비할 수 있습니다.",
   },
   {
     q: "무료 체험은 어떻게 이용하나요?",
-    a: "회원가입만 하면 무료 플랜이 자동 적용됩니다. 모의고사 월 1회, AI 훈련소 일 3회 등 핵심 기능을 바로 이용할 수 있습니다. 유료 플랜은 7일 무료 체험을 제공합니다.",
+    a: "회원가입만 하면 무료 플랜이 자동 적용됩니다. 모의고사 월 1회, AI 훈련소 일 3회 등 핵심 기능을 바로 이용할 수 있습니다.",
   },
   {
     q: "AI가 실제로 OPIc 점수 향상에 도움이 되나요?",
-    a: "최신 AI 음성 분석 기술을 활용하여 발음, 문법, 유창성 등을 분석합니다. 학습자의 92%가 목표 등급을 달성했습니다.",
+    a: "최신 AI 음성 분석 기술을 활용하여 발음, 문법, 유창성 등을 분석합니다. 실시간 피드백으로 약점을 정확히 파악하고 개선할 수 있습니다.",
   },
   {
     q: "언제든지 해지할 수 있나요?",
@@ -205,45 +201,72 @@ export default function HomePage() {
                   </span>
                 </div>
               </div>
-              {/* 스크린 영역 — 추후 실제 스크린샷으로 교체 */}
-              <div className="flex h-[320px] items-center justify-center bg-primary-50 sm:h-[400px] md:h-[520px]">
-                <div className="text-center">
-                  <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-primary-100">
-                    <Stethoscope className="h-8 w-8 text-primary-500" />
-                  </div>
-                  <p className="mt-4 text-sm font-medium text-primary-600">
-                    말하기가 아플 땐? 오픽 톡닥.
+              {/* 스크린 영역 — 궁금증 유발 티저 */}
+              <div className="flex h-[320px] flex-col items-center justify-center bg-[#FAFBFC] px-6 sm:h-[400px] md:h-[520px]">
+                {/* 대충 아는 것 3줄 */}
+                <div className="w-full max-w-[520px] space-y-3 sm:space-y-4">
+                  {[
+                    {
+                      rough: "서베이가 중요하다더라",
+                      question: "얼마나?",
+                    },
+                    {
+                      rough: "5-5가 좋다더라",
+                      question: "왜?",
+                    },
+                    {
+                      rough: "스크립트 외우면 안 된대",
+                      question: "대안이 뭔데?",
+                    },
+                  ].map((item) => (
+                    <div
+                      key={item.rough}
+                      className="flex items-center justify-between"
+                    >
+                      <p className="text-sm font-semibold text-[#64748B] sm:text-base md:text-lg">
+                        &ldquo;{item.rough}&rdquo;
+                      </p>
+                      <p className="text-sm font-bold text-primary-500 sm:text-base md:text-lg">
+                        → {item.question}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* 펀치라인 */}
+                <div className="mt-8 text-center sm:mt-10">
+                  <p className="text-xs text-[#94A3B8] sm:text-sm">
+                    대충 아는 사람의
                   </p>
-                  <p className="mt-1 text-xs text-primary-400">
-                    제품 스크린샷이 여기에 들어갑니다
+                  <p className="mt-1 text-[40px] font-black leading-none tracking-tight text-[#1f1e30] sm:text-[52px] md:text-[64px]">
+                    68%
+                  </p>
+                  <p className="mt-1 text-xs text-[#94A3B8] sm:text-sm">
+                    가 IM2 이하입니다
                   </p>
                 </div>
+
+                {/* CTA */}
+                <Link
+                  href="/strategy"
+                  className="mt-6 inline-flex items-center gap-1.5 rounded-full bg-[#1f1e30] px-5 py-2 text-xs font-semibold text-white transition-colors hover:bg-[#2d2c3e] sm:mt-8 sm:px-6 sm:py-2.5 sm:text-sm"
+                >
+                  정확히 알아보기
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </Link>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ━━━ Trust Bar ━━━ */}
-      <section className="border-y border-[#F4F4F5] bg-[#FCFBF8]">
-        <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-center gap-12 px-4 py-12 sm:gap-16">
-          {trustStats.map((stat) => (
-            <div key={stat.label} className="text-center">
-              <div className="font-serif text-[28px] font-bold italic text-[#1f1e30]">
-                {stat.value}
-              </div>
-              <div className="mt-1 text-sm text-[#A1A1AA]">{stat.label}</div>
-            </div>
-          ))}
-        </div>
-      </section>
 
       {/* ━━━ Features ━━━ */}
       <section id="features" className="bg-[#FCFBF8] py-20 sm:py-28">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           {/* 섹션 헤더 — 3T 시스템 */}
           <div className="flex flex-col items-center text-center">
-            <SectionPill>The 3T System</SectionPill>
+            <SectionPill>3T 시스템</SectionPill>
             <h2 className="mt-5 font-serif text-3xl font-semibold italic leading-[1.25] tracking-tight text-[#1f1e30] sm:text-[40px]">
               진단하고, 위로하고,
               <br />해결합니다
@@ -294,12 +317,88 @@ export default function HomePage() {
                         "0 8px 32px -4px rgba(13, 148, 136, 0.07)",
                     }}
                   >
-                    <div className="text-center">
-                      <Icon className="mx-auto h-10 w-10 text-[#A1A1AA]" />
-                      <p className="mt-3 text-sm text-[#A1A1AA]">
-                        {f.imageAlt}
-                      </p>
-                    </div>
+                    {f.badge === "톡닥이" ? (
+                      <div className="w-full max-w-[300px] space-y-3 px-4">
+                        <div className="rounded-xl bg-white/80 p-5 shadow-sm backdrop-blur">
+                          <p className="text-[13px] font-bold text-[#1f1e30]">
+                            스피킹 진단 리포트
+                          </p>
+                          <div className="mt-4 space-y-3">
+                            {["발음·억양", "유창성", "문법", "답변 구성"].map(
+                              (label, i) => (
+                                <div
+                                  key={label}
+                                  className="flex items-center gap-3"
+                                >
+                                  <span className="w-16 text-[11px] text-[#71717A]">
+                                    {label}
+                                  </span>
+                                  <div className="h-1.5 flex-1 rounded-full bg-primary-100">
+                                    <div
+                                      className="h-1.5 rounded-full bg-primary-400"
+                                      style={{
+                                        width: `${[72, 58, 81, 65][i]}%`,
+                                      }}
+                                    />
+                                  </div>
+                                </div>
+                              ),
+                            )}
+                          </div>
+                          <div className="mt-4 rounded-lg bg-primary-50 px-3 py-2">
+                            <p className="text-[11px] text-primary-600">
+                              💡 유창성 집중 훈련을 추천합니다
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ) : f.badge === "토닥이" ? (
+                      <div className="w-full max-w-[300px] space-y-3 px-4">
+                        <div className="ml-auto w-fit rounded-2xl rounded-br-md bg-accent-100 px-4 py-3">
+                          <p className="text-[13px] text-[#52525B]">
+                            문법이 자꾸 틀려서 자신이 없어요...
+                          </p>
+                        </div>
+                        <div className="mr-auto w-fit rounded-2xl rounded-bl-md bg-white px-4 py-3 shadow-sm">
+                          <p className="text-[13px] text-[#52525B]">
+                            괜찮아요! 문법 실수는 누구나 해요 😊
+                            <br />
+                            <span className="font-medium text-accent-500">
+                              같이 하나씩 고쳐보자!
+                            </span>
+                          </p>
+                        </div>
+                        <div className="ml-auto w-fit rounded-2xl rounded-br-md bg-accent-100 px-4 py-3">
+                          <p className="text-[13px] text-[#52525B]">
+                            네, 한번 더 해볼게요!
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="w-full max-w-[300px] space-y-3 px-4">
+                        <div className="rounded-xl bg-white/80 p-5 shadow-sm backdrop-blur">
+                          <div className="flex flex-wrap gap-2">
+                            {["여행", "요리", "주말 활동"].map((tag) => (
+                              <span
+                                key={tag}
+                                className="rounded-full bg-secondary-100 px-3 py-1 text-[11px] font-medium text-secondary-600"
+                              >
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
+                          <div className="mt-4 space-y-2">
+                            <div className="h-2 w-full rounded bg-[#F4F4F5]" />
+                            <div className="h-2 w-4/5 rounded bg-[#F4F4F5]" />
+                            <div className="h-2 w-full rounded bg-[#F4F4F5]" />
+                            <div className="h-2 w-3/5 rounded bg-[#F4F4F5]" />
+                          </div>
+                          <p className="mt-3 text-[11px] text-secondary-500">
+                            ✨ 내 경험 기반 스크립트 생성 중...
+                          </p>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               );
@@ -348,7 +447,7 @@ export default function HomePage() {
               나에게 맞는 플랜을 선택하세요
             </h2>
             <p className="mt-4 text-base text-[#71717A]">
-              7일 무료 체험 후 결제가 시작됩니다. 언제든 해지 가능합니다.
+              무료 플랜으로 바로 시작하세요. 유료 플랜은 준비 중입니다.
             </p>
           </div>
 
@@ -402,6 +501,17 @@ export default function HomePage() {
                 >
                   {plan.description}
                 </p>
+                {plan.sub && (
+                  <span
+                    className={`mt-2 inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                      plan.highlight
+                        ? "bg-[#3f3e50] text-[#A1A1AA]"
+                        : "bg-[#F4F4F5] text-[#71717A]"
+                    }`}
+                  >
+                    {plan.sub}
+                  </span>
+                )}
 
                 {/* 구분선 */}
                 <div
@@ -433,16 +543,22 @@ export default function HomePage() {
                 </ul>
 
                 {/* CTA 버튼 */}
-                <Link
-                  href={plan.href}
-                  className={`mt-8 flex h-12 items-center justify-center rounded-full text-[15px] font-semibold transition-colors ${
-                    plan.highlight
-                      ? "bg-primary-500 text-white shadow-[0_4px_16px_rgba(13,148,136,0.25)] hover:bg-primary-600"
-                      : "border border-[#E4E4E7] text-[#1f1e30] hover:bg-gray-50"
-                  }`}
-                >
-                  {plan.cta}
-                </Link>
+                {plan.comingSoon ? (
+                  <span className="mt-8 flex h-12 cursor-not-allowed items-center justify-center rounded-full border border-[#E4E4E7] text-[15px] font-semibold text-[#A1A1AA]">
+                    준비 중
+                  </span>
+                ) : (
+                  <Link
+                    href={plan.href}
+                    className={`mt-8 flex h-12 items-center justify-center rounded-full text-[15px] font-semibold transition-colors ${
+                      plan.highlight
+                        ? "bg-primary-500 text-white shadow-[0_4px_16px_rgba(13,148,136,0.25)] hover:bg-primary-600"
+                        : "border border-[#E4E4E7] text-[#1f1e30] hover:bg-gray-50"
+                    }`}
+                  >
+                    {plan.cta}
+                  </Link>
+                )}
               </div>
             ))}
           </div>
@@ -517,7 +633,7 @@ export default function HomePage() {
             </Link>
           </div>
           <p className="mt-6 text-[13px] text-[#A1A1AA]">
-            카드 등록 없이 무료로 시작 · 언제든 해지 가능
+            카드 등록 없이 무료로 시작할 수 있습니다
           </p>
         </div>
       </section>

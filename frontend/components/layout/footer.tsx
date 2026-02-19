@@ -8,7 +8,7 @@ export function Footer() {
           {/* 브랜드 */}
           <div className="flex flex-col gap-2">
             <span className="text-lg font-extrabold text-primary-300">
-              OPIcTalkDoc
+              오픽톡닥
             </span>
             <p className="text-sm">
               AI와 함께하는 OPIc 말하기 학습
@@ -44,7 +44,7 @@ export function Footer() {
             </a>
           </p>
           <p className="mt-4 text-[#4A5568]">
-            &copy; {new Date().getFullYear()} OPIcTalkDoc. All rights reserved.
+            &copy; {new Date().getFullYear()} 오픽톡닥. All rights reserved.
           </p>
         </div>
       </div>

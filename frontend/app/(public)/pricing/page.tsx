@@ -2,58 +2,62 @@ import Link from "next/link";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "요금제 | OPIcTalkDoc",
-  description: "OPIcTalkDoc 요금제 안내 - 무료, 베이직, 프리미엄",
+  title: "요금제 | 오픽톡닥",
+  description: "오픽톡닥 요금제 안내 - 체험, 베이직, 프리미엄",
 };
 
 const plans = [
   {
-    name: "무료",
+    name: "체험",
     price: "0",
     period: "",
-    description: "OPIc 학습을 체험해 보세요",
+    description: "OPIc이 어떤 시험인지 경험해 보세요",
+    sub: "",
     features: [
-      "모의고사 월 1회",
-      "AI 훈련소 일 3회",
-      "쉐도잉 기본 콘텐츠",
-      "학습 리포트 요약",
+      "샘플 모의고사 1회 (고정문제)",
+      "AI 진단 · 튜터링 무료",
+      "체화 · 쉐도잉 훈련 무제한",
     ],
     cta: "무료로 시작하기",
     href: "/signup",
     highlight: false,
+    comingSoon: false,
   },
   {
     name: "베이직",
-    price: "9,900",
-    period: "/월",
-    description: "본격적인 OPIc 준비를 시작하세요",
+    price: "19,900",
+    period: " / 3회권",
+    description: "본격적인 실전 감각을 키우세요",
+    sub: "1개월 이용",
     features: [
-      "모의고사 무제한",
-      "AI 훈련소 무제한",
-      "쉐도잉 전체 콘텐츠",
-      "상세 학습 리포트",
-      "등급별 맞춤 학습",
+      "실전 모의고사 3회",
+      "스크립트 패키지 생성 30회",
+      "AI 진단 · 튜터링 무료",
+      "체화 · 쉐도잉 훈련 무제한",
+      "성적 진단 리포트",
     ],
-    cta: "베이직 시작하기",
-    href: "/signup",
+    cta: "준비 중",
+    href: "#",
     highlight: true,
+    comingSoon: true,
   },
   {
     name: "프리미엄",
-    price: "19,900",
-    period: "/월",
-    description: "목표 등급 달성을 위한 최고의 선택",
+    price: "49,900",
+    period: " / 10회권",
+    description: "목표 등급 달성을 위한 완벽 준비",
+    sub: "2개월 이용",
     features: [
-      "베이직 전체 기능 포함",
-      "AI 1:1 맞춤 코칭",
-      "취약점 집중 훈련",
-      "실전 모의고사 (강화판)",
-      "우선 고객 지원",
-      "학습 데이터 분석 대시보드",
+      "실전 모의고사 10회",
+      "스크립트 패키지 생성 100회",
+      "AI 진단 · 튜터링 무료",
+      "체화 · 쉐도잉 훈련 무제한",
+      "성장 데이터 리포트",
     ],
-    cta: "프리미엄 시작하기",
-    href: "/signup",
+    cta: "준비 중",
+    href: "#",
     highlight: false,
+    comingSoon: true,
   },
 ];
 
@@ -66,7 +70,7 @@ export default function PricingPage() {
           나에게 맞는 플랜을 선택하세요
         </h1>
         <p className="mt-3 text-foreground-secondary">
-          7일 무료 체험 후 결제가 시작됩니다. 언제든 해지 가능합니다.
+          무료 플랜으로 바로 시작하세요. 유료 플랜은 준비 중입니다.
         </p>
       </div>
 
@@ -91,6 +95,11 @@ export default function PricingPage() {
             <p className="mt-1 text-sm text-foreground-secondary">
               {plan.description}
             </p>
+            {plan.sub && (
+              <span className="mt-2 inline-flex rounded-full bg-surface-secondary px-2.5 py-0.5 text-xs font-medium text-foreground-secondary">
+                {plan.sub}
+              </span>
+            )}
 
             <div className="mt-5 flex items-baseline gap-1">
               {plan.price === "0" ? (
@@ -132,16 +141,22 @@ export default function PricingPage() {
             </ul>
 
             {/* CTA */}
-            <Link
-              href={plan.href}
-              className={`mt-6 inline-flex h-11 items-center justify-center rounded-[var(--radius-lg)] text-sm font-medium transition-colors ${
-                plan.highlight
-                  ? "bg-primary-500 text-white hover:bg-primary-600"
-                  : "border border-border bg-surface text-foreground hover:bg-surface-secondary"
-              }`}
-            >
-              {plan.cta}
-            </Link>
+            {plan.comingSoon ? (
+              <span className="mt-6 inline-flex h-11 cursor-not-allowed items-center justify-center rounded-[var(--radius-lg)] border border-border text-sm font-medium text-foreground-muted">
+                준비 중
+              </span>
+            ) : (
+              <Link
+                href={plan.href}
+                className={`mt-6 inline-flex h-11 items-center justify-center rounded-[var(--radius-lg)] text-sm font-medium transition-colors ${
+                  plan.highlight
+                    ? "bg-primary-500 text-white hover:bg-primary-600"
+                    : "border border-border bg-surface text-foreground hover:bg-surface-secondary"
+                }`}
+              >
+                {plan.cta}
+              </Link>
+            )}
           </div>
         ))}
       </div>
@@ -157,7 +172,7 @@ export default function PricingPage() {
                   기능
                 </th>
                 <th className="px-4 py-3 text-center font-semibold text-foreground">
-                  무료
+                  체험
                 </th>
                 <th className="px-4 py-3 text-center font-semibold text-primary-600">
                   베이직
@@ -169,16 +184,14 @@ export default function PricingPage() {
             </thead>
             <tbody className="divide-y divide-border">
               {[
-                ["모의고사", "월 1회", "무제한", "무제한"],
-                ["AI 훈련소", "일 3회", "무제한", "무제한"],
-                ["쉐도잉", "기본", "전체", "전체"],
-                ["학습 리포트", "요약", "상세", "상세"],
-                ["등급별 맞춤 학습", "—", "O", "O"],
-                ["AI 1:1 맞춤 코칭", "—", "—", "O"],
-                ["취약점 집중 훈련", "—", "—", "O"],
-                ["실전 모의고사 (강화판)", "—", "—", "O"],
-                ["학습 데이터 분석", "—", "—", "O"],
-                ["우선 고객 지원", "—", "—", "O"],
+                ["실전 모의고사", "샘플 1회", "3회", "10회"],
+                ["스크립트 패키지 생성", "—", "30회", "100회"],
+                ["AI 진단 · 튜터링", "무료", "무료", "무료"],
+                ["체화 훈련", "무제한", "무제한", "무제한"],
+                ["쉐도잉 훈련", "무제한", "무제한", "무제한"],
+                ["성적 진단 리포트", "—", "O", "O"],
+                ["성장 데이터 리포트", "—", "—", "O"],
+                ["이용 기간", "무제한", "1개월", "2개월"],
               ].map(([feature, free, basic, premium]) => (
                 <tr key={feature}>
                   <td className="px-4 py-3 text-foreground">{feature}</td>
@@ -198,10 +211,46 @@ export default function PricingPage() {
         </div>
       </div>
 
+      {/* 개별 횟수권 스토어 안내 */}
+      <div className="mt-20">
+        <h2 className="text-center text-2xl font-bold">
+          횟수가 부족하다면?
+        </h2>
+        <p className="mt-3 text-center text-foreground-secondary">
+          패키지 외에 필요한 만큼만 개별 구매할 수 있습니다.
+        </p>
+        <div className="mt-8 grid gap-6 sm:grid-cols-2">
+          <div className="rounded-[var(--radius-xl)] border border-border bg-surface p-6 text-center">
+            <p className="text-lg font-bold">모의고사 횟수권</p>
+            <p className="mt-1 text-sm text-foreground-secondary">
+              실전 모의고사 1회 단위로 구매
+            </p>
+            <p className="mt-4 text-3xl font-bold">
+              ₩7,900<span className="text-sm font-normal text-foreground-secondary"> / 1회</span>
+            </p>
+            <span className="mt-4 inline-flex h-10 cursor-not-allowed items-center justify-center rounded-[var(--radius-lg)] border border-border px-6 text-sm font-medium text-foreground-muted">
+              준비 중
+            </span>
+          </div>
+          <div className="rounded-[var(--radius-xl)] border border-border bg-surface p-6 text-center">
+            <p className="text-lg font-bold">스크립트 패키지 횟수권</p>
+            <p className="mt-1 text-sm text-foreground-secondary">
+              스크립트 패키지 생성 10회 단위로 구매
+            </p>
+            <p className="mt-4 text-3xl font-bold">
+              ₩3,900<span className="text-sm font-normal text-foreground-secondary"> / 10회</span>
+            </p>
+            <span className="mt-4 inline-flex h-10 cursor-not-allowed items-center justify-center rounded-[var(--radius-lg)] border border-border px-6 text-sm font-medium text-foreground-muted">
+              준비 중
+            </span>
+          </div>
+        </div>
+      </div>
+
       {/* 하단 안내 */}
       <div className="mt-12 text-center text-sm text-foreground-muted">
         <p>
-          모든 유료 플랜은 7일 무료 체험이 포함됩니다.{" "}
+          유료 플랜 및 스토어는 준비 중입니다.{" "}
           <Link href="/refund" className="text-primary-500 hover:underline">
             환불 규정
           </Link>

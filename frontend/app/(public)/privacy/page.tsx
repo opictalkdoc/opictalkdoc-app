@@ -104,7 +104,65 @@ export default function PrivacyPage() {
         {/* 제5조 */}
         <section>
           <h2 className="text-lg font-semibold text-foreground">
-            제5조 (개인정보의 파기)
+            제5조 (개인정보 처리의 위탁)
+          </h2>
+          <p className="mt-2">
+            회사는 원활한 서비스 제공을 위해 다음과 같이 개인정보 처리
+            업무를 위탁하고 있습니다.
+          </p>
+          <div className="mt-3 overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="border-b border-border">
+                  <th className="pb-2 pr-4 font-medium text-foreground">
+                    수탁업체
+                  </th>
+                  <th className="pb-2 pr-4 font-medium text-foreground">
+                    위탁 업무
+                  </th>
+                  <th className="pb-2 font-medium text-foreground">
+                    보유 기간
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border/50">
+                <tr>
+                  <td className="py-2 pr-4">주식회사 코리아포트원 (PortOne)</td>
+                  <td className="py-2 pr-4">전자결제 처리 및 결제 도용 방지</td>
+                  <td className="py-2">위탁 계약 종료 시까지</td>
+                </tr>
+                <tr>
+                  <td className="py-2 pr-4">주식회사 KG이니시스</td>
+                  <td className="py-2 pr-4">신용카드 결제 대행</td>
+                  <td className="py-2">위탁 계약 종료 시까지</td>
+                </tr>
+                <tr>
+                  <td className="py-2 pr-4">Supabase Inc.</td>
+                  <td className="py-2 pr-4">클라우드 인프라 운영 및 데이터 저장</td>
+                  <td className="py-2">위탁 계약 종료 시까지</td>
+                </tr>
+                <tr>
+                  <td className="py-2 pr-4">Vercel Inc.</td>
+                  <td className="py-2 pr-4">웹 호스팅 및 서비스 배포</td>
+                  <td className="py-2">위탁 계약 종료 시까지</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p className="mt-3">
+            회사는 위탁 계약 체결 시 개인정보보호법 제26조에 따라
+            위탁업무 수행 목적 외 개인정보 처리 금지, 기술적·관리적
+            보호조치, 재위탁 제한, 수탁자에 대한 관리·감독, 손해배상 등
+            책임에 관한 사항을 계약서 등 문서에 명시하고, 해당
+            수탁자가 개인정보를 안전하게 처리하는지를 감독하고
+            있습니다.
+          </p>
+        </section>
+
+        {/* 제6조 */}
+        <section>
+          <h2 className="text-lg font-semibold text-foreground">
+            제6조 (개인정보의 파기)
           </h2>
           <p className="mt-2">
             회사는 개인정보 보유기간의 경과, 처리 목적 달성 등 개인정보가
@@ -116,10 +174,10 @@ export default function PrivacyPage() {
           </ul>
         </section>
 
-        {/* 제6조 */}
+        {/* 제7조 */}
         <section>
           <h2 className="text-lg font-semibold text-foreground">
-            제6조 (이용자의 권리·의무)
+            제7조 (이용자의 권리·의무)
           </h2>
           <p className="mt-2">
             이용자는 언제든지 자신의 개인정보에 대해 다음의 권리를 행사할 수
@@ -137,10 +195,10 @@ export default function PrivacyPage() {
           </p>
         </section>
 
-        {/* 제7조 */}
+        {/* 제8조 */}
         <section>
           <h2 className="text-lg font-semibold text-foreground">
-            제7조 (개인정보의 안전성 확보 조치)
+            제8조 (개인정보의 안전성 확보 조치)
           </h2>
           <p className="mt-2">
             회사는 개인정보의 안전성 확보를 위해 다음과 같은 조치를 취하고
@@ -154,10 +212,10 @@ export default function PrivacyPage() {
           </ul>
         </section>
 
-        {/* 제8조 */}
+        {/* 제9조 */}
         <section>
           <h2 className="text-lg font-semibold text-foreground">
-            제8조 (개인정보 보호책임자)
+            제9조 (개인정보 보호책임자)
           </h2>
           <ul className="mt-2 space-y-0.5">
             <li>성명: 전다영</li>
@@ -166,10 +224,10 @@ export default function PrivacyPage() {
           </ul>
         </section>
 
-        {/* 제9조 */}
+        {/* 제10조 */}
         <section>
           <h2 className="text-lg font-semibold text-foreground">
-            제9조 (개인정보 처리방침 변경)
+            제10조 (개인정보 처리방침 변경)
           </h2>
           <p className="mt-2">
             이 개인정보처리방침은 시행일로부터 적용되며, 법령 및 방침에 따른
