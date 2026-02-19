@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { resetPassword } from "@/lib/actions/auth";
 import {
   resetPasswordSchema,
@@ -60,9 +60,8 @@ export default function ResetPasswordPage() {
           >
             새 비밀번호
           </label>
-          <Input
+          <PasswordInput
             id="password"
-            type="password"
             placeholder="8자 이상"
             autoComplete="new-password"
             error={!!errors.password}
@@ -81,9 +80,8 @@ export default function ResetPasswordPage() {
           >
             비밀번호 확인
           </label>
-          <Input
+          <PasswordInput
             id="confirmPassword"
-            type="password"
             placeholder="비밀번호를 다시 입력"
             autoComplete="new-password"
             error={!!errors.confirmPassword}

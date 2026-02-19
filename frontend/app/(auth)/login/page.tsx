@@ -8,6 +8,7 @@ import { useSearchParams } from "next/navigation";
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { login, loginWithOAuth } from "@/lib/actions/auth";
 import { loginSchema, type LoginInput } from "@/lib/validations/auth";
 import { isInAppBrowser, openInExternalBrowser } from "@/lib/utils/detect-webview";
@@ -171,9 +172,8 @@ function LoginForm() {
           <label htmlFor="password" className="mb-1.5 block text-sm font-medium">
             비밀번호
           </label>
-          <Input
+          <PasswordInput
             id="password"
-            type="password"
             placeholder="••••••••"
             autoComplete="current-password"
             error={!!errors.password}

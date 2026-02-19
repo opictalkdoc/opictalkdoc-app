@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
-import { LogoutButton } from "@/components/auth/logout-button";
+import { UserMenu } from "./user-menu";
 import { MobileNav } from "./mobile-nav";
 
 /* ── 네비게이션 항목 ── */
@@ -9,15 +9,16 @@ type NavItem = { label: string; href: string; soon?: boolean };
 
 const publicNav: NavItem[] = [
   { label: "학습 기능", href: "/#features" },
+  { label: "전략 가이드", href: "/strategy" },
   { label: "요금제", href: "/pricing" },
 ];
 
 const appNav: NavItem[] = [
   { label: "대시보드", href: "/dashboard" },
-  { label: "모의고사", href: "#", soon: true },
-  { label: "AI 훈련소", href: "#", soon: true },
+  { label: "시험후기", href: "/reviews" },
   { label: "스크립트", href: "#", soon: true },
-  { label: "쉐도잉", href: "#", soon: true },
+  { label: "모의고사", href: "#", soon: true },
+  { label: "튜터링", href: "#", soon: true },
 ];
 
 export async function Navbar() {
@@ -27,6 +28,7 @@ export async function Navbar() {
   } = await supabase.auth.getUser();
 
   const isLoggedIn = !!user;
+  const userName = user?.user_metadata?.display_name || "";
   const navItems = isLoggedIn ? appNav : publicNav;
 
   return (
@@ -63,7 +65,7 @@ export async function Navbar() {
         {/* 우측: 인증 버튼 + 모바일 메뉴 */}
         <div className="flex items-center gap-2">
           {isLoggedIn ? (
-            <LogoutButton />
+            <UserMenu name={userName} />
           ) : (
             <div className="hidden items-center gap-2 md:flex">
               <Link
@@ -82,7 +84,7 @@ export async function Navbar() {
           )}
 
           {/* 모바일 햄버거 */}
-          <MobileNav isLoggedIn={isLoggedIn} items={navItems} />
+          <MobileNav isLoggedIn={isLoggedIn} items={navItems} userName={userName} />
         </div>
       </nav>
     </header>

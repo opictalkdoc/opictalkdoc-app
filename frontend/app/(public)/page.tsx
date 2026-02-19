@@ -1,8 +1,8 @@
 import Link from "next/link";
 import {
   Stethoscope,
-  Heart,
   Zap,
+  Headphones,
   Check,
   ArrowRight,
   Plus,
@@ -10,35 +10,38 @@ import {
 
 /* ── 데이터 ── */
 
-/* 3T 시스템 기반 Features */
+/* 핵심 기능 — 진단 · 처방 · 체화 */
 const features = [
   {
     icon: Stethoscope,
     iconBg: "bg-primary-50 text-primary-500",
-    badge: "톡닥이",
+    badge: "진단",
     title: "네 실력을 정확히 진단해 줄게",
-    desc: "AI 레벨 테스트, 발음·억양 분석, 문법 교정까지. 똑똑한 AI 주치의가 당신의 스피킹을 정밀 진단합니다.",
+    desc: "AI 레벨 테스트, 발음·억양 분석, 문법 교정까지. AI 주치의 톡닥이가 당신의 스피킹을 정밀 진단합니다.",
     imageBg: "bg-primary-50",
     imageAlt: "AI 스피킹 진단",
-  },
-  {
-    icon: Heart,
-    iconBg: "bg-accent-50 text-accent-500",
-    badge: "토닥이",
-    title: "틀려도 괜찮아, 다시 해보자",
-    desc: "칭찬 피드백과 멘탈 케어 메시지로 지친 수험생을 토닥여줍니다. 공부인데 부담 없는, 따뜻한 학습 경험.",
-    imageBg: "bg-accent-50",
-    imageAlt: "따뜻한 학습 경험",
-    reverse: true,
+    mockup: "diagnosis",
   },
   {
     icon: Zap,
     iconBg: "bg-secondary-50 text-secondary-600",
-    badge: "뚝딱이",
+    badge: "처방",
     title: "고민할 시간에 답을 줄게",
     desc: "키워드만 넣으면 스크립트가 뚝딱. 내 경험을 영어로 변환하고, 예상 질문까지 적중시켜 드립니다.",
     imageBg: "bg-secondary-50",
     imageAlt: "AI 스크립트 생성",
+    reverse: true,
+    mockup: "script",
+  },
+  {
+    icon: Headphones,
+    iconBg: "bg-accent-50 text-accent-500",
+    badge: "체화",
+    title: "듣고, 따라하고, 입에 붙이기",
+    desc: "원어민 발화를 따라하며 자연스러운 영어를 체화합니다. 반복할수록 내 것이 됩니다.",
+    imageBg: "bg-accent-50",
+    imageAlt: "쉐도잉 훈련",
+    mockup: "shadowing",
   },
 ];
 
@@ -202,9 +205,9 @@ export default function HomePage() {
                 </div>
               </div>
               {/* 스크린 영역 — 궁금증 유발 티저 */}
-              <div className="flex h-[320px] flex-col items-center justify-center bg-[#FAFBFC] px-6 sm:h-[400px] md:h-[520px]">
+              <div className="flex h-[320px] flex-col items-center justify-center bg-[#FAFBFC] px-4 sm:h-[400px] sm:px-6 md:h-[520px]">
                 {/* 대충 아는 것 3줄 */}
-                <div className="w-full max-w-[520px] space-y-3 sm:space-y-4">
+                <div className="w-full max-w-[520px] space-y-2.5 sm:space-y-4">
                   {[
                     {
                       rough: "서베이가 중요하다더라",
@@ -264,12 +267,12 @@ export default function HomePage() {
       {/* ━━━ Features ━━━ */}
       <section id="features" className="bg-[#FCFBF8] py-20 sm:py-28">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          {/* 섹션 헤더 — 3T 시스템 */}
+          {/* 섹션 헤더 — AI 스피킹 클리닉 */}
           <div className="flex flex-col items-center text-center">
-            <SectionPill>3T 시스템</SectionPill>
+            <SectionPill>AI 스피킹 클리닉</SectionPill>
             <h2 className="mt-5 font-serif text-3xl font-semibold italic leading-[1.25] tracking-tight text-[#1f1e30] sm:text-[40px]">
-              진단하고, 위로하고,
-              <br />해결합니다
+              진단하고, 처방하고,
+              <br />체화합니다
             </h2>
             <p className="mt-4 max-w-[520px] text-base leading-relaxed text-[#71717A]">
               공부는 쉬워야 하고, 결과는 빨라야 하며, 과정은 따뜻해야 합니다.
@@ -317,8 +320,8 @@ export default function HomePage() {
                         "0 8px 32px -4px rgba(13, 148, 136, 0.07)",
                     }}
                   >
-                    {f.badge === "톡닥이" ? (
-                      <div className="w-full max-w-[300px] space-y-3 px-4">
+                    {f.mockup === "diagnosis" ? (
+                      <div className="w-full max-w-[300px] space-y-3 px-3 sm:px-4">
                         <div className="rounded-xl bg-white/80 p-5 shadow-sm backdrop-blur">
                           <p className="text-[13px] font-bold text-[#1f1e30]">
                             스피킹 진단 리포트
@@ -352,30 +355,8 @@ export default function HomePage() {
                           </div>
                         </div>
                       </div>
-                    ) : f.badge === "토닥이" ? (
-                      <div className="w-full max-w-[300px] space-y-3 px-4">
-                        <div className="ml-auto w-fit rounded-2xl rounded-br-md bg-accent-100 px-4 py-3">
-                          <p className="text-[13px] text-[#52525B]">
-                            문법이 자꾸 틀려서 자신이 없어요...
-                          </p>
-                        </div>
-                        <div className="mr-auto w-fit rounded-2xl rounded-bl-md bg-white px-4 py-3 shadow-sm">
-                          <p className="text-[13px] text-[#52525B]">
-                            괜찮아요! 문법 실수는 누구나 해요 😊
-                            <br />
-                            <span className="font-medium text-accent-500">
-                              같이 하나씩 고쳐보자!
-                            </span>
-                          </p>
-                        </div>
-                        <div className="ml-auto w-fit rounded-2xl rounded-br-md bg-accent-100 px-4 py-3">
-                          <p className="text-[13px] text-[#52525B]">
-                            네, 한번 더 해볼게요!
-                          </p>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="w-full max-w-[300px] space-y-3 px-4">
+                    ) : f.mockup === "script" ? (
+                      <div className="w-full max-w-[300px] space-y-3 px-3 sm:px-4">
                         <div className="rounded-xl bg-white/80 p-5 shadow-sm backdrop-blur">
                           <div className="flex flex-wrap gap-2">
                             {["여행", "요리", "주말 활동"].map((tag) => (
@@ -396,6 +377,46 @@ export default function HomePage() {
                           <p className="mt-3 text-[11px] text-secondary-500">
                             ✨ 내 경험 기반 스크립트 생성 중...
                           </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="w-full max-w-[300px] space-y-3 px-3 sm:px-4">
+                        <div className="rounded-xl bg-white/80 p-5 shadow-sm backdrop-blur">
+                          <p className="text-[13px] font-bold text-[#1f1e30]">
+                            쉐도잉 훈련
+                          </p>
+                          <div className="mt-4 flex items-center gap-3">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent-100">
+                              <span className="text-sm text-accent-500">▶</span>
+                            </div>
+                            <div className="flex-1">
+                              <div className="flex items-center gap-1">
+                                {[3,5,8,4,7,6,3,5,8,6,4,7,5,3,6].map((h, i) => (
+                                  <div
+                                    key={i}
+                                    className="w-1 rounded-full bg-accent-300"
+                                    style={{ height: `${h * 3}px` }}
+                                  />
+                                ))}
+                              </div>
+                              <p className="mt-1 text-[10px] text-[#A1A1AA]">0:12 / 0:45</p>
+                            </div>
+                          </div>
+                          <div className="mt-4 space-y-2">
+                            <p className="text-[12px] text-[#71717A]">
+                              <span className="font-medium text-accent-500">원문</span>{" "}
+                              I usually go hiking on weekends.
+                            </p>
+                            <p className="text-[12px] text-[#71717A]">
+                              <span className="font-medium text-primary-500">내 발화</span>{" "}
+                              I usually go hiking on weekends.
+                            </p>
+                          </div>
+                          <div className="mt-3 rounded-lg bg-accent-50 px-3 py-2">
+                            <p className="text-[11px] text-accent-600">
+                              🎯 발음 일치율 87% — 아주 잘하고 있어요!
+                            </p>
+                          </div>
                         </div>
                       </div>
                     )}

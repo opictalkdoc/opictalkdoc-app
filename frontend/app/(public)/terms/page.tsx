@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "이용약관 | OPIcTalkDoc",
-  description: "OPIcTalkDoc 서비스 이용약관",
+  title: "이용약관 | 오픽톡닥",
+  description: "오픽톡닥 서비스 이용약관",
 };
 
 export default function TermsPage() {
@@ -20,9 +20,10 @@ export default function TermsPage() {
             제1조 (목적)
           </h2>
           <p className="mt-2">
-            이 약관은 스투스 OPIc(이하 &quot;회사&quot;)이 제공하는 OPIcTalkDoc
-            서비스(이하 &quot;서비스&quot;)의 이용 조건 및 절차, 회사와 회원 간의
-            권리·의무 및 책임사항을 규정함을 목적으로 합니다.
+            이 약관은 스투스 OPIc(이하 &quot;회사&quot;)이 제공하는
+            오픽톡닥(OPIcTalkDoc) 서비스(이하 &quot;서비스&quot;)의 이용 조건 및
+            절차, 회사와 회원 간의 권리·의무 및 책임사항을 규정함을 목적으로
+            합니다.
           </p>
         </section>
 

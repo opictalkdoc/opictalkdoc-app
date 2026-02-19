@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Jua, Fraunces } from "next/font/google";
+import { Inter, Jua, Fraunces, Noto_Serif_KR } from "next/font/google";
 import "./globals.css";
 
 const inter = Inter({
@@ -21,19 +21,26 @@ const fraunces = Fraunces({
   variable: "--font-fraunces",
 });
 
+const notoSerifKR = Noto_Serif_KR({
+  weight: ["400", "700"],
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-noto-serif-kr",
+});
+
 export const metadata: Metadata = {
   title: {
-    template: "%s | OPIcTalkDoc",
-    default: "OPIcTalkDoc - AI 기반 OPIc 말하기 학습",
+    template: "%s | 오픽톡닥",
+    default: "오픽톡닥 - AI 기반 OPIc 말하기 학습",
   },
   description:
     "AI와 함께하는 OPIc 영어 말하기 학습 플랫폼. 모의고사, AI 훈련소, 쉐도잉으로 목표 등급을 달성하세요.",
   openGraph: {
-    title: "OPIcTalkDoc - AI 기반 OPIc 말하기 학습",
+    title: "오픽톡닥 - AI 기반 OPIc 말하기 학습",
     description:
       "AI와 함께하는 OPIc 영어 말하기 학습 플랫폼. 모의고사, AI 훈련소, 쉐도잉으로 목표 등급을 달성하세요.",
     url: "https://opictalkdoc.com",
-    siteName: "OPIcTalkDoc",
+    siteName: "오픽톡닥",
     locale: "ko_KR",
     type: "website",
   },
@@ -45,7 +52,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ko" className={`${inter.variable} ${jua.variable} ${fraunces.variable}`}>
+    <html lang="ko" className={`${inter.variable} ${jua.variable} ${fraunces.variable} ${notoSerifKR.variable}`}>
       <head>
         <link
           rel="stylesheet"

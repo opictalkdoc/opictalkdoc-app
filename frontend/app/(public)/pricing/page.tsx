@@ -165,19 +165,19 @@ export default function PricingPage() {
       <div className="mt-20">
         <h2 className="text-center text-2xl font-bold">기능 비교</h2>
         <div className="mt-8 overflow-x-auto rounded-[var(--radius-xl)] border border-border">
-          <table className="w-full text-left text-sm">
+          <table className="w-full min-w-[480px] text-left text-sm">
             <thead className="bg-surface-secondary">
               <tr>
-                <th className="px-4 py-3 font-semibold text-foreground">
+                <th className="px-3 py-3 font-semibold text-foreground sm:px-4">
                   기능
                 </th>
-                <th className="px-4 py-3 text-center font-semibold text-foreground">
+                <th className="px-2 py-3 text-center font-semibold text-foreground sm:px-4">
                   체험
                 </th>
-                <th className="px-4 py-3 text-center font-semibold text-primary-600">
+                <th className="px-2 py-3 text-center font-semibold text-primary-600 sm:px-4">
                   베이직
                 </th>
-                <th className="px-4 py-3 text-center font-semibold text-foreground">
+                <th className="px-2 py-3 text-center font-semibold text-foreground sm:px-4">
                   프리미엄
                 </th>
               </tr>
@@ -194,14 +194,14 @@ export default function PricingPage() {
                 ["이용 기간", "무제한", "1개월", "2개월"],
               ].map(([feature, free, basic, premium]) => (
                 <tr key={feature}>
-                  <td className="px-4 py-3 text-foreground">{feature}</td>
-                  <td className="px-4 py-3 text-center text-foreground-secondary">
+                  <td className="px-3 py-3 text-foreground sm:px-4">{feature}</td>
+                  <td className="px-2 py-3 text-center text-foreground-secondary sm:px-4">
                     {free}
                   </td>
-                  <td className="px-4 py-3 text-center text-foreground-secondary">
+                  <td className="px-2 py-3 text-center text-foreground-secondary sm:px-4">
                     {basic}
                   </td>
-                  <td className="px-4 py-3 text-center text-foreground-secondary">
+                  <td className="px-2 py-3 text-center text-foreground-secondary sm:px-4">
                     {premium}
                   </td>
                 </tr>
@@ -245,6 +245,22 @@ export default function PricingPage() {
             </span>
           </div>
         </div>
+      </div>
+
+      {/* 전략 가이드 CTA */}
+      <div className="mt-16 rounded-[var(--radius-xl)] border border-primary-200 bg-gradient-to-br from-primary-50 to-primary-100/50 p-8 text-center">
+        <p className="text-lg font-bold text-foreground">
+          왜 이 요금제가 효과적인지 궁금하신가요?
+        </p>
+        <p className="mt-2 text-sm text-foreground-secondary">
+          230건 실제 시험 데이터로 증명된 OPIc 전략을 확인해 보세요.
+        </p>
+        <Link
+          href="/strategy"
+          className="mt-4 inline-flex h-10 items-center justify-center gap-1 rounded-[var(--radius-lg)] bg-primary-500 px-6 text-sm font-medium text-white transition-colors hover:bg-primary-600"
+        >
+          전략 가이드 보기 →
+        </Link>
       </div>
 
       {/* 하단 안내 */}

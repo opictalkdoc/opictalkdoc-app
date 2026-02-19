@@ -1,20 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Settings, LogOut } from "lucide-react";
+import { logout } from "@/lib/actions/auth";
 
 type NavItem = { label: string; href: string; soon?: boolean };
 
 export function MobileNav({
   isLoggedIn,
   items,
+  userName,
 }: {
   isLoggedIn: boolean;
   items: NavItem[];
+  userName?: string;
 }) {
   const [open, setOpen] = useState(false);
+  const [isPending, startTransition] = useTransition();
   const pathname = usePathname();
 
   return (
@@ -61,6 +65,42 @@ export function MobileNav({
                 );
               })}
             </div>
+
+            {/* 로그인 시: 마이페이지 + 로그아웃 */}
+            {isLoggedIn && (
+              <div className="mt-3 space-y-1 border-t border-border pt-3">
+                <Link
+                  href="/mypage"
+                  onClick={() => setOpen(false)}
+                  className={`flex items-center gap-2 rounded-[var(--radius-lg)] px-3 py-2.5 text-sm font-medium transition-colors ${
+                    pathname === "/mypage"
+                      ? "bg-primary-50 text-primary-600"
+                      : "text-foreground-secondary hover:bg-surface-secondary hover:text-foreground"
+                  }`}
+                >
+                  <Settings size={16} />
+                  마이페이지
+                  {userName && (
+                    <span className="ml-auto text-xs text-foreground-muted">
+                      {userName}
+                    </span>
+                  )}
+                </Link>
+                <button
+                  onClick={() => {
+                    setOpen(false);
+                    startTransition(async () => {
+                      await logout();
+                    });
+                  }}
+                  disabled={isPending}
+                  className="flex w-full items-center gap-2 rounded-[var(--radius-lg)] px-3 py-2.5 text-sm font-medium text-foreground-secondary transition-colors hover:bg-surface-secondary hover:text-foreground disabled:opacity-50"
+                >
+                  <LogOut size={16} />
+                  {isPending ? "로그아웃 중..." : "로그아웃"}
+                </button>
+              </div>
+            )}
 
             {/* 비로그인 시 CTA */}
             {!isLoggedIn && (

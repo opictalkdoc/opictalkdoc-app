@@ -8,7 +8,7 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
         <div className="mb-8 text-center">
           <Link href="/">
             <span className="font-display text-2xl text-primary-500">
-              OPIcTalkDoc
+              오픽톡닥
             </span>
           </Link>
         </div>

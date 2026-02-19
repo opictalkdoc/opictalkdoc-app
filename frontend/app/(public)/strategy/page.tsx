@@ -352,6 +352,30 @@ export default function StrategyPage() {
             <br className="hidden sm:block" />
             <strong>시험 구조 자체를 모르는 것</strong>입니다.
           </p>
+
+          {/* 이탈 방지 메시지 */}
+          <div className="mt-10 w-full max-w-[560px] rounded-2xl border border-[#1f1e30]/10 bg-[#1f1e30] px-6 py-7 text-center sm:px-8">
+            <p className="text-[15px] font-semibold leading-[1.8] text-white/90">
+              오픽톡닥을 이용하지 않으셔도 됩니다.
+            </p>
+            <p className="mt-1 text-[15px] font-bold leading-[1.8] text-white">
+              단, 이 글만큼은 끝까지 읽어 주세요.
+            </p>
+            <div className="mx-auto my-4 h-px w-12 bg-white/20" />
+            <p className="text-sm leading-[1.8] text-white/60">
+              대부분의 수험생은 OPIc을 &ldquo;대충&rdquo; 안 채로 시험장에 갑니다.
+              <br className="hidden sm:block" />
+              그리고 같은 등급을 받고, 같은 방식으로 다시 준비합니다.
+            </p>
+            <p className="mt-4 text-[15px] font-bold leading-[1.8] text-primary-300">
+              이 정보를 아는 것 자체가 전략입니다.
+            </p>
+            <p className="mt-1 text-sm leading-[1.8] text-white/50">
+              앞으로 오랫동안 함께할 OPIc을,
+              <br className="hidden sm:block" />
+              제대로 마주할 마지막 기회일 수 있습니다.
+            </p>
+          </div>
         </div>
       </section>
 
@@ -479,14 +503,14 @@ export default function StrategyPage() {
           </div>
 
           {/* 다른 시험과 비교 */}
-          <div className="mt-10 overflow-hidden rounded-2xl border border-[#F4F4F5] bg-white">
+          <div className="mt-10 overflow-x-auto rounded-2xl border border-[#F4F4F5] bg-white">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-[#F4F4F5] bg-[#FAFAFA]">
-                  <th className="px-6 py-3 text-left font-semibold text-[#1f1e30]">
+                  <th className="px-3 py-3 text-left font-semibold text-[#1f1e30] sm:px-6">
                     시험
                   </th>
-                  <th className="px-6 py-3 text-center font-semibold text-[#1f1e30]">
+                  <th className="px-3 py-3 text-center font-semibold text-[#1f1e30] sm:px-6">
                     출제 범위 예측
                   </th>
                 </tr>
@@ -494,8 +518,8 @@ export default function StrategyPage() {
               <tbody className="divide-y divide-[#F4F4F5]">
                 {["토익", "토플", "아이엘츠"].map((exam) => (
                   <tr key={exam}>
-                    <td className="px-6 py-3 text-[#71717A]">{exam}</td>
-                    <td className="px-6 py-3 text-center">
+                    <td className="px-3 py-3 text-[#71717A] sm:px-6">{exam}</td>
+                    <td className="px-3 py-3 text-center sm:px-6">
                       <span className="inline-flex items-center gap-1 text-red-400">
                         <X className="h-4 w-4" /> 예측 불가
                       </span>
@@ -503,10 +527,10 @@ export default function StrategyPage() {
                   </tr>
                 ))}
                 <tr className="bg-primary-50">
-                  <td className="px-6 py-3 font-bold text-primary-700">
+                  <td className="px-3 py-3 font-bold text-primary-700 sm:px-6">
                     OPIc
                   </td>
-                  <td className="px-6 py-3 text-center">
+                  <td className="px-3 py-3 text-center sm:px-6">
                     <span className="inline-flex items-center gap-1 font-bold text-primary-600">
                       <Check className="h-4 w-4" /> 60%를 내가 직접 결정
                     </span>
@@ -533,7 +557,7 @@ export default function StrategyPage() {
           </p>
 
           {/* 10가지 문제유형 테이블 */}
-          <div className="mt-12 overflow-hidden rounded-2xl border border-[#F4F4F5] bg-white">
+          <div className="mt-12 overflow-x-auto rounded-2xl border border-[#F4F4F5] bg-white">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-[#F4F4F5] bg-[#FAFAFA]">
@@ -708,7 +732,7 @@ export default function StrategyPage() {
                 key={item.cat}
                 className="flex flex-col gap-3 rounded-xl border border-[#F4F4F5] bg-white p-4 sm:flex-row sm:items-center sm:gap-4"
               >
-                <div className="min-w-[120px]">
+                <div className="sm:min-w-[120px]">
                   <p className="text-sm font-bold text-[#1f1e30]">
                     {item.cat}
                   </p>
@@ -731,18 +755,18 @@ export default function StrategyPage() {
           </div>
 
           {/* 결과 요약 */}
-          <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center sm:gap-6">
-            <div className="rounded-xl bg-[#F1F3F5] px-6 py-4 text-center">
+          <div className="mt-10 flex flex-col items-center gap-3 sm:flex-row sm:justify-center sm:gap-6">
+            <div className="w-full max-w-[200px] rounded-xl bg-[#F1F3F5] px-5 py-3 text-center sm:w-auto sm:px-6 sm:py-4">
               <p className="text-2xl font-black text-[#64748B]">16개</p>
               <p className="mt-1 text-xs text-[#94A3B8]">선택한 항목</p>
             </div>
-            <span className="text-xl text-[#CBD5E1]">→</span>
-            <div className="rounded-xl bg-[#F1F3F5] px-6 py-4 text-center">
+            <span className="text-xl text-[#CBD5E1]"><span className="sm:hidden">↓</span><span className="hidden sm:inline">→</span></span>
+            <div className="w-full max-w-[200px] rounded-xl bg-[#F1F3F5] px-5 py-3 text-center sm:w-auto sm:px-6 sm:py-4">
               <p className="text-2xl font-black text-[#64748B]">6개</p>
               <p className="mt-1 text-xs text-[#94A3B8]">필러 (출제 0건)</p>
             </div>
-            <span className="text-xl text-[#CBD5E1]">→</span>
-            <div className="rounded-xl bg-primary-50 px-6 py-4 text-center">
+            <span className="text-xl text-[#CBD5E1]"><span className="sm:hidden">↓</span><span className="hidden sm:inline">→</span></span>
+            <div className="w-full max-w-[200px] rounded-xl bg-primary-50 px-5 py-3 text-center sm:w-auto sm:px-6 sm:py-4">
               <p className="text-2xl font-black text-primary-600">10개</p>
               <p className="mt-1 text-xs text-primary-500">
                 실제 공부할 주제
@@ -768,7 +792,7 @@ export default function StrategyPage() {
           </p>
 
           {/* 빈도 테이블 */}
-          <div className="mt-12 overflow-hidden rounded-2xl border border-[#F4F4F5] bg-white">
+          <div className="mt-12 overflow-x-auto rounded-2xl border border-[#F4F4F5] bg-white">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-[#F4F4F5] bg-[#FAFAFA]">
@@ -876,7 +900,7 @@ export default function StrategyPage() {
           </p>
 
           {/* 공통형 빈도 테이블 */}
-          <div className="mt-12 overflow-hidden rounded-2xl border border-[#F4F4F5] bg-white">
+          <div className="mt-12 overflow-x-auto rounded-2xl border border-[#F4F4F5] bg-white">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-[#F4F4F5] bg-[#FAFAFA]">
@@ -1056,7 +1080,7 @@ export default function StrategyPage() {
           </div>
 
           {/* 5-5 vs 전체 평균 비교 테이블 */}
-          <div className="mt-10 overflow-hidden rounded-2xl border border-[#F4F4F5] bg-white">
+          <div className="mt-10 overflow-x-auto rounded-2xl border border-[#F4F4F5] bg-white">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-[#F4F4F5] bg-[#FAFAFA]">
@@ -1159,7 +1183,7 @@ export default function StrategyPage() {
                   key={row.label}
                   className="flex flex-col gap-2 rounded-lg bg-white p-4 sm:flex-row sm:items-center sm:gap-4"
                 >
-                  <span className="min-w-[140px] text-sm font-semibold text-[#1f1e30]">
+                  <span className="text-sm font-semibold text-[#1f1e30] sm:min-w-[140px]">
                     {row.label}
                   </span>
                   <span className="rounded-md bg-primary-50 px-3 py-1 text-xs font-semibold text-primary-600">
@@ -1203,7 +1227,7 @@ export default function StrategyPage() {
                 className="flex flex-col gap-4 rounded-2xl border border-[#F4F4F5] bg-white p-5 sm:flex-row sm:items-center sm:gap-6"
               >
                 {/* 등급 뱃지 */}
-                <div className="flex items-center gap-3 sm:min-w-[140px]">
+                <div className="flex items-center gap-3 sm:min-w-[160px]">
                   <span
                     className={`flex h-12 w-12 items-center justify-center rounded-xl text-sm font-black text-white ${
                       gs.grade === "AL"
@@ -1445,7 +1469,7 @@ export default function StrategyPage() {
           </div>
 
           {/* 데이터 규모별 효과 */}
-          <div className="mt-10 overflow-hidden rounded-2xl border border-[#F4F4F5] bg-white">
+          <div className="mt-10 overflow-x-auto rounded-2xl border border-[#F4F4F5] bg-white">
             <div className="border-b border-[#F4F4F5] bg-[#FAFAFA] px-6 py-3">
               <p className="text-center text-sm font-semibold text-[#1f1e30]">
                 데이터 규모별 예상 효과

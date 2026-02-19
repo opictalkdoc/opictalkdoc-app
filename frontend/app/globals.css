@@ -7,7 +7,7 @@
     "Noto Sans KR", "Malgun Gothic", "Apple Color Emoji", "Segoe UI Emoji",
     "Segoe UI Symbol", sans-serif;
   --font-display: var(--font-jua);
-  --font-serif: var(--font-fraunces);
+  --font-serif: var(--font-fraunces), var(--font-noto-serif-kr);
 
   /* Primary - 민트 */
   --color-primary-50: #F0FDFA;
@@ -93,6 +93,13 @@ body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* 스크롤바 공간 항상 확보 — 탭 전환 시 레이아웃 밀림 방지 (데스크톱만) */
+@media (min-width: 768px) {
+  html {
+    scrollbar-gutter: stable;
+  }
 }
 
 /* 섹션 라벨 (FEATURES, HOW IT WORKS 등) */

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { signup, loginWithOAuth } from "@/lib/actions/auth";
 import { signupSchema, type SignupInput } from "@/lib/validations/auth";
 import { isInAppBrowser, openInExternalBrowser } from "@/lib/utils/detect-webview";
@@ -184,9 +185,8 @@ export default function SignupPage() {
           >
             비밀번호
           </label>
-          <Input
+          <PasswordInput
             id="password"
-            type="password"
             placeholder="8자 이상"
             autoComplete="new-password"
             error={!!errors.password}
@@ -207,9 +207,8 @@ export default function SignupPage() {
           >
             비밀번호 확인
           </label>
-          <Input
+          <PasswordInput
             id="confirmPassword"
-            type="password"
             placeholder="비밀번호를 다시 입력"
             autoComplete="new-password"
             error={!!errors.confirmPassword}

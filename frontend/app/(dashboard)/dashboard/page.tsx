@@ -1,7 +1,6 @@
 import Link from "next/link";
 import {
   Stethoscope,
-  Heart,
   Zap,
   ClipboardList,
   Headphones,
@@ -61,7 +60,7 @@ const quickActions = [
   {
     icon: Stethoscope,
     iconBg: "bg-primary-50 text-primary-500",
-    title: "톡닥이 — AI 진단",
+    title: "AI 진단",
     desc: "발음·억양·문법을 정밀 분석해요",
     href: "#",
     soon: true,
@@ -69,7 +68,7 @@ const quickActions = [
   {
     icon: Zap,
     iconBg: "bg-secondary-50 text-secondary-600",
-    title: "뚝딱이 — 스크립트",
+    title: "맞춤 스크립트",
     desc: "키워드만 넣으면 답변을 뚝딱 만들어요",
     href: "#",
     soon: true,
@@ -185,7 +184,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* 학습 로드맵 + 3T 시스템 */}
+      {/* 학습 로드맵 + AI 주치의 */}
       <div className="grid gap-6 lg:grid-cols-5">
         {/* 학습 로드맵 */}
         <div className="rounded-[var(--radius-xl)] border border-border bg-surface p-6 lg:col-span-3">
@@ -224,55 +223,37 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* 3T 시스템 */}
+        {/* AI 주치의 톡닥이 */}
         <div className="space-y-4 lg:col-span-2">
-          <h2 className="text-lg font-bold text-foreground">3T 시스템</h2>
-          {[
-            {
-              icon: Stethoscope,
-              name: "톡닥이",
-              role: "AI 주치의",
-              desc: "실력을 정확히 진단해 줄게",
-              color: "border-l-primary-400 bg-primary-50/50",
-              iconColor: "text-primary-500",
-            },
-            {
-              icon: Heart,
-              name: "토닥이",
-              role: "페이스메이커",
-              desc: "틀려도 괜찮아, 다시 해보자",
-              color: "border-l-accent-400 bg-accent-50/50",
-              iconColor: "text-accent-500",
-            },
-            {
-              icon: Zap,
-              name: "뚝딱이",
-              role: "만능 도구",
-              desc: "고민할 시간에 답을 줄게",
-              color: "border-l-secondary-400 bg-secondary-50/50",
-              iconColor: "text-secondary-600",
-            },
-          ].map((t) => (
-            <div
-              key={t.name}
-              className={`rounded-[var(--radius-xl)] border border-border border-l-4 ${t.color} p-4`}
-            >
-              <div className="flex items-center gap-3">
-                <t.icon size={20} className={t.iconColor} />
-                <div>
-                  <p className="font-semibold text-foreground">
-                    {t.name}{" "}
-                    <span className="text-sm font-normal text-foreground-secondary">
-                      — {t.role}
-                    </span>
-                  </p>
-                  <p className="text-sm text-foreground-secondary">
-                    &ldquo;{t.desc}&rdquo;
-                  </p>
-                </div>
-              </div>
+          <h2 className="text-lg font-bold text-foreground">AI 주치의</h2>
+          <div className="rounded-[var(--radius-xl)] border border-border border-l-4 border-l-primary-400 bg-primary-50/50 p-5">
+            <div className="flex items-center gap-3">
+              <Stethoscope size={22} className="text-primary-500" />
+              <p className="text-lg font-semibold text-foreground">톡닥이</p>
             </div>
-          ))}
+            <p className="mt-3 text-sm leading-relaxed text-foreground-secondary">
+              진단하고, 처방하고, 체화까지.
+              <br />
+              오픽의 모든 과정을 톡닥이가 함께합니다.
+            </p>
+          </div>
+
+          {/* 전략 가이드 */}
+          <div className="rounded-[var(--radius-xl)] border border-[#1f1e30]/10 bg-[#1f1e30] p-5">
+            <p className="text-sm font-semibold text-white">
+              OPIc 전략, 정확히 알고 계신가요?
+            </p>
+            <p className="mt-1 text-xs text-white/60">
+              230건 데이터로 증명된 서베이 전략과 5-5 난이도 전략을 확인하세요.
+            </p>
+            <Link
+              href="/strategy"
+              className="mt-3 inline-flex items-center gap-1 rounded-full bg-white px-4 py-2 text-sm font-medium text-[#1f1e30] transition-colors hover:bg-white/90"
+            >
+              전략 가이드
+              <ArrowRight size={14} />
+            </Link>
+          </div>
 
           {/* 요금제 업그레이드 CTA */}
           <div className="rounded-[var(--radius-xl)] border border-primary-200 bg-gradient-to-br from-primary-50 to-primary-100/50 p-5">

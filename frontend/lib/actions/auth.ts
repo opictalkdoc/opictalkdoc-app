@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import {
   loginSchema,
@@ -134,6 +135,49 @@ export async function loginWithOAuth(provider: "google" | "kakao") {
   }
 
   redirect(data.url);
+}
+
+export async function updateProfile(formData: FormData): Promise<AuthResult> {
+  const name = formData.get("name") as string;
+  if (!name?.trim()) {
+    return { error: "이름을 입력해주세요" };
+  }
+
+  const supabase = await createServerSupabaseClient();
+  const { error } = await supabase.auth.updateUser({
+    data: { display_name: name.trim() },
+  });
+
+  if (error) {
+    return { error: "프로필 업데이트에 실패했습니다" };
+  }
+
+  revalidatePath("/mypage");
+  revalidatePath("/dashboard");
+  return {};
+}
+
+export async function updateGoals(formData: FormData): Promise<AuthResult> {
+  const targetGrade = formData.get("targetGrade") as string;
+  const examDate = formData.get("examDate") as string;
+  const weeklyGoal = formData.get("weeklyGoal") as string;
+
+  const supabase = await createServerSupabaseClient();
+  const { error } = await supabase.auth.updateUser({
+    data: {
+      target_grade: targetGrade || null,
+      exam_date: examDate || null,
+      weekly_goal: weeklyGoal || null,
+    },
+  });
+
+  if (error) {
+    return { error: "목표 설정 저장에 실패했습니다" };
+  }
+
+  revalidatePath("/mypage");
+  revalidatePath("/dashboard");
+  return {};
 }
 
 export async function logout() {

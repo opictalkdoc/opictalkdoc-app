@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "환불 규정 | OPIcTalkDoc",
-  description: "OPIcTalkDoc 환불 규정 안내",
+  title: "환불 규정 | 오픽톡닥",
+  description: "오픽톡닥 환불 규정 안내",
 };
 
 export default function RefundPage() {
@@ -20,8 +20,9 @@ export default function RefundPage() {
             제1조 (목적)
           </h2>
           <p className="mt-2">
-            이 규정은 스투스 OPIc(이하 &quot;회사&quot;)이 제공하는 OPIcTalkDoc
-            유료서비스에 대한 환불 기준과 절차를 규정합니다.
+            이 규정은 스투스 OPIc(이하 &quot;회사&quot;)이 제공하는
+            오픽톡닥(OPIcTalkDoc) 유료서비스에 대한 환불 기준과 절차를
+            규정합니다.
             전자상거래 등에서의 소비자보호에 관한 법률에 따릅니다.
           </p>
         </section>

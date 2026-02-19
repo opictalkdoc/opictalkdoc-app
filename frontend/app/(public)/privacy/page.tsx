@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "개인정보처리방침 | OPIcTalkDoc",
-  description: "OPIcTalkDoc 개인정보처리방침",
+  title: "개인정보처리방침 | 오픽톡닥",
+  description: "오픽톡닥 개인정보처리방침",
 };
 
 export default function PrivacyPage() {
