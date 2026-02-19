@@ -8,9 +8,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { signup, loginWithOAuth } from "@/lib/actions/auth";
 import { signupSchema, type SignupInput } from "@/lib/validations/auth";
+import { isInAppBrowser, openInExternalBrowser } from "@/lib/utils/detect-webview";
 
 export default function SignupPage() {
   const [serverError, setServerError] = useState<string | null>(null);
+  const [webviewWarning, setWebviewWarning] = useState(false);
   const [isPending, startTransition] = useTransition();
 
   const {
@@ -42,6 +44,25 @@ export default function SignupPage() {
         무료 계정을 만들고 OPIc 학습을 시작하세요
       </p>
 
+      {/* 인앱 브라우저 경고 */}
+      {webviewWarning && (
+        <div className="mt-4 rounded-[var(--radius-md)] border border-amber-300 bg-amber-50 p-4 text-sm">
+          <p className="font-medium text-amber-800">
+            인앱 브라우저에서는 Google 로그인이 지원되지 않습니다
+          </p>
+          <p className="mt-1 text-amber-700">
+            아래 버튼을 눌러 외부 브라우저에서 열어주세요
+          </p>
+          <button
+            type="button"
+            className="mt-3 w-full rounded-[var(--radius-md)] bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-700"
+            onClick={() => openInExternalBrowser()}
+          >
+            외부 브라우저에서 열기
+          </button>
+        </div>
+      )}
+
       {/* 소셜 회원가입 */}
       <div className="mt-6">
         <Button
@@ -49,6 +70,10 @@ export default function SignupPage() {
           variant="outline"
           className="w-full gap-2"
           onClick={() => {
+            if (isInAppBrowser()) {
+              setWebviewWarning(true);
+              return;
+            }
             startTransition(async () => {
               await loginWithOAuth("google");
             });
