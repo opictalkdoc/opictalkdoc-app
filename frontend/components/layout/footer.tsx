@@ -37,11 +37,14 @@ export function Footer() {
             업태: 정보통신업 / 응용 소프트웨어 개발 및 공급업
           </p>
           <p className="mt-1">
-            통신판매업 신고번호: 준비 중 &nbsp;|&nbsp;
+            대표전화: 010-4715-8846 &nbsp;|&nbsp;
             이메일:{" "}
             <a href="mailto:opictalkdoc@gmail.com">
               opictalkdoc@gmail.com
             </a>
+          </p>
+          <p className="mt-1">
+            통신판매업 신고번호: 준비 중
           </p>
           <p className="mt-4 text-[#4A5568]">
             &copy; {new Date().getFullYear()} 오픽톡닥. All rights reserved.
