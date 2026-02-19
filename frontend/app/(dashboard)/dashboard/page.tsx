@@ -1,14 +1,16 @@
 import Link from "next/link";
 import {
   Stethoscope,
-  Zap,
+  BarChart3,
+  FileText,
   ClipboardList,
-  Headphones,
+  MessageCircle,
   ArrowRight,
   TrendingUp,
   Target,
   BookOpen,
   Calendar,
+  Crown,
 } from "lucide-react";
 
 export const metadata = {
@@ -22,8 +24,9 @@ const stats = [
     label: "현재 플랜",
     value: "체험",
     sub: "무료",
-    icon: Target,
+    icon: Crown,
     color: "bg-primary-50 text-primary-500",
+    href: "/store",
   },
   {
     label: "남은 모의고사",
@@ -31,6 +34,7 @@ const stats = [
     sub: "샘플",
     icon: ClipboardList,
     color: "bg-secondary-50 text-secondary-600",
+    href: null,
   },
   {
     label: "스크립트 생성",
@@ -38,6 +42,7 @@ const stats = [
     sub: "체험판",
     icon: BookOpen,
     color: "bg-accent-50 text-accent-500",
+    href: null,
   },
   {
     label: "연속 학습",
@@ -45,39 +50,40 @@ const stats = [
     sub: "시작해 보세요!",
     icon: Calendar,
     color: "bg-primary-50 text-primary-500",
+    href: null,
   },
 ];
 
-const quickActions = [
+const modules = [
+  {
+    icon: BarChart3,
+    iconBg: "bg-primary-50 text-primary-500",
+    title: "시험후기",
+    desc: "출제 빈도 분석 · 후기 제출 · 시험 후기 열람",
+    href: "/reviews",
+    soon: false,
+  },
+  {
+    icon: FileText,
+    iconBg: "bg-secondary-50 text-secondary-600",
+    title: "스크립트",
+    desc: "맞춤 스크립트 생성 · 내 스크립트 관리 · 쉐도잉 훈련",
+    href: "#",
+    soon: true,
+  },
   {
     icon: ClipboardList,
-    iconBg: "bg-secondary-50 text-secondary-600",
-    title: "모의고사",
-    desc: "실전처럼 연습하고 AI가 진단해 줘요",
-    href: "#",
-    soon: true,
-  },
-  {
-    icon: Stethoscope,
-    iconBg: "bg-primary-50 text-primary-500",
-    title: "AI 진단",
-    desc: "발음·억양·문법을 정밀 분석해요",
-    href: "#",
-    soon: true,
-  },
-  {
-    icon: Zap,
-    iconBg: "bg-secondary-50 text-secondary-600",
-    title: "맞춤 스크립트",
-    desc: "키워드만 넣으면 답변을 뚝딱 만들어요",
-    href: "#",
-    soon: true,
-  },
-  {
-    icon: Headphones,
     iconBg: "bg-accent-50 text-accent-500",
-    title: "쉐도잉 훈련",
-    desc: "원어민 발화를 따라하며 체화해요",
+    title: "모의고사",
+    desc: "실전 모의고사 응시 · AI 평가 리포트 · 나의 이력",
+    href: "#",
+    soon: true,
+  },
+  {
+    icon: MessageCircle,
+    iconBg: "bg-primary-50 text-primary-500",
+    title: "튜터링",
+    desc: "AI 진단 · 맞춤 처방 · 레벨별 훈련",
     href: "#",
     soon: true,
   },
@@ -86,26 +92,37 @@ const quickActions = [
 const learningSteps = [
   {
     step: 1,
-    title: "레벨 테스트",
-    desc: "현재 스피킹 실력을 AI가 진단합니다",
+    title: "시험 후기 확인",
+    desc: "어떤 주제가 자주 나오는지 빈도 분석을 확인합니다",
+    module: "시험후기",
     done: false,
   },
   {
     step: 2,
     title: "맞춤 스크립트 생성",
-    desc: "내 경험을 기반으로 영어 답변을 만듭니다",
+    desc: "빈출 주제로 내 경험 기반 영어 답변을 만듭니다",
+    module: "스크립트",
     done: false,
   },
   {
     step: 3,
-    title: "체화 훈련",
-    desc: "쉐도잉과 반복 연습으로 입에 붙입니다",
+    title: "쉐도잉으로 체화",
+    desc: "생성한 스크립트를 원어민 발화로 따라하며 입에 붙입니다",
+    module: "스크립트",
     done: false,
   },
   {
     step: 4,
     title: "실전 모의고사",
-    desc: "실제 시험과 동일한 환경에서 연습합니다",
+    desc: "실제 시험 환경에서 15문제를 풀고 AI가 평가합니다",
+    module: "모의고사",
+    done: false,
+  },
+  {
+    step: 5,
+    title: "AI 튜터링",
+    desc: "모의고사 결과를 진단하고 약점을 집중 훈련합니다",
+    module: "튜터링",
     done: false,
   },
 ];
@@ -117,9 +134,7 @@ export default function DashboardPage() {
     <div className="space-y-8 pb-8 pt-2 lg:pt-0">
       {/* 헤더 */}
       <div>
-        <h1 className="text-2xl font-bold text-foreground">
-          학습 대시보드
-        </h1>
+        <h1 className="text-2xl font-bold text-foreground">대시보드</h1>
         <p className="mt-1 text-foreground-secondary">
           오픽톡닥과 함께 OPIc 목표 등급을 달성해 보세요.
         </p>
@@ -127,64 +142,83 @@ export default function DashboardPage() {
 
       {/* 통계 카드 */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {stats.map((s) => (
-          <div
-            key={s.label}
-            className="rounded-[var(--radius-xl)] border border-border bg-surface p-5"
-          >
-            <div className="flex items-center justify-between">
-              <p className="text-sm text-foreground-secondary">{s.label}</p>
-              <div
-                className={`flex h-9 w-9 items-center justify-center rounded-[var(--radius-lg)] ${s.color}`}
-              >
-                <s.icon size={18} />
+        {stats.map((s) => {
+          const inner = (
+            <>
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-foreground-secondary">{s.label}</p>
+                <div
+                  className={`flex h-9 w-9 items-center justify-center rounded-[var(--radius-lg)] ${s.color}`}
+                >
+                  <s.icon size={18} />
+                </div>
               </div>
+              <p className="mt-3 text-2xl font-bold text-foreground">
+                {s.value}
+              </p>
+              <p className="mt-0.5 text-xs text-foreground-muted">{s.sub}</p>
+            </>
+          );
+
+          return s.href ? (
+            <Link
+              key={s.label}
+              href={s.href}
+              className="rounded-[var(--radius-xl)] border border-border bg-surface p-5 transition-all hover:border-border-hover hover:shadow-[var(--shadow-card)]"
+            >
+              {inner}
+            </Link>
+          ) : (
+            <div
+              key={s.label}
+              className="rounded-[var(--radius-xl)] border border-border bg-surface p-5"
+            >
+              {inner}
             </div>
-            <p className="mt-3 text-2xl font-bold text-foreground">{s.value}</p>
-            <p className="mt-0.5 text-xs text-foreground-muted">{s.sub}</p>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
-      {/* 퀵 액션 */}
+      {/* 모듈 바로가기 */}
       <div>
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-bold text-foreground">학습 시작하기</h2>
-        </div>
+        <h2 className="mb-4 text-lg font-bold text-foreground">
+          학습 모듈
+        </h2>
         <div className="grid gap-4 sm:grid-cols-2">
-          {quickActions.map((a) => (
-            <div
-              key={a.title}
+          {modules.map((m) => (
+            <Link
+              key={m.title}
+              href={m.href}
               className="group relative flex items-start gap-4 rounded-[var(--radius-xl)] border border-border bg-surface p-5 transition-all hover:border-border-hover hover:shadow-[var(--shadow-card)]"
             >
               <div
-                className={`icon-container flex-shrink-0 ${a.iconBg}`}
+                className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-[var(--radius-lg)] ${m.iconBg}`}
               >
-                <a.icon size={22} />
+                <m.icon size={22} />
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                  <h3 className="font-semibold text-foreground">{a.title}</h3>
-                  {a.soon && (
+                  <h3 className="font-semibold text-foreground">{m.title}</h3>
+                  {m.soon && (
                     <span className="rounded-full bg-primary-50 px-2 py-0.5 text-[10px] font-medium text-primary-600">
                       준비 중
                     </span>
                   )}
                 </div>
                 <p className="mt-1 text-sm text-foreground-secondary">
-                  {a.desc}
+                  {m.desc}
                 </p>
               </div>
               <ArrowRight
                 size={16}
-                className="mt-1 flex-shrink-0 text-foreground-muted transition-transform group-hover:translate-x-1 group-hover:text-primary-500"
+                className="mt-1 shrink-0 text-foreground-muted transition-transform group-hover:translate-x-1 group-hover:text-primary-500"
               />
-            </div>
+            </Link>
           ))}
         </div>
       </div>
 
-      {/* 학습 로드맵 + AI 주치의 */}
+      {/* 학습 로드맵 + 사이드 패널 */}
       <div className="grid gap-6 lg:grid-cols-5">
         {/* 학습 로드맵 */}
         <div className="rounded-[var(--radius-xl)] border border-border bg-surface p-6 lg:col-span-3">
@@ -193,12 +227,11 @@ export default function DashboardPage() {
             학습 로드맵
           </h2>
           <p className="mt-1 text-sm text-foreground-secondary">
-            4단계를 거쳐 OPIc 목표 등급을 달성합니다
+            5단계를 거쳐 OPIc 목표 등급을 달성합니다
           </p>
-          <div className="mt-5 space-y-4">
+          <div className="mt-5 space-y-3">
             {learningSteps.map((ls, i) => (
               <div key={ls.step} className="flex items-start gap-4">
-                {/* 스텝 번호 + 연결선 */}
                 <div className="flex flex-col items-center">
                   <div
                     className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold ${
@@ -210,12 +243,16 @@ export default function DashboardPage() {
                     {ls.step}
                   </div>
                   {i < learningSteps.length - 1 && (
-                    <div className="mt-1 h-8 w-px bg-border" />
+                    <div className="mt-1 h-6 w-px bg-border" />
                   )}
                 </div>
-                {/* 내용 */}
-                <div className="pb-2">
-                  <p className="font-semibold text-foreground">{ls.title}</p>
+                <div className="pb-1">
+                  <div className="flex items-center gap-2">
+                    <p className="font-semibold text-foreground">{ls.title}</p>
+                    <span className="rounded-full bg-surface-secondary px-2 py-0.5 text-[10px] font-medium text-foreground-muted">
+                      {ls.module}
+                    </span>
+                  </div>
                   <p className="text-sm text-foreground-secondary">{ls.desc}</p>
                 </div>
               </div>
@@ -223,9 +260,9 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* AI 주치의 톡닥이 */}
+        {/* 사이드 패널 */}
         <div className="space-y-4 lg:col-span-2">
-          <h2 className="text-lg font-bold text-foreground">AI 주치의</h2>
+          {/* AI 주치의 톡닥이 */}
           <div className="rounded-[var(--radius-xl)] border border-border border-l-4 border-l-primary-400 bg-primary-50/50 p-5">
             <div className="flex items-center gap-3">
               <Stethoscope size={22} className="text-primary-500" />
@@ -237,6 +274,30 @@ export default function DashboardPage() {
               오픽의 모든 과정을 톡닥이가 함께합니다.
             </p>
           </div>
+
+          {/* 목표 설정 유도 */}
+          <Link
+            href="/mypage"
+            className="block rounded-[var(--radius-xl)] border border-border bg-surface p-5 transition-all hover:border-border-hover hover:shadow-[var(--shadow-card)]"
+          >
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-[var(--radius-lg)] bg-secondary-50 text-secondary-600">
+                <Target size={20} />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-foreground">
+                  목표 등급 설정하기
+                </p>
+                <p className="text-xs text-foreground-secondary">
+                  마이페이지에서 목표를 설정하세요
+                </p>
+              </div>
+              <ArrowRight
+                size={14}
+                className="ml-auto text-foreground-muted"
+              />
+            </div>
+          </Link>
 
           {/* 전략 가이드 */}
           <div className="rounded-[var(--radius-xl)] border border-[#1f1e30]/10 bg-[#1f1e30] p-5">
@@ -255,7 +316,7 @@ export default function DashboardPage() {
             </Link>
           </div>
 
-          {/* 요금제 업그레이드 CTA */}
+          {/* Store CTA */}
           <div className="rounded-[var(--radius-xl)] border border-primary-200 bg-gradient-to-br from-primary-50 to-primary-100/50 p-5">
             <p className="text-sm font-semibold text-primary-700">
               더 많은 학습이 필요하신가요?
@@ -265,10 +326,10 @@ export default function DashboardPage() {
               이용할 수 있어요.
             </p>
             <Link
-              href="/pricing"
+              href="/store"
               className="mt-3 inline-flex items-center gap-1 rounded-full bg-primary-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-600"
             >
-              요금제 보기
+              Store
               <ArrowRight size={14} />
             </Link>
           </div>

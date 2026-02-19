@@ -19,6 +19,7 @@ const appNav: NavItem[] = [
   { label: "스크립트", href: "#", soon: true },
   { label: "모의고사", href: "#", soon: true },
   { label: "튜터링", href: "#", soon: true },
+  { label: "Store", href: "/store" },
 ];
 
 export async function Navbar() {
