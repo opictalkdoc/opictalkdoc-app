@@ -1,22 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { createClient, clearAllSupabaseCookies } from "@/lib/supabase";
+import { serverSignOut } from "@/lib/supabase";
 
 export function LogoutButton() {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-  const handleLogout = async () => {
-    setIsLoggingOut(true);
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    clearAllSupabaseCookies();
-    window.location.href = "/";
-  };
-
   return (
     <button
-      onClick={handleLogout}
+      onClick={() => {
+        setIsLoggingOut(true);
+        serverSignOut();
+      }}
       disabled={isLoggingOut}
       className="inline-flex h-8 items-center justify-center rounded-[var(--radius-md)] px-3 text-sm font-medium text-foreground-secondary transition-colors hover:bg-surface-secondary disabled:opacity-50"
     >

@@ -7,12 +7,8 @@ export function createClient() {
   )
 }
 
-// signOut()이 제거하지 않는 PKCE code_verifier 등 잔존 쿠키까지 모두 삭제
-export function clearAllSupabaseCookies() {
-  document.cookie.split(';').forEach(cookie => {
-    const name = cookie.split('=')[0].trim()
-    if (name.startsWith('sb-')) {
-      document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`
-    }
-  })
+// 서버 측 signout API 호출 → 세션 무효화 + 전체 Supabase 쿠키 삭제 (PKCE 포함)
+export async function serverSignOut() {
+  await fetch('/api/auth/signout', { method: 'POST' })
+  window.location.href = '/'
 }
