@@ -37,17 +37,20 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
-  // 보호 경로 또는 인증 경로에서만 getUser() 호출 (공개 페이지는 스킵)
+  // 보호 경로 또는 인증 경로에서만 세션 체크 (공개 페이지는 스킵)
   const isProtected = protectedRoutes.some((route) => pathname.startsWith(route));
   const isAuthRoute = authRoutes.some((route) => pathname.startsWith(route));
 
   if (isProtected || isAuthRoute) {
+    // getSession(): 쿠키에서 JWT 로컬 읽기 — 네트워크 호출 없음 (빠름)
+    // getUser(): Supabase API 왕복 — 200-300ms (느림)
+    // 라우팅 판단은 getSession()으로 충분, 실제 보안은 RLS가 담당
     const {
-      data: { user },
-    } = await supabase.auth.getUser();
+      data: { session },
+    } = await supabase.auth.getSession();
 
     // 보호 라우트: 비인증 사용자 → /login 리다이렉트
-    if (!user && isProtected) {
+    if (!session && isProtected) {
       const url = request.nextUrl.clone();
       url.pathname = "/login";
       url.searchParams.set("redirect", pathname);
@@ -55,7 +58,7 @@ export async function middleware(request: NextRequest) {
     }
 
     // 인증 라우트: 인증된 사용자 → /dashboard 리다이렉트
-    if (user && isAuthRoute) {
+    if (session && isAuthRoute) {
       const url = request.nextUrl.clone();
       url.pathname = "/dashboard";
       return NextResponse.redirect(url);

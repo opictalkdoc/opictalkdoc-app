@@ -1,5 +1,8 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { getUser } from "@/lib/auth";
+import { createClient } from "@/lib/supabase";
 import { UserMenu } from "./user-menu";
 import { MobileNav } from "./mobile-nav";
 
@@ -22,12 +25,31 @@ const appNav: NavItem[] = [
   { label: "Store", href: "/store" },
 ];
 
-export async function Navbar() {
-  // React cache()로 동일 요청 내 1회만 호출됨
-  const user = await getUser();
+export function Navbar() {
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
+  const [userName, setUserName] = useState("");
 
-  const isLoggedIn = !!user;
-  const userName = user?.user_metadata?.display_name || "";
+  useEffect(() => {
+    const supabase = createClient();
+
+    // 초기 세션 확인 (로컬 쿠키에서 읽기 — 네트워크 호출 없음)
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setIsLoggedIn(!!session);
+      setUserName(session?.user?.user_metadata?.display_name || "");
+    });
+
+    // 인증 상태 변경 구독 (로그인/로그아웃 시 즉시 반영)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setIsLoggedIn(!!session);
+        setUserName(session?.user?.user_metadata?.display_name || "");
+      }
+    );
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // 초기 상태 확인 전: 최소한의 레이아웃 유지 (깜빡임 방지)
   const navItems = isLoggedIn ? appNav : publicNav;
 
   return (
@@ -63,7 +85,10 @@ export async function Navbar() {
 
         {/* 우측: 인증 버튼 + 모바일 메뉴 */}
         <div className="flex items-center gap-2">
-          {isLoggedIn ? (
+          {isLoggedIn === null ? (
+            // 세션 확인 전: 빈 공간 (깜빡임 최소화)
+            <div className="h-8 w-8" />
+          ) : isLoggedIn ? (
             <UserMenu name={userName} />
           ) : (
             <div className="hidden items-center gap-2 md:flex">
@@ -83,7 +108,9 @@ export async function Navbar() {
           )}
 
           {/* 모바일 햄버거 */}
-          <MobileNav isLoggedIn={isLoggedIn} items={navItems} userName={userName} />
+          {isLoggedIn !== null && (
+            <MobileNav isLoggedIn={isLoggedIn} items={navItems} userName={userName} />
+          )}
         </div>
       </nav>
     </header>
