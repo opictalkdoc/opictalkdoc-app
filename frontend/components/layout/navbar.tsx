@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 import { UserMenu } from "./user-menu";
 import { MobileNav } from "./mobile-nav";
@@ -26,8 +27,16 @@ const appNav: NavItem[] = [
 ];
 
 export function Navbar() {
+  const pathname = usePathname();
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
   const [userName, setUserName] = useState("");
+
+  const handleLogoClick = useCallback((e: React.MouseEvent) => {
+    if (pathname === "/") {
+      e.preventDefault();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }, [pathname]);
 
   useEffect(() => {
     const supabase = createClient();
@@ -58,6 +67,7 @@ export function Navbar() {
         {/* 로고 */}
         <Link
           href="/"
+          onClick={handleLogoClick}
           className="flex items-center gap-2"
         >
           <span className="font-display text-xl text-primary-500">
