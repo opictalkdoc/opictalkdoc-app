@@ -201,18 +201,7 @@ function LoginForm() {
             </p>
           )}
         </div>
-        {/* 로그인 상태 유지 + 비밀번호 찾기 */}
-        <div className="flex items-center justify-between">
-          <label className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              defaultChecked
-              className="h-4 w-4 rounded border-border accent-primary-500"
-            />
-            <span className="text-sm text-foreground-secondary">
-              로그인 상태 유지
-            </span>
-          </label>
+        <div className="flex justify-end">
           <Link
             href="/forgot-password"
             className="text-sm text-primary-500 hover:text-primary-600"
