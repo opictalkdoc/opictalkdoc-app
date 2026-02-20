@@ -172,18 +172,23 @@ export async function POST(request: NextRequest) {
     if (existingCredits) {
       // 기존 사용자 — 크레딧 추가
       const updates: Record<string, unknown> = {
-        mock_exam_credits:
-          existingCredits.mock_exam_credits + product.mockExam,
-        script_credits: existingCredits.script_credits + product.script,
         updated_at: new Date().toISOString(),
       };
 
-      // 플랜 상품인 경우 플랜 + 만료일 갱신
       if (product.months > 0) {
+        // 플랜 상품 → 플랜 크레딧에 추가 (만료 있음)
         updates.current_plan = product.plan;
+        updates.plan_mock_exam_credits = product.mockExam;
+        updates.plan_script_credits = product.script;
         const expiresAt = new Date();
         expiresAt.setMonth(expiresAt.getMonth() + product.months);
         updates.plan_expires_at = expiresAt.toISOString();
+      } else {
+        // 횟수권 → 영구 크레딧에 추가
+        updates.mock_exam_credits =
+          existingCredits.mock_exam_credits + product.mockExam;
+        updates.script_credits =
+          existingCredits.script_credits + product.script;
       }
 
       const { error: updateError } = await supabase
@@ -200,20 +205,23 @@ export async function POST(request: NextRequest) {
       }
     } else {
       // 신규 사용자 (트리거가 안 돌았을 경우 안전망)
+      const insertData: Record<string, unknown> = {
+        user_id: userId,
+        current_plan: product.months > 0 ? product.plan : "free",
+        mock_exam_credits: product.months > 0 ? 1 : 1 + product.mockExam,
+        script_credits: product.months > 0 ? 0 : product.script,
+        plan_mock_exam_credits: product.months > 0 ? product.mockExam : 0,
+        plan_script_credits: product.months > 0 ? product.script : 0,
+        plan_expires_at:
+          product.months > 0
+            ? new Date(
+                Date.now() + product.months * 30 * 24 * 60 * 60 * 1000
+              ).toISOString()
+            : null,
+      };
       const { error: insertError } = await supabase
         .from("user_credits")
-        .insert({
-          user_id: userId,
-          current_plan: product.months > 0 ? product.plan : "free",
-          mock_exam_credits: 1 + product.mockExam,
-          script_credits: product.script,
-          plan_expires_at:
-            product.months > 0
-              ? new Date(
-                  Date.now() + product.months * 30 * 24 * 60 * 60 * 1000
-                ).toISOString()
-              : null,
-        });
+        .insert(insertData);
 
       if (insertError) {
         console.error("크레딧 생성 오류:", insertError);

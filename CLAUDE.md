@@ -298,7 +298,26 @@ origin: https://opictalkdoc@github.com/opictalkdoc/opictalkdoc-app.git
 - **결제 SDK**: 포트원(PortOne) V2 — `@portone/browser-sdk`
 - **PG사**: KG이니시스 (MID: `MOI7638900`) — 신용카드 일시불
 - **결제 플로우**: Store 구매 버튼 → 포트원 결제창 → /api/payment/verify 검증 → DB 기록
+- **취소 플로우**: 포트원 콘솔 취소 → 웹훅(`/api/payment/webhook`) → DB 자동 원복
 - **상품**: 베이직(19,900), 프리미엄(49,900), 모의고사 횟수권(7,900), 스크립트 횟수권(3,900)
+
+### ⚠️ 크레딧 시스템 (모듈 구현 시 반드시 참고)
+
+**DB 구조 (`user_credits` 테이블):**
+| 컬럼 | 용도 | 만료 |
+|------|------|------|
+| `plan_mock_exam_credits` | 플랜 구매로 받은 모의고사 크레딧 | 플랜 만료 시 0으로 초기화 |
+| `plan_script_credits` | 플랜 구매로 받은 스크립트 크레딧 | 플랜 만료 시 0으로 초기화 |
+| `mock_exam_credits` | 횟수권으로 구매한 모의고사 크레딧 | 영구 (만료 없음) |
+| `script_credits` | 횟수권으로 구매한 스크립트 크레딧 | 영구 (만료 없음) |
+
+**크레딧 소진 순서 (TODO — 모의고사/스크립트 모듈에서 구현):**
+1. **플랜 크레딧 먼저 차감** (`plan_mock_exam_credits`, `plan_script_credits`) — 만료되는 것부터
+2. **횟수권 크레딧 차감** (`mock_exam_credits`, `script_credits`) — 영구 크레딧은 나중에
+
+**플랜 만료 처리 (TODO):**
+- `plan_expires_at < NOW()` 시 → `plan_mock_exam_credits = 0`, `plan_script_credits = 0`, `current_plan = 'free'`
+- 체크 시점: 모의고사/스크립트 사용 시 또는 대시보드 로드 시
 
 ### PG사 심사 현황
 | PG사 | 상태 | 비고 |

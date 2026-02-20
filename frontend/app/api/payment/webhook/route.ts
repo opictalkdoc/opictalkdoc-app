@@ -109,15 +109,19 @@ export async function POST(request: NextRequest) {
 
     if (credits) {
       const updates: Record<string, unknown> = {
-        mock_exam_credits: Math.max(0, credits.mock_exam_credits - product.mockExam),
-        script_credits: Math.max(0, credits.script_credits - product.script),
         updated_at: new Date().toISOString(),
       };
 
-      // 플랜 상품이었으면 free로 되돌림
       if (product.months > 0) {
+        // 플랜 취소 → 플랜 크레딧 초기화
         updates.current_plan = "free";
+        updates.plan_mock_exam_credits = 0;
+        updates.plan_script_credits = 0;
         updates.plan_expires_at = null;
+      } else {
+        // 횟수권 취소 → 영구 크레딧 차감
+        updates.mock_exam_credits = Math.max(0, credits.mock_exam_credits - product.mockExam);
+        updates.script_credits = Math.max(0, credits.script_credits - product.script);
       }
 
       await supabase

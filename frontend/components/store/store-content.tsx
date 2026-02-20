@@ -36,6 +36,8 @@ interface UserCredits {
   current_plan: string;
   mock_exam_credits: number;
   script_credits: number;
+  plan_mock_exam_credits: number;
+  plan_script_credits: number;
   plan_expires_at: string | null;
 }
 
@@ -354,14 +356,24 @@ export function StoreContent() {
             <span className="text-foreground-secondary">
               모의고사{" "}
               <span className="font-semibold text-foreground">
-                {credits.mock_exam_credits}회
+                {credits.plan_mock_exam_credits + credits.mock_exam_credits}회
               </span>
+              {credits.plan_mock_exam_credits > 0 && credits.mock_exam_credits > 0 && (
+                <span className="text-xs text-foreground-muted ml-1">
+                  (플랜 {credits.plan_mock_exam_credits} + 횟수권 {credits.mock_exam_credits})
+                </span>
+              )}
             </span>
             <span className="text-foreground-secondary">
               스크립트{" "}
               <span className="font-semibold text-foreground">
-                {credits.script_credits}회
+                {credits.plan_script_credits + credits.script_credits}회
               </span>
+              {credits.plan_script_credits > 0 && credits.script_credits > 0 && (
+                <span className="text-xs text-foreground-muted ml-1">
+                  (플랜 {credits.plan_script_credits} + 횟수권 {credits.script_credits})
+                </span>
+              )}
             </span>
             {credits.plan_expires_at && (
               <span className="text-foreground-secondary">
