@@ -123,7 +123,7 @@
 - **Project ID**: `rwdsyqnrrpwkureqfxwb`
 - **Project URL**: `https://rwdsyqnrrpwkureqfxwb.supabase.co`
 - **Region**: Northeast Asia (Seoul)
-- **DB Password**: `opictalkdoc2026!!`
+- **DB Password**: `opictalk2026`
 - **DB Host (Pooler)**: `aws-1-ap-northeast-2.pooler.supabase.com`
 - **DB Port**: `6543` (Transaction) / `5432` (Session)
 - **DB User**: `postgres.rwdsyqnrrpwkureqfxwb`
@@ -327,10 +327,10 @@ origin: https://opictalkdoc@github.com/opictalkdoc/opictalkdoc-app.git
 | 네이버페이 | 재심사 요청 완료 | 심사 결과 대기 |
 | 토스페이 | 입점 정보 회신 완료 | MID 발급 대기 |
 
-### Supabase DB 접속
+### Supabase DB 접속 (psql)
 ```bash
-export PGPASSWORD=$(printf '%s' 'opictalkdoc2026!!')
-PGCLIENTENCODING='UTF8' "/c/Program Files/PostgreSQL/16/bin/psql" \
+# Claude Code에서 psql 직접 실행
+PGPASSWORD='opictalk2026' PGCLIENTENCODING='UTF8' "/c/Program Files/PostgreSQL/16/bin/psql" \
   -h aws-1-ap-northeast-2.pooler.supabase.com \
   -p 6543 \
   -U postgres.rwdsyqnrrpwkureqfxwb \
