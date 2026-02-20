@@ -88,6 +88,7 @@ function getDday(dateStr: string) {
 
 function providerLabel(provider: string) {
   if (provider === "google") return "Google";
+  if (provider === "kakao") return "카카오";
   return "이메일";
 }
 
@@ -191,7 +192,7 @@ function ProfileTab({ user }: { user: UserData }) {
           <div>
             <p className="text-sm text-foreground-secondary">
               {user.avatarUrl
-                ? "Google 계정 프로필 사진이 표시됩니다."
+                ? "소셜 계정 프로필 사진이 표시됩니다."
                 : "프로필 사진 업로드 기능은 곧 지원됩니다."}
             </p>
           </div>
@@ -275,7 +276,7 @@ function ProfileTab({ user }: { user: UserData }) {
       </div>
 
       {/* 비밀번호 변경 — 이메일 가입자만 */}
-      {user.provider !== "google" && (
+      {user.provider !== "google" && user.provider !== "kakao" && (
         <div className="rounded-[var(--radius-xl)] border border-border bg-surface p-6">
           <h3 className="mb-4 font-semibold text-foreground">비밀번호</h3>
           <p className="mb-3 text-sm text-foreground-secondary">
