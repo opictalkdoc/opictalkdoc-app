@@ -15,6 +15,7 @@ export default async function MyPage() {
   }
 
   const userData = {
+    id: user.id,
     email: user.email || "",
     name: user.user_metadata?.display_name || "",
     avatarUrl: user.user_metadata?.avatar_url || "",

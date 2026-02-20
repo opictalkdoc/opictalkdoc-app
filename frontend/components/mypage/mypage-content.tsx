@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -27,6 +28,7 @@ import { updateProfile, updateGoals, logout } from "@/lib/actions/auth";
 /* ── 타입 ── */
 
 type UserData = {
+  id: string;
   email: string;
   name: string;
   avatarUrl: string;
@@ -589,8 +591,37 @@ function HistoryTab() {
 /* ── 계정 관리 탭 ── */
 
 function AccountTab({ user }: { user: UserData }) {
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  const handleDeleteAccount = async () => {
+    setDeleteError(null);
+    setIsDeleting(true);
+    try {
+      const res = await fetch("/api/auth/delete-account", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user.id }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        setDeleteError(data.error || "탈퇴 처리에 실패했습니다.");
+        setIsDeleting(false);
+        return;
+      }
+
+      // 탈퇴 성공 → 랜딩 페이지로 이동
+      router.push("/");
+      router.refresh();
+    } catch {
+      setDeleteError("네트워크 오류가 발생했습니다. 다시 시도해 주세요.");
+      setIsDeleting(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -637,23 +668,33 @@ function AccountTab({ user }: { user: UserData }) {
               정말 탈퇴하시겠습니까?
             </p>
             <p className="mt-1 text-xs text-foreground-secondary">
-              탈퇴를 원하시면{" "}
-              <a
-                href="mailto:opictalkdoc@gmail.com"
-                className="font-medium text-primary-500 underline hover:text-primary-600"
-              >
-                opictalkdoc@gmail.com
-              </a>
-              으로 문의해 주세요.
+              모든 학습 기록, 결제 내역, 크레딧이 즉시 삭제되며 복구할 수
+              없습니다.
             </p>
-            <Button
-              variant="outline"
-              size="sm"
-              className="mt-3"
-              onClick={() => setShowDeleteConfirm(false)}
-            >
-              취소
-            </Button>
+            {deleteError && (
+              <p className="mt-2 text-xs text-accent-500">{deleteError}</p>
+            )}
+            <div className="mt-3 flex gap-2">
+              <Button
+                variant="danger"
+                size="sm"
+                onClick={handleDeleteAccount}
+                disabled={isDeleting}
+              >
+                {isDeleting ? "탈퇴 처리 중..." : "탈퇴하기"}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setShowDeleteConfirm(false);
+                  setDeleteError(null);
+                }}
+                disabled={isDeleting}
+              >
+                취소
+              </Button>
+            </div>
           </div>
         )}
       </div>
