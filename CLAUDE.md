@@ -181,7 +181,12 @@ git add -A && git commit -m "feat: 기능 설명" && git push origin main
 NEXT_PUBLIC_SUPABASE_URL=https://rwdsyqnrrpwkureqfxwb.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIs...
 SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIs...
-NEXT_PUBLIC_SITE_URL=http://localhost:3000
+NEXT_PUBLIC_SITE_URL=http://localhost:3001
+
+# PortOne (결제)
+NEXT_PUBLIC_PORTONE_STORE_ID=store-73f548e3-...
+NEXT_PUBLIC_PORTONE_CHANNEL_KEY=channel-key-06303dde-...
+PORTONE_API_SECRET=XFGThRDJX2...
 ```
 
 ## 🚨 Critical Development Workflow
@@ -241,7 +246,7 @@ origin: https://opictalkdoc@github.com/opictalkdoc/opictalkdoc-app.git
 - 소리담 코드 레벨 상세 분석 완료 (master_questions 핵심 코어 파악)
 - 프로젝트 문서 체계 정리 (개발계획서, 기능분석, 분석결과)
 
-### 2026-02-20 - 네비게이션 재구성 + 시험후기 + 몰입형 레이아웃 + DB Step 0
+### 2026-02-20 - 네비게이션 재구성 + 시험후기 + 몰입형 레이아웃 + DB Step 0 + 결제 구현
 - 네비게이션 메뉴 전면 재구성: 대시보드 | 시험후기 | 스크립트 | 모의고사 | 튜터링
 - 시험후기 페이지 UI 셸 구현 (/reviews, 3탭: 빈도 분석 / 후기 제출 / 시험 후기)
 - 모바일 반응형 수정 (마이페이지, 풋터, 랜딩, 전략 가이드, 요금제)
@@ -253,10 +258,18 @@ origin: https://opictalkdoc@github.com/opictalkdoc/opictalkdoc-app.git
 - **DB Step 0 완료**: master_questions + custom_mode_questions 테이블 생성 (ENUM, RLS, 트리거, RPC)
 - **시드 데이터 510개 삽입**: 소리담 프로덕션에서 추출 → 오픽톡닥 DB 로드 완료
 - **Storage 버킷 생성**: audio-recordings (공개 읽기, 인증 업로드)
+- **결제 플로우 구현** (카카오페이 심사 대응):
+  - @portone/browser-sdk 설치 (포트원 V2)
+  - orders + user_credits DB 테이블 생성 (마이그레이션 002)
+  - /api/payment/verify 결제 검증 API (금액 위변조 방지)
+  - Store 페이지: 서버/클라이언트 분리 + 구매 버튼 활성화 + 크레딧 표시
+  - Pricing 페이지: "준비 중" 제거 + 스토어 링크 연결
+  - 포트원 + KG이니시스 결제창 정상 동작 확인 (프로덕션)
+- **PG사 심사 대응**: 카카오페이 보완 회신, 네이버페이 재심사 요청, 토스페이 입점 정보 회신
 
 ## 🔮 현재 상태 & 다음 단계
 
-**현재**: Phase 3 (핵심 모듈 이관) — Step 0 DB 설계 완료, Step 1 대기
+**현재**: Phase 3 (핵심 모듈 이관) — Step 0 DB + 결제 플로우 완료, Step 1 대기
 **다음 작업**: Step 1 — 시험후기 모듈 이관 (submissions 테이블 + Edge Function + 프론트 연결)
 
 ### 네비게이션 구조 (확정)
@@ -277,7 +290,23 @@ origin: https://opictalkdoc@github.com/opictalkdoc/opictalkdoc-app.git
 ### DB 현황
 - **master_questions**: 510행 (시드 로드 완료)
 - **custom_mode_questions**: 0행 (DB 트리거로 자동 생성 예정)
+- **orders**: 결제 기록 테이블 (RLS: 본인 조회만)
+- **user_credits**: 사용자 이용권 테이블 (회원가입 트리거로 자동 생성)
 - **Storage**: audio-recordings 버킷 (공개, RLS 설정 완료)
+
+### 결제 시스템 현황
+- **결제 SDK**: 포트원(PortOne) V2 — `@portone/browser-sdk`
+- **PG사**: KG이니시스 (MID: `MOI7638900`) — 신용카드 일시불
+- **결제 플로우**: Store 구매 버튼 → 포트원 결제창 → /api/payment/verify 검증 → DB 기록
+- **상품**: 베이직(19,900), 프리미엄(49,900), 모의고사 횟수권(7,900), 스크립트 횟수권(3,900)
+
+### PG사 심사 현황
+| PG사 | 상태 | 비고 |
+|------|------|------|
+| KG이니시스 | 사전심사 체크리스트 답변 대기 | 본인인증 필요 |
+| 카카오페이 | 보완 회신 완료 | 심사 결과 대기 |
+| 네이버페이 | 재심사 요청 완료 | 심사 결과 대기 |
+| 토스페이 | 입점 정보 회신 완료 | MID 발급 대기 |
 
 ### Supabase DB 접속
 ```bash
@@ -295,4 +324,4 @@ PGCLIENTENCODING='UTF8' "/c/Program Files/PostgreSQL/16/bin/psql" \
 
 ---
 *최종 업데이트: 2026-02-20*
-*상태: Phase 3 Step 0 완료 — DB 코어 테이블 + 시드 + 버킷 완료, Step 1 시험후기 이관 대기*
+*상태: Phase 3 Step 0 + 결제 플로우 완료 — 결제 프로덕션 동작 확인, PG사 심사 진행 중, Step 1 시험후기 이관 대기*

@@ -168,6 +168,58 @@ export function StoreContent() {
     fetchCredits();
   }, [fetchCredits]);
 
+  // 모바일 결제 후 리다이렉트 처리
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const paymentId = params.get("paymentId");
+    const productId = params.get("productId") as ProductId | null;
+    const code = params.get("code");
+    const errorMessage = params.get("message");
+
+    if (!paymentId) return;
+
+    // URL 정리 (쿼리 파라미터 제거)
+    window.history.replaceState({}, "", "/store");
+
+    // 에러 코드가 있으면 실패
+    if (code) {
+      setMessage({
+        type: "error",
+        text: errorMessage || "결제가 취소되었습니다.",
+      });
+      return;
+    }
+
+    // 결제 검증
+    if (productId && PRODUCT_MAP[productId]) {
+      setLoadingProduct(productId);
+      fetch("/api/payment/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ paymentId, productId }),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success) {
+            setMessage({ type: "success", text: "결제가 완료되었습니다!" });
+            fetchCredits();
+          } else {
+            setMessage({
+              type: "error",
+              text: data.error || "결제 검증에 실패했습니다.",
+            });
+          }
+        })
+        .catch(() => {
+          setMessage({
+            type: "error",
+            text: "결제 검증 중 오류가 발생했습니다.",
+          });
+        })
+        .finally(() => setLoadingProduct(null));
+    }
+  }, [fetchCredits]);
+
   // 결제 처리
   const handlePayment = async (productId: ProductId) => {
     const product = PRODUCT_MAP[productId];
@@ -189,6 +241,9 @@ export function StoreContent() {
       const buyerName =
         user.user_metadata?.display_name || user.email?.split("@")[0] || "구매자";
 
+      // 모바일 결제 후 돌아올 URL (PortOne이 paymentId 등을 쿼리로 추가)
+      const redirectUrl = `${window.location.origin}/store?productId=${productId}`;
+
       // 포트원 결제창 호출
       const response = await PortOne.requestPayment({
         storeId: process.env.NEXT_PUBLIC_PORTONE_STORE_ID!,
@@ -198,6 +253,7 @@ export function StoreContent() {
         totalAmount: product.price,
         currency: "CURRENCY_KRW",
         payMethod: "CARD",
+        redirectUrl,
         customer: {
           fullName: buyerName,
           email: user.email ?? "buyer@opictalkdoc.com",
