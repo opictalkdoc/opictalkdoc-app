@@ -170,6 +170,13 @@ export function StoreContent() {
     fetchCredits();
   }, [fetchCredits]);
 
+  // 메시지 5초 후 자동 사라짐
+  useEffect(() => {
+    if (!message) return;
+    const timer = setTimeout(() => setMessage(null), 5000);
+    return () => clearTimeout(timer);
+  }, [message]);
+
   // 모바일 결제 후 리다이렉트 처리
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);

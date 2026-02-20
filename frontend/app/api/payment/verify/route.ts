@@ -138,6 +138,24 @@ export async function POST(request: NextRequest) {
 
     const supabase = getServiceClient();
 
+    // 중복 결제 처리 방지 — 이미 처리된 paymentId인지 확인
+    const { data: existingOrder } = await supabase
+      .from("orders")
+      .select("id, status")
+      .eq("payment_id", paymentId)
+      .single();
+
+    if (existingOrder) {
+      // 이미 처리된 결제
+      if (existingOrder.status === "paid") {
+        return NextResponse.json({
+          success: true,
+          message: "이미 처리된 결제입니다.",
+          orderId: paymentId,
+        });
+      }
+    }
+
     // orders 기록
     const { error: orderError } = await supabase.from("orders").insert({
       user_id: userId,

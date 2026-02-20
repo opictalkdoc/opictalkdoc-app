@@ -24,20 +24,22 @@ CREATE TABLE orders (
   updated_at      TIMESTAMPTZ DEFAULT NOW()
 );
 
+CREATE UNIQUE INDEX idx_orders_payment_id ON orders(payment_id);
 CREATE INDEX idx_orders_user_id ON orders(user_id);
-CREATE INDEX idx_orders_payment_id ON orders(payment_id);
 CREATE INDEX idx_orders_status ON orders(status);
 
 -- ── user_credits: 사용자 이용권 (1 row per user) ──
 
 CREATE TABLE user_credits (
-  user_id              UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-  current_plan         TEXT NOT NULL DEFAULT 'free',  -- 'free' | 'basic' | 'premium'
-  mock_exam_credits    INTEGER NOT NULL DEFAULT 1,    -- 잔여 모의고사 횟수 (체험 1회)
-  script_credits       INTEGER NOT NULL DEFAULT 0,    -- 잔여 스크립트 패키지 횟수
-  plan_expires_at      TIMESTAMPTZ,                   -- 플랜 만료일 (NULL = 무료)
-  created_at           TIMESTAMPTZ DEFAULT NOW(),
-  updated_at           TIMESTAMPTZ DEFAULT NOW()
+  user_id                UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  current_plan           TEXT NOT NULL DEFAULT 'free',  -- 'free' | 'basic' | 'premium'
+  plan_mock_exam_credits INTEGER NOT NULL DEFAULT 0,    -- 플랜 모의고사 크레딧 (만료됨)
+  plan_script_credits    INTEGER NOT NULL DEFAULT 0,    -- 플랜 스크립트 크레딧 (만료됨)
+  mock_exam_credits      INTEGER NOT NULL DEFAULT 1,    -- 횟수권 모의고사 크레딧 (영구, 체험 1회)
+  script_credits         INTEGER NOT NULL DEFAULT 0,    -- 횟수권 스크립트 크레딧 (영구)
+  plan_expires_at        TIMESTAMPTZ,                   -- 플랜 만료일 (NULL = 무료)
+  created_at             TIMESTAMPTZ DEFAULT NOW(),
+  updated_at             TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- ── updated_at 자동 갱신 (001에서 만든 update_updated_at() 함수 재사용) ──
@@ -69,8 +71,12 @@ CREATE POLICY "user_credits_select_own" ON user_credits
 CREATE OR REPLACE FUNCTION handle_new_user_credits()
 RETURNS TRIGGER AS $$
 BEGIN
-  INSERT INTO user_credits (user_id, current_plan, mock_exam_credits, script_credits)
-  VALUES (NEW.id, 'free', 1, 0)
+  INSERT INTO user_credits (
+    user_id, current_plan,
+    plan_mock_exam_credits, plan_script_credits,
+    mock_exam_credits, script_credits
+  )
+  VALUES (NEW.id, 'free', 0, 0, 1, 0)
   ON CONFLICT (user_id) DO NOTHING;
   RETURN NEW;
 END;
