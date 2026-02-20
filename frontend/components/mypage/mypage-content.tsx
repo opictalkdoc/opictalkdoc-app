@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { updateProfile, updateGoals, logout } from "@/lib/actions/auth";
+import { updateProfile, updateGoals } from "@/lib/actions/auth";
 import { createClient } from "@/lib/supabase";
 
 /* ── 타입 ── */
@@ -591,8 +591,8 @@ function HistoryTab() {
 /* ── 계정 관리 탭 ── */
 
 function AccountTab({ user }: { user: UserData }) {
-  const [isPending, startTransition] = useTransition();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
@@ -634,15 +634,16 @@ function AccountTab({ user }: { user: UserData }) {
         <Button
           variant="outline"
           size="sm"
-          onClick={() =>
-            startTransition(async () => {
-              await logout();
-            })
-          }
-          disabled={isPending}
+          onClick={async () => {
+            setIsLoggingOut(true);
+            const supabase = createClient();
+            await supabase.auth.signOut();
+            window.location.href = "/";
+          }}
+          disabled={isLoggingOut}
         >
           <LogOut size={16} className="mr-1.5" />
-          {isPending ? "로그아웃 중..." : "로그아웃"}
+          {isLoggingOut ? "로그아웃 중..." : "로그아웃"}
         </Button>
       </div>
 

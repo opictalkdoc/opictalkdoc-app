@@ -1,24 +1,25 @@
 "use client";
 
-import { useTransition } from "react";
-import { logout } from "@/lib/actions/auth";
+import { useState } from "react";
+import { createClient } from "@/lib/supabase";
 
 export function LogoutButton() {
-  const [isPending, startTransition] = useTransition();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-  const handleLogout = () => {
-    startTransition(async () => {
-      await logout();
-    });
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    window.location.href = "/";
   };
 
   return (
     <button
       onClick={handleLogout}
-      disabled={isPending}
+      disabled={isLoggingOut}
       className="inline-flex h-8 items-center justify-center rounded-[var(--radius-md)] px-3 text-sm font-medium text-foreground-secondary transition-colors hover:bg-surface-secondary disabled:opacity-50"
     >
-      {isPending ? "로그아웃 중..." : "로그아웃"}
+      {isLoggingOut ? "로그아웃 중..." : "로그아웃"}
     </button>
   );
 }

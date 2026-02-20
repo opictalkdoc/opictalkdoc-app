@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, X, Settings, LogOut } from "lucide-react";
-import { logout } from "@/lib/actions/auth";
+import { createClient } from "@/lib/supabase";
 
 type NavItem = { label: string; href: string; soon?: boolean };
 
@@ -18,7 +18,7 @@ export function MobileNav({
   userName?: string;
 }) {
   const [open, setOpen] = useState(false);
-  const [isPending, startTransition] = useTransition();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const pathname = usePathname();
 
   return (
@@ -87,17 +87,18 @@ export function MobileNav({
                   )}
                 </Link>
                 <button
-                  onClick={() => {
+                  onClick={async () => {
                     setOpen(false);
-                    startTransition(async () => {
-                      await logout();
-                    });
+                    setIsLoggingOut(true);
+                    const supabase = createClient();
+                    await supabase.auth.signOut();
+                    window.location.href = "/";
                   }}
-                  disabled={isPending}
+                  disabled={isLoggingOut}
                   className="flex w-full items-center gap-2 rounded-[var(--radius-lg)] px-3 py-2.5 text-sm font-medium text-foreground-secondary transition-colors hover:bg-surface-secondary hover:text-foreground disabled:opacity-50"
                 >
                   <LogOut size={16} />
-                  {isPending ? "로그아웃 중..." : "로그아웃"}
+                  {isLoggingOut ? "로그아웃 중..." : "로그아웃"}
                 </button>
               </div>
             )}
