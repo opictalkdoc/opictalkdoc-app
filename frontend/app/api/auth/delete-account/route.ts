@@ -61,9 +61,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Service Role로 사용자 삭제 (CASCADE로 orders, user_credits 자동 삭제)
+    // Service Role로 사용자 하드 삭제 (CASCADE로 orders, user_credits 자동 삭제)
+    // shouldSoftDelete=false → auth.users + auth.identities 완전 삭제 (동일 OAuth 재가입 허용)
     const serviceClient = getServiceClient();
-    const { error } = await serviceClient.auth.admin.deleteUser(userId);
+    const { error } = await serviceClient.auth.admin.deleteUser(userId, false);
 
     if (error) {
       console.error("회원 탈퇴 오류:", error);
