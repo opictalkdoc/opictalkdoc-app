@@ -21,7 +21,6 @@ const plans = [
     cta: "무료로 시작하기",
     href: "/signup",
     highlight: false,
-    comingSoon: false,
   },
   {
     name: "베이직",
@@ -36,10 +35,9 @@ const plans = [
       "체화 · 쉐도잉 훈련 무제한",
       "성적 진단 리포트",
     ],
-    cta: "준비 중",
-    href: "#",
+    cta: "구매하기",
+    href: "/store",
     highlight: true,
-    comingSoon: true,
   },
   {
     name: "프리미엄",
@@ -54,10 +52,9 @@ const plans = [
       "체화 · 쉐도잉 훈련 무제한",
       "성장 데이터 리포트",
     ],
-    cta: "준비 중",
-    href: "#",
+    cta: "구매하기",
+    href: "/store",
     highlight: false,
-    comingSoon: true,
   },
 ];
 
@@ -70,7 +67,7 @@ export default function PricingPage() {
           나에게 맞는 플랜을 선택하세요
         </h1>
         <p className="mt-3 text-foreground-secondary">
-          무료 플랜으로 바로 시작하세요. 유료 플랜은 준비 중입니다.
+          무료 체험으로 시작하고, 필요할 때 업그레이드하세요.
         </p>
       </div>
 
@@ -141,22 +138,16 @@ export default function PricingPage() {
             </ul>
 
             {/* CTA */}
-            {plan.comingSoon ? (
-              <span className="mt-6 inline-flex h-11 cursor-not-allowed items-center justify-center rounded-[var(--radius-lg)] border border-border text-sm font-medium text-foreground-muted">
-                준비 중
-              </span>
-            ) : (
-              <Link
-                href={plan.href}
-                className={`mt-6 inline-flex h-11 items-center justify-center rounded-[var(--radius-lg)] text-sm font-medium transition-colors ${
-                  plan.highlight
-                    ? "bg-primary-500 text-white hover:bg-primary-600"
-                    : "border border-border bg-surface text-foreground hover:bg-surface-secondary"
-                }`}
-              >
-                {plan.cta}
-              </Link>
-            )}
+            <Link
+              href={plan.href}
+              className={`mt-6 inline-flex h-11 items-center justify-center rounded-[var(--radius-lg)] text-sm font-medium transition-colors ${
+                plan.highlight
+                  ? "bg-primary-500 text-white hover:bg-primary-600"
+                  : "border border-border bg-surface text-foreground hover:bg-surface-secondary"
+              }`}
+            >
+              {plan.cta}
+            </Link>
           </div>
         ))}
       </div>
@@ -228,9 +219,12 @@ export default function PricingPage() {
             <p className="mt-4 text-3xl font-bold">
               ₩7,900<span className="text-sm font-normal text-foreground-secondary"> / 1회</span>
             </p>
-            <span className="mt-4 inline-flex h-10 cursor-not-allowed items-center justify-center rounded-[var(--radius-lg)] border border-border px-6 text-sm font-medium text-foreground-muted">
-              준비 중
-            </span>
+            <Link
+              href="/store"
+              className="mt-4 inline-flex h-10 items-center justify-center rounded-[var(--radius-lg)] border border-border px-6 text-sm font-medium text-foreground transition-colors hover:bg-surface-secondary"
+            >
+              스토어에서 구매
+            </Link>
           </div>
           <div className="rounded-[var(--radius-xl)] border border-border bg-surface p-6 text-center">
             <p className="text-lg font-bold">스크립트 패키지 횟수권</p>
@@ -240,9 +234,12 @@ export default function PricingPage() {
             <p className="mt-4 text-3xl font-bold">
               ₩3,900<span className="text-sm font-normal text-foreground-secondary"> / 10회</span>
             </p>
-            <span className="mt-4 inline-flex h-10 cursor-not-allowed items-center justify-center rounded-[var(--radius-lg)] border border-border px-6 text-sm font-medium text-foreground-muted">
-              준비 중
-            </span>
+            <Link
+              href="/store"
+              className="mt-4 inline-flex h-10 items-center justify-center rounded-[var(--radius-lg)] border border-border px-6 text-sm font-medium text-foreground transition-colors hover:bg-surface-secondary"
+            >
+              스토어에서 구매
+            </Link>
           </div>
         </div>
       </div>
@@ -266,7 +263,7 @@ export default function PricingPage() {
       {/* 하단 안내 */}
       <div className="mt-12 text-center text-sm text-foreground-muted">
         <p>
-          유료 플랜 및 스토어는 준비 중입니다.{" "}
+          결제는 KG이니시스를 통해 안전하게 처리됩니다.{" "}
           <Link href="/refund" className="text-primary-500 hover:underline">
             환불 규정
           </Link>

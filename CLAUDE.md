@@ -123,6 +123,10 @@
 - **Project ID**: `rwdsyqnrrpwkureqfxwb`
 - **Project URL**: `https://rwdsyqnrrpwkureqfxwb.supabase.co`
 - **Region**: Northeast Asia (Seoul)
+- **DB Password**: `opictalkdoc2026!!`
+- **DB Host (Pooler)**: `aws-1-ap-northeast-2.pooler.supabase.com`
+- **DB Port**: `6543` (Transaction) / `5432` (Session)
+- **DB User**: `postgres.rwdsyqnrrpwkureqfxwb`
 
 ### Vercel
 - **팀**: OPIcTalkDoc (Pro)
@@ -237,31 +241,58 @@ origin: https://opictalkdoc@github.com/opictalkdoc/opictalkdoc-app.git
 - 소리담 코드 레벨 상세 분석 완료 (master_questions 핵심 코어 파악)
 - 프로젝트 문서 체계 정리 (개발계획서, 기능분석, 분석결과)
 
-### 2026-02-20 - 네비게이션 재구성 + 시험후기 페이지
+### 2026-02-20 - 네비게이션 재구성 + 시험후기 + 몰입형 레이아웃 + DB Step 0
 - 네비게이션 메뉴 전면 재구성: 대시보드 | 시험후기 | 스크립트 | 모의고사 | 튜터링
 - 시험후기 페이지 UI 셸 구현 (/reviews, 3탭: 빈도 분석 / 후기 제출 / 시험 후기)
 - 모바일 반응형 수정 (마이페이지, 풋터, 랜딩, 전략 가이드, 요금제)
 - 마이페이지 저장 버튼 세로 깨짐 수정 (shrink-0)
 - 모듈별 탭 구조 확정 (시험후기/스크립트/모의고사/튜터링 각각 내부 탭)
+- **몰입형 레이아웃 시스템 구축**: (immersive) 레이아웃 + ImmersiveHeader 컴포넌트
+- **허브 페이지 3개**: 스크립트(/scripts), 모의고사(/mock-exam), 튜터링(/tutoring) 탭 UI
+- **몰입형 페이지 4개**: 모의고사 세션, 스크립트 생성, 쉐도잉, 튜터링 훈련 (UI 셸)
+- **DB Step 0 완료**: master_questions + custom_mode_questions 테이블 생성 (ENUM, RLS, 트리거, RPC)
+- **시드 데이터 510개 삽입**: 소리담 프로덕션에서 추출 → 오픽톡닥 DB 로드 완료
+- **Storage 버킷 생성**: audio-recordings (공개 읽기, 인증 업로드)
 
 ## 🔮 현재 상태 & 다음 단계
 
-**현재**: Phase 3 (핵심 모듈 이관) 진입 — 시험후기 UI 셸 완료
-**다음 작업**: master_questions + custom_mode_questions DB 설계 (Step 0)
+**현재**: Phase 3 (핵심 모듈 이관) — Step 0 DB 설계 완료, Step 1 대기
+**다음 작업**: Step 1 — 시험후기 모듈 이관 (submissions 테이블 + Edge Function + 프론트 연결)
 
 ### 네비게이션 구조 (확정)
 ```
 대시보드 | 시험후기 | 스크립트 | 모의고사 | 튜터링
 ```
 
+### 레이아웃 구조 (확정)
+- **(dashboard)**: 탐색/허브 페이지 — Navbar + Footer 포함
+- **(immersive)**: 활동/몰입 페이지 — ImmersiveHeader만, Navbar/Footer 없음
+
 ### 모듈별 내부 탭 구조 (확정)
 - **시험후기** (/reviews): 빈도 분석 | 후기 제출 | 시험 후기
-- **스크립트** (미구현): 스크립트 생성 | 내 스크립트 | 쉐도잉 훈련
-- **모의고사** (미구현): 응시 | 결과 | 나의 이력
-- **튜터링** (미구현): 진단 | 처방 | 훈련
+- **스크립트** (/scripts): 스크립트 생성 | 내 스크립트 | 쉐도잉 훈련
+- **모의고사** (/mock-exam): 응시 | 결과 | 나의 이력
+- **튜터링** (/tutoring): 진단 | 처방 | 훈련
+
+### DB 현황
+- **master_questions**: 510행 (시드 로드 완료)
+- **custom_mode_questions**: 0행 (DB 트리거로 자동 생성 예정)
+- **Storage**: audio-recordings 버킷 (공개, RLS 설정 완료)
+
+### Supabase DB 접속
+```bash
+export PGPASSWORD=$(printf '%s' 'opictalkdoc2026!!')
+PGCLIENTENCODING='UTF8' "/c/Program Files/PostgreSQL/16/bin/psql" \
+  -h aws-1-ap-northeast-2.pooler.supabase.com \
+  -p 6543 \
+  -U postgres.rwdsyqnrrpwkureqfxwb \
+  -d postgres \
+  --set=sslmode=require \
+  -c "SQL문"
+```
 
 > 상세 진행 상황은 `오픽톡닥_개발계획서.md`의 "현재 진행 상태" 참조
 
 ---
 *최종 업데이트: 2026-02-20*
-*상태: Phase 3 진입 — 시험후기 UI 셸 완료, Step 0 DB 설계 대기*
+*상태: Phase 3 Step 0 완료 — DB 코어 테이블 + 시드 + 버킷 완료, Step 1 시험후기 이관 대기*
