@@ -42,7 +42,7 @@ function LoginForm() {
 
   const [webviewWarning, setWebviewWarning] = useState(false);
 
-  const handleOAuth = (provider: "google") => {
+  const handleOAuth = (provider: "google" | "kakao") => {
     // 인앱 브라우저 감지 시 외부 브라우저로 유도
     if (isInAppBrowser()) {
       setWebviewWarning(true);
@@ -72,7 +72,7 @@ function LoginForm() {
       {webviewWarning && (
         <div className="mt-4 rounded-[var(--radius-md)] border border-amber-300 bg-amber-50 p-4 text-sm">
           <p className="font-medium text-amber-800">
-            인앱 브라우저에서는 Google 로그인이 지원되지 않습니다
+            인앱 브라우저에서는 소셜 로그인이 지원되지 않습니다
           </p>
           <p className="mt-1 text-amber-700">
             아래 버튼을 눌러 외부 브라우저에서 열어주세요
@@ -116,6 +116,22 @@ function LoginForm() {
           </svg>
           Google로 계속하기
         </Button>
+        <button
+          type="button"
+          className="flex w-full items-center justify-center gap-2 rounded-[var(--radius-md)] border border-[#FEE500] bg-[#FEE500] px-4 py-2.5 text-sm font-medium text-[#000000] transition-colors hover:bg-[#FDD835] disabled:opacity-50"
+          onClick={() => handleOAuth("kakao")}
+          disabled={isPending}
+        >
+          <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none">
+            <path
+              fillRule="evenodd"
+              clipRule="evenodd"
+              d="M12 4C7.029 4 3 7.13 3 10.95c0 2.414 1.605 4.536 4.02 5.726l-1.02 3.784c-.09.332.287.6.578.41L10.7 18.28c.424.046.858.07 1.3.07 4.971 0 9-3.13 9-6.95S16.971 4 12 4z"
+              fill="#000000"
+            />
+          </svg>
+          카카오로 계속하기
+        </button>
         <p className="text-center text-xs text-foreground-muted">
           계속하면{" "}
           <Link href="/terms" className="underline hover:text-foreground-secondary" target="_blank">
