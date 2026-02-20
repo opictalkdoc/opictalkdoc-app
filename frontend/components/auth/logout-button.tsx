@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { createClient } from "@/lib/supabase";
+import { createClient, clearAllSupabaseCookies } from "@/lib/supabase";
 
 export function LogoutButton() {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -10,6 +10,7 @@ export function LogoutButton() {
     setIsLoggingOut(true);
     const supabase = createClient();
     await supabase.auth.signOut();
+    clearAllSupabaseCookies();
     window.location.href = "/";
   };
 

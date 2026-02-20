@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { Settings, LogOut } from "lucide-react";
-import { createClient } from "@/lib/supabase";
+import { createClient, clearAllSupabaseCookies } from "@/lib/supabase";
 
 export function UserMenu({ name }: { name: string }) {
   const [open, setOpen] = useState(false);
@@ -53,6 +53,7 @@ export function UserMenu({ name }: { name: string }) {
               setIsLoggingOut(true);
               const supabase = createClient();
               await supabase.auth.signOut();
+              clearAllSupabaseCookies();
               window.location.href = "/";
             }}
             disabled={isLoggingOut}

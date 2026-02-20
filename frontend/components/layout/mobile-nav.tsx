@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, X, Settings, LogOut } from "lucide-react";
-import { createClient } from "@/lib/supabase";
+import { createClient, clearAllSupabaseCookies } from "@/lib/supabase";
 
 type NavItem = { label: string; href: string; soon?: boolean };
 
@@ -92,6 +92,7 @@ export function MobileNav({
                     setIsLoggingOut(true);
                     const supabase = createClient();
                     await supabase.auth.signOut();
+                    clearAllSupabaseCookies();
                     window.location.href = "/";
                   }}
                   disabled={isLoggingOut}

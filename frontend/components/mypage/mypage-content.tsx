@@ -23,7 +23,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { updateProfile, updateGoals } from "@/lib/actions/auth";
-import { createClient } from "@/lib/supabase";
+import { createClient, clearAllSupabaseCookies } from "@/lib/supabase";
 
 /* ── 타입 ── */
 
@@ -616,6 +616,7 @@ function AccountTab({ user }: { user: UserData }) {
       // 탈퇴 성공 → 브라우저 쿠키 삭제 후 하드 리다이렉트
       const supabase = createClient();
       await supabase.auth.signOut({ scope: "local" });
+      clearAllSupabaseCookies();
       window.location.href = "/";
     } catch {
       setDeleteError("네트워크 오류가 발생했습니다. 다시 시도해 주세요.");
@@ -638,6 +639,7 @@ function AccountTab({ user }: { user: UserData }) {
             setIsLoggingOut(true);
             const supabase = createClient();
             await supabase.auth.signOut();
+            clearAllSupabaseCookies();
             window.location.href = "/";
           }}
           disabled={isLoggingOut}
