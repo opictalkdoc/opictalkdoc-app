@@ -1,16 +1,14 @@
 import { redirect } from "next/navigation";
-import { createServerSupabaseClient } from "@/lib/supabase-server";
+import { getUser } from "@/lib/auth";
 import { MyPageContent } from "@/components/mypage/mypage-content";
 
 export const metadata = {
   title: "마이페이지 | 오픽톡닥",
 };
 
+// mypage는 user 데이터가 필요하므로 cache된 getUser() 사용
 export default async function MyPage() {
-  const supabase = await createServerSupabaseClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getUser();
 
   if (!user) {
     redirect("/login");

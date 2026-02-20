@@ -1,21 +1,11 @@
-import { redirect } from "next/navigation";
-import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { ScriptsContent } from "@/components/scripts/scripts-content";
 
 export const metadata = {
   title: "스크립트 | 오픽톡닥",
 };
 
-export default async function ScriptsPage() {
-  const supabase = await createServerSupabaseClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/login");
-  }
-
+// 인증은 미들웨어에서 처리
+export default function ScriptsPage() {
   return (
     <div className="pb-8 pt-2 lg:pt-0">
       <div className="mb-6">

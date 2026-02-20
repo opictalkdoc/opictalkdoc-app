@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { createServerSupabaseClient } from "@/lib/supabase-server";
+import { getUser } from "@/lib/auth";
 import { UserMenu } from "./user-menu";
 import { MobileNav } from "./mobile-nav";
 
@@ -23,10 +23,8 @@ const appNav: NavItem[] = [
 ];
 
 export async function Navbar() {
-  const supabase = await createServerSupabaseClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // React cache()로 동일 요청 내 1회만 호출됨
+  const user = await getUser();
 
   const isLoggedIn = !!user;
   const userName = user?.user_metadata?.display_name || "";

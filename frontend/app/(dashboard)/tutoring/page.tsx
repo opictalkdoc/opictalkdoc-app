@@ -1,21 +1,11 @@
-import { redirect } from "next/navigation";
-import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { TutoringContent } from "@/components/tutoring/tutoring-content";
 
 export const metadata = {
   title: "튜터링 | 오픽톡닥",
 };
 
-export default async function TutoringPage() {
-  const supabase = await createServerSupabaseClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/login");
-  }
-
+// 인증은 미들웨어에서 처리
+export default function TutoringPage() {
   return (
     <div className="pb-8 pt-2 lg:pt-0">
       <div className="mb-6">

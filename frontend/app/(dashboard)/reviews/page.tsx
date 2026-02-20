@@ -1,21 +1,11 @@
-import { redirect } from "next/navigation";
-import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { ReviewsContent } from "@/components/reviews/reviews-content";
 
 export const metadata = {
   title: "시험후기 | 오픽톡닥",
 };
 
-export default async function ReviewsPage() {
-  const supabase = await createServerSupabaseClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/login");
-  }
-
+// 인증은 미들웨어에서 처리 — 여기서는 UI만 렌더링
+export default function ReviewsPage() {
   return (
     <div className="pb-8 pt-2 lg:pt-0">
       <div className="mb-6">

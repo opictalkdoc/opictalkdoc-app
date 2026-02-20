@@ -1,6 +1,4 @@
-import { redirect } from "next/navigation";
 import Link from "next/link";
-import { createServerSupabaseClient } from "@/lib/supabase-server";
 import {
   Check,
   Crown,
@@ -92,16 +90,8 @@ const addons = [
 
 /* ── 페이지 ── */
 
-export default async function StorePage() {
-  const supabase = await createServerSupabaseClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/login");
-  }
-
+// 인증은 미들웨어에서 처리
+export default function StorePage() {
   return (
     <div className="pb-8 pt-2 lg:pt-0">
       {/* 헤더 */}
