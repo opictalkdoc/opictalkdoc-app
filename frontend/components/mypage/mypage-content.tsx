@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -24,6 +23,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { updateProfile, updateGoals, logout } from "@/lib/actions/auth";
+import { createClient } from "@/lib/supabase";
 
 /* ── 타입 ── */
 
@@ -591,7 +591,6 @@ function HistoryTab() {
 /* ── 계정 관리 탭 ── */
 
 function AccountTab({ user }: { user: UserData }) {
-  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -614,9 +613,10 @@ function AccountTab({ user }: { user: UserData }) {
         return;
       }
 
-      // 탈퇴 성공 → 랜딩 페이지로 이동
-      router.push("/");
-      router.refresh();
+      // 탈퇴 성공 → 브라우저 쿠키 삭제 후 하드 리다이렉트
+      const supabase = createClient();
+      await supabase.auth.signOut({ scope: "local" });
+      window.location.href = "/";
     } catch {
       setDeleteError("네트워크 오류가 발생했습니다. 다시 시도해 주세요.");
       setIsDeleting(false);

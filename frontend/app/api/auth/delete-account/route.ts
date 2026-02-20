@@ -73,6 +73,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // 서버 세션 정리 (쿠키에서 Supabase 토큰 제거)
+    await authClient.auth.signOut();
+
     return NextResponse.json({ success: true });
   } catch (err) {
     console.error("회원 탈퇴 에러:", err);
