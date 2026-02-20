@@ -44,14 +44,14 @@ export function Navbar() {
     // 초기 세션 확인 (로컬 쿠키에서 읽기 — 네트워크 호출 없음)
     supabase.auth.getSession().then(({ data: { session } }) => {
       setIsLoggedIn(!!session);
-      setUserName(session?.user?.user_metadata?.display_name || "");
+      setUserName(session?.user?.user_metadata?.display_name || session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.name || "");
     });
 
     // 인증 상태 변경 구독 (로그인/로그아웃 시 즉시 반영)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
         setIsLoggedIn(!!session);
-        setUserName(session?.user?.user_metadata?.display_name || "");
+        setUserName(session?.user?.user_metadata?.display_name || session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.name || "");
       }
     );
 
