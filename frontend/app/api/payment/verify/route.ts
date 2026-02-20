@@ -120,9 +120,14 @@ export async function POST(request: NextRequest) {
     }
 
     // customData에서 userId 추출
-    const userId = payment.customData
-      ? JSON.parse(payment.customData).userId
-      : null;
+    let userId: string | null = null;
+    if (payment.customData) {
+      const custom =
+        typeof payment.customData === "string"
+          ? JSON.parse(payment.customData)
+          : payment.customData;
+      userId = custom.userId ?? null;
+    }
 
     if (!userId) {
       return NextResponse.json(

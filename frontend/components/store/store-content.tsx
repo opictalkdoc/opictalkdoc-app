@@ -196,7 +196,7 @@ export function StoreContent() {
         totalAmount: product.price,
         currency: "CURRENCY_KRW",
         payMethod: "CARD",
-        customData: JSON.stringify({ userId: user.id, productId }),
+        customData: { userId: user.id, productId },
       });
 
       // 사용자 취소 또는 에러
