@@ -196,6 +196,9 @@ export function StoreContent() {
         totalAmount: product.price,
         currency: "CURRENCY_KRW",
         payMethod: "CARD",
+        customer: {
+          email: user.email ?? undefined,
+        },
         customData: { userId: user.id, productId },
       });
 
