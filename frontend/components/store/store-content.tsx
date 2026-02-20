@@ -145,6 +145,12 @@ export function StoreContent() {
     type: "success" | "error";
     text: string;
   } | null>(null);
+  // 전화번호 입력 모달
+  const [showPhoneModal, setShowPhoneModal] = useState(false);
+  const [phoneInput, setPhoneInput] = useState("");
+  const [pendingProductId, setPendingProductId] = useState<ProductId | null>(
+    null
+  );
 
   const supabase = createClient();
 
@@ -168,24 +174,76 @@ export function StoreContent() {
     fetchCredits();
   }, [fetchCredits]);
 
-  // 결제 처리
+  // 결제 시작 — 전화번호 없으면 모달로 입력 받기
   const handlePayment = async (productId: ProductId) => {
     const product = PRODUCT_MAP[productId];
     if (!product) return;
 
-    setLoadingProduct(productId);
     setMessage(null);
 
-    try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) {
-        setMessage({ type: "error", text: "로그인이 필요합니다." });
-        return;
-      }
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      setMessage({ type: "error", text: "로그인이 필요합니다." });
+      return;
+    }
 
+    const phone =
+      user.user_metadata?.phone_number || user.phone || "";
+
+    if (!phone) {
+      // 전화번호 없으면 모달로 입력 요청
+      setPendingProductId(productId);
+      setPhoneInput("");
+      setShowPhoneModal(true);
+      return;
+    }
+
+    await processPayment(productId, user, phone);
+  };
+
+  // 전화번호 모달 확인 후 결제 진행
+  const handlePhoneSubmit = async () => {
+    const phone = phoneInput.replace(/[^0-9-]/g, "");
+    if (!phone || phone.replace(/-/g, "").length < 10) {
+      setMessage({
+        type: "error",
+        text: "올바른 전화번호를 입력해 주세요.",
+      });
+      return;
+    }
+
+    setShowPhoneModal(false);
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user || !pendingProductId) return;
+
+    // user_metadata에 전화번호 저장 (다음 결제 시 재활용)
+    await supabase.auth.updateUser({
+      data: { phone_number: phone },
+    });
+
+    await processPayment(pendingProductId, user, phone);
+  };
+
+  // 실제 결제 처리
+  const processPayment = async (
+    productId: ProductId,
+    user: { id: string; email?: string; user_metadata?: Record<string, string> },
+    phone: string
+  ) => {
+    const product = PRODUCT_MAP[productId];
+    if (!product) return;
+
+    setLoadingProduct(productId);
+
+    try {
       const paymentId = `order_${Date.now()}_${crypto.randomUUID().slice(0, 8)}`;
+      const buyerName =
+        user.user_metadata?.display_name || user.email?.split("@")[0] || "구매자";
 
       // 포트원 결제창 호출
       const response = await PortOne.requestPayment({
@@ -197,7 +255,9 @@ export function StoreContent() {
         currency: "CURRENCY_KRW",
         payMethod: "CARD",
         customer: {
+          fullName: buyerName,
           email: user.email ?? undefined,
+          phoneNumber: phone,
         },
         customData: { userId: user.id, productId },
       });
@@ -226,7 +286,6 @@ export function StoreContent() {
 
       if (verifyRes.ok && verifyData.success) {
         setMessage({ type: "success", text: "결제가 완료되었습니다!" });
-        // 크레딧 새로고침
         await fetchCredits();
       } else {
         setMessage({
@@ -259,6 +318,42 @@ export function StoreContent() {
 
   return (
     <div>
+      {/* 전화번호 입력 모달 */}
+      {showPhoneModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="mx-4 w-full max-w-sm rounded-[var(--radius-xl)] bg-surface p-6 shadow-xl">
+            <h3 className="text-lg font-bold text-foreground">
+              전화번호 입력
+            </h3>
+            <p className="mt-1 text-sm text-foreground-secondary">
+              결제를 위해 휴대폰 번호가 필요합니다.
+            </p>
+            <input
+              type="tel"
+              value={phoneInput}
+              onChange={(e) => setPhoneInput(e.target.value)}
+              placeholder="010-1234-5678"
+              className="mt-4 w-full rounded-[var(--radius-lg)] border border-border bg-surface px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary-500"
+              onKeyDown={(e) => e.key === "Enter" && handlePhoneSubmit()}
+            />
+            <div className="mt-4 flex gap-3">
+              <button
+                onClick={() => setShowPhoneModal(false)}
+                className="flex-1 rounded-[var(--radius-lg)] border border-border py-2.5 text-sm font-medium text-foreground-secondary hover:bg-surface-secondary"
+              >
+                취소
+              </button>
+              <button
+                onClick={handlePhoneSubmit}
+                className="flex-1 rounded-[var(--radius-lg)] bg-primary-500 py-2.5 text-sm font-medium text-white hover:bg-primary-600"
+              >
+                확인
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 메시지 토스트 */}
       {message && (
         <div
