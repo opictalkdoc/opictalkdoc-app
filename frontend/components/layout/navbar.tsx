@@ -16,9 +16,9 @@ const publicNav: NavItem[] = [
 const appNav: NavItem[] = [
   { label: "대시보드", href: "/dashboard" },
   { label: "시험후기", href: "/reviews" },
-  { label: "스크립트", href: "#", soon: true },
-  { label: "모의고사", href: "#", soon: true },
-  { label: "튜터링", href: "#", soon: true },
+  { label: "스크립트", href: "/scripts" },
+  { label: "모의고사", href: "/mock-exam" },
+  { label: "튜터링", href: "/tutoring" },
   { label: "Store", href: "/store" },
 ];
 
