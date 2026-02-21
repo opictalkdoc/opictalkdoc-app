@@ -21,6 +21,7 @@ export default async function MyPage() {
     avatarUrl: user.user_metadata?.avatar_url || "",
     provider: user.app_metadata?.provider || "email",
     createdAt: user.created_at,
+    currentGrade: user.user_metadata?.current_grade || "",
     targetGrade: user.user_metadata?.target_grade || "",
     examDate: user.user_metadata?.exam_date || "",
     weeklyGoal: user.user_metadata?.weekly_goal || "",

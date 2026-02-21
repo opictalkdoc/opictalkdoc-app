@@ -11,7 +11,7 @@ export function Footer() {
               오픽톡닥
             </span>
             <p className="text-sm">
-              말하기 실력이 아니라, 전략입니다
+              말하다, 나답게.
             </p>
           </div>
 

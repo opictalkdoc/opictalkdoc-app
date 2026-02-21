@@ -34,6 +34,7 @@ type UserData = {
   avatarUrl: string;
   provider: string;
   createdAt: string;
+  currentGrade: string;
   targetGrade: string;
   examDate: string;
   weeklyGoal: string;
@@ -51,7 +52,19 @@ const tabs = [
 
 type TabId = (typeof tabs)[number]["id"];
 
-const opicGrades = [
+const currentGradeOptions = [
+  { value: "", label: "선택해 주세요" },
+  { value: "none", label: "아직 미응시" },
+  { value: "NH", label: "NH (Novice High)" },
+  { value: "IL", label: "IL (Intermediate Low)" },
+  { value: "IM1", label: "IM1 (Intermediate Mid 1)" },
+  { value: "IM2", label: "IM2 (Intermediate Mid 2)" },
+  { value: "IM3", label: "IM3 (Intermediate Mid 3)" },
+  { value: "IH", label: "IH (Intermediate High)" },
+  { value: "AL", label: "AL (Advanced Low)" },
+];
+
+const targetGradeOptions = [
   { value: "", label: "선택해 주세요" },
   { value: "IL", label: "IL (Intermediate Low)" },
   { value: "IM1", label: "IM1 (Intermediate Mid 1)" },
@@ -368,6 +381,7 @@ function PlanTab({ user }: { user: UserData }) {
 /* ── 목표 탭 ── */
 
 function GoalTab({ user }: { user: UserData }) {
+  const [currentGrade, setCurrentGrade] = useState(user.currentGrade);
   const [targetGrade, setTargetGrade] = useState(user.targetGrade);
   const [examDate, setExamDate] = useState(user.examDate);
   const [weeklyGoal, setWeeklyGoal] = useState(user.weeklyGoal);
@@ -381,6 +395,7 @@ function GoalTab({ user }: { user: UserData }) {
     setMsg(null);
     startTransition(async () => {
       const fd = new FormData();
+      fd.append("currentGrade", currentGrade);
       fd.append("targetGrade", targetGrade);
       fd.append("examDate", examDate);
       fd.append("weeklyGoal", weeklyGoal);
@@ -396,6 +411,7 @@ function GoalTab({ user }: { user: UserData }) {
 
   const dDay = getDday(examDate);
   const hasChanges =
+    currentGrade !== user.currentGrade ||
     targetGrade !== user.targetGrade ||
     examDate !== user.examDate ||
     weeklyGoal !== user.weeklyGoal;
@@ -405,6 +421,28 @@ function GoalTab({ user }: { user: UserData }) {
       <div className="rounded-[var(--radius-xl)] border border-border bg-surface p-6">
         <h3 className="mb-5 font-semibold text-foreground">목표 설정</h3>
         <div className="space-y-5">
+          {/* 현재 등급 */}
+          <div>
+            <label
+              htmlFor="current-grade"
+              className="mb-1.5 block text-sm text-foreground-secondary"
+            >
+              현재 OPIc 등급
+            </label>
+            <select
+              id="current-grade"
+              value={currentGrade}
+              onChange={(e) => setCurrentGrade(e.target.value)}
+              className="flex h-10 w-full max-w-xs rounded-[var(--radius-md)] border border-border bg-surface px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
+            >
+              {currentGradeOptions.map((g) => (
+                <option key={g.value} value={g.value}>
+                  {g.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
           {/* 목표 등급 */}
           <div>
             <label
@@ -419,7 +457,7 @@ function GoalTab({ user }: { user: UserData }) {
               onChange={(e) => setTargetGrade(e.target.value)}
               className="flex h-10 w-full max-w-xs rounded-[var(--radius-md)] border border-border bg-surface px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
             >
-              {opicGrades.map((g) => (
+              {targetGradeOptions.map((g) => (
                 <option key={g.value} value={g.value}>
                   {g.label}
                 </option>
@@ -505,13 +543,21 @@ function GoalTab({ user }: { user: UserData }) {
       </div>
 
       {/* 목표 요약 카드 */}
-      {(targetGrade || examDate || weeklyGoal) && (
+      {(currentGrade || targetGrade || examDate || weeklyGoal) && (
         <div className="rounded-[var(--radius-xl)] border border-primary-200 bg-primary-50/50 p-6">
           <h3 className="mb-3 flex items-center gap-2 font-semibold text-foreground">
             <Target size={18} className="text-primary-500" />
             나의 목표 요약
           </h3>
           <div className="grid gap-3 sm:grid-cols-3">
+            {currentGrade && (
+              <div className="rounded-[var(--radius-lg)] bg-white p-3 text-center">
+                <p className="text-xs text-foreground-muted">현재 등급</p>
+                <p className="mt-1 text-lg font-bold text-foreground">
+                  {currentGrade}
+                </p>
+              </div>
+            )}
             {targetGrade && (
               <div className="rounded-[var(--radius-lg)] bg-white p-3 text-center">
                 <p className="text-xs text-foreground-muted">목표 등급</p>

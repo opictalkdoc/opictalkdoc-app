@@ -158,6 +158,7 @@ export async function updateProfile(formData: FormData): Promise<AuthResult> {
 }
 
 export async function updateGoals(formData: FormData): Promise<AuthResult> {
+  const currentGrade = formData.get("currentGrade") as string;
   const targetGrade = formData.get("targetGrade") as string;
   const examDate = formData.get("examDate") as string;
   const weeklyGoal = formData.get("weeklyGoal") as string;
@@ -165,6 +166,7 @@ export async function updateGoals(formData: FormData): Promise<AuthResult> {
   const supabase = await createServerSupabaseClient();
   const { error } = await supabase.auth.updateUser({
     data: {
+      current_grade: currentGrade || null,
       target_grade: targetGrade || null,
       exam_date: examDate || null,
       weekly_goal: weeklyGoal || null,

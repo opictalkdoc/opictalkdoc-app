@@ -1,6 +1,5 @@
 import Link from "next/link";
 import {
-  Stethoscope,
   BarChart3,
   FileText,
   ClipboardList,
@@ -12,47 +11,38 @@ import {
   Calendar,
   Crown,
 } from "lucide-react";
+import { getUser } from "@/lib/auth";
+import { createServerSupabaseClient } from "@/lib/supabase-server";
 
 export const metadata = {
   title: "대시보드 | 오픽톡닥",
 };
 
-/* ── 데이터 ── */
+/* ── 유틸 ── */
 
-const stats = [
-  {
-    label: "현재 플랜",
-    value: "체험",
-    sub: "무료",
-    icon: Crown,
-    color: "bg-primary-50 text-primary-500",
-    href: "/store",
-  },
-  {
-    label: "남은 모의고사",
-    value: "1회",
-    sub: "샘플",
-    icon: ClipboardList,
-    color: "bg-secondary-50 text-secondary-600",
-    href: null,
-  },
-  {
-    label: "스크립트 생성",
-    value: "무제한",
-    sub: "체험판",
-    icon: BookOpen,
-    color: "bg-accent-50 text-accent-500",
-    href: null,
-  },
-  {
-    label: "연속 학습",
-    value: "0일",
-    sub: "시작해 보세요!",
-    icon: Calendar,
-    color: "bg-primary-50 text-primary-500",
-    href: null,
-  },
-];
+function getPlanLabel(plan: string) {
+  if (plan === "basic") return "베이직";
+  if (plan === "premium") return "프리미엄";
+  return "체험";
+}
+
+function getPlanSub(plan: string) {
+  if (plan === "basic") return "3회권";
+  if (plan === "premium") return "10회권";
+  return "무료";
+}
+
+function getDday(dateStr: string | null) {
+  if (!dateStr) return null;
+  const diff = Math.ceil(
+    (new Date(dateStr).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+  );
+  if (diff > 0) return `D-${diff}`;
+  if (diff === 0) return "D-Day";
+  return `D+${Math.abs(diff)}`;
+}
+
+/* ── 정적 데이터 ── */
 
 const modules = [
   {
@@ -61,7 +51,6 @@ const modules = [
     title: "시험후기",
     desc: "출제 빈도 분석 · 후기 제출 · 시험 후기 열람",
     href: "/reviews",
-    soon: false,
   },
   {
     icon: FileText,
@@ -69,7 +58,6 @@ const modules = [
     title: "스크립트",
     desc: "맞춤 스크립트 생성 · 내 스크립트 관리 · 쉐도잉 훈련",
     href: "/scripts",
-    soon: false,
   },
   {
     icon: ClipboardList,
@@ -77,7 +65,6 @@ const modules = [
     title: "모의고사",
     desc: "실전 모의고사 응시 · AI 평가 리포트 · 나의 이력",
     href: "/mock-exam",
-    soon: false,
   },
   {
     icon: MessageCircle,
@@ -85,7 +72,6 @@ const modules = [
     title: "튜터링",
     desc: "AI 진단 · 맞춤 처방 · 레벨별 훈련",
     href: "/tutoring",
-    soon: false,
   },
 ];
 
@@ -95,41 +81,98 @@ const learningSteps = [
     title: "시험 후기 확인",
     desc: "어떤 주제가 자주 나오는지 빈도 분석을 확인합니다",
     module: "시험후기",
-    done: false,
   },
   {
     step: 2,
     title: "맞춤 스크립트 생성",
     desc: "빈출 주제로 내 경험 기반 영어 답변을 만듭니다",
     module: "스크립트",
-    done: false,
   },
   {
     step: 3,
     title: "쉐도잉으로 체화",
     desc: "생성한 스크립트를 원어민 발화로 따라하며 입에 붙입니다",
     module: "스크립트",
-    done: false,
   },
   {
     step: 4,
     title: "실전 모의고사",
     desc: "실제 시험 환경에서 15문제를 풀고 AI가 평가합니다",
     module: "모의고사",
-    done: false,
   },
   {
     step: 5,
     title: "AI 튜터링",
     desc: "모의고사 결과를 진단하고 약점을 집중 훈련합니다",
     module: "튜터링",
-    done: false,
   },
 ];
 
 /* ── 페이지 ── */
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  // 사용자 정보 + 크레딧 조회
+  const user = await getUser();
+  const supabase = await createServerSupabaseClient();
+
+  // user_credits 조회 (없으면 기본값)
+  const { data: credits } = user
+    ? await supabase
+        .from("user_credits")
+        .select("*")
+        .eq("user_id", user.id)
+        .single()
+    : { data: null };
+
+  // 메타데이터
+  const targetGrade = user?.user_metadata?.target_grade || "";
+  const currentGrade = user?.user_metadata?.current_grade || "";
+  const examDate = user?.user_metadata?.exam_date || "";
+  const dDay = getDday(examDate || null);
+
+  // 통계 데이터
+  const plan = credits?.current_plan || "free";
+  const totalMockExam =
+    (credits?.plan_mock_exam_credits || 0) +
+    (credits?.mock_exam_credits || 0);
+  const totalScript =
+    (credits?.plan_script_credits || 0) + (credits?.script_credits || 0);
+
+  const stats = [
+    {
+      label: "현재 플랜",
+      value: getPlanLabel(plan),
+      sub: getPlanSub(plan),
+      icon: Crown,
+      color: "bg-primary-50 text-primary-500",
+      href: "/store",
+    },
+    {
+      label: "남은 모의고사",
+      value: `${totalMockExam}회`,
+      sub: totalMockExam === 0 ? "크레딧 없음" : plan === "free" ? "샘플" : "사용 가능",
+      icon: ClipboardList,
+      color: "bg-secondary-50 text-secondary-600",
+      href: null,
+    },
+    {
+      label: "스크립트 생성",
+      value: totalScript === 0 ? "0회" : `${totalScript}회`,
+      sub: plan === "free" ? "크레딧 구매 필요" : "사용 가능",
+      icon: BookOpen,
+      color: "bg-accent-50 text-accent-500",
+      href: null,
+    },
+    {
+      label: "연속 학습",
+      value: "0일",
+      sub: "시작해 보세요!",
+      icon: Calendar,
+      color: "bg-primary-50 text-primary-500",
+      href: null,
+    },
+  ];
+
   return (
     <div className="space-y-8 pb-8 pt-2 lg:pt-0">
       {/* 헤더 */}
@@ -197,14 +240,7 @@ export default function DashboardPage() {
                 <m.icon size={22} />
               </div>
               <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <h3 className="font-semibold text-foreground">{m.title}</h3>
-                  {m.soon && (
-                    <span className="rounded-full bg-primary-50 px-2 py-0.5 text-[10px] font-medium text-primary-600">
-                      준비 중
-                    </span>
-                  )}
-                </div>
+                <h3 className="font-semibold text-foreground">{m.title}</h3>
                 <p className="mt-1 text-sm text-foreground-secondary">
                   {m.desc}
                 </p>
@@ -233,13 +269,7 @@ export default function DashboardPage() {
             {learningSteps.map((ls, i) => (
               <div key={ls.step} className="flex items-start gap-4">
                 <div className="flex flex-col items-center">
-                  <div
-                    className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold ${
-                      ls.done
-                        ? "bg-primary-500 text-white"
-                        : "border-2 border-border bg-surface-secondary text-foreground-muted"
-                    }`}
-                  >
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-border bg-surface-secondary text-sm font-bold text-foreground-muted">
                     {ls.step}
                   </div>
                   {i < learningSteps.length - 1 && (
@@ -262,42 +292,61 @@ export default function DashboardPage() {
 
         {/* 사이드 패널 */}
         <div className="space-y-4 lg:col-span-2">
-          {/* AI 주치의 톡닥이 */}
-          <div className="rounded-[var(--radius-xl)] border border-border border-l-4 border-l-primary-400 bg-primary-50/50 p-5">
-            <div className="flex items-center gap-3">
-              <Stethoscope size={22} className="text-primary-500" />
-              <p className="text-lg font-semibold text-foreground">톡닥이</p>
-            </div>
-            <p className="mt-3 text-sm leading-relaxed text-foreground-secondary">
-              진단하고, 처방하고, 체화까지.
-              <br />
-              오픽의 모든 과정을 톡닥이가 함께합니다.
-            </p>
-          </div>
-
-          {/* 목표 설정 유도 */}
-          <Link
-            href="/mypage"
-            className="block rounded-[var(--radius-xl)] border border-border bg-surface p-5 transition-all hover:border-border-hover hover:shadow-[var(--shadow-card)]"
-          >
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-[var(--radius-lg)] bg-secondary-50 text-secondary-600">
-                <Target size={20} />
+          {/* 목표 등급 요약 */}
+          {(targetGrade || currentGrade) ? (
+            <div className="rounded-[var(--radius-xl)] border border-primary-200 bg-primary-50/50 p-5">
+              <div className="flex items-center gap-2">
+                <Target size={18} className="text-primary-500" />
+                <p className="font-semibold text-foreground">나의 목표</p>
               </div>
-              <div>
-                <p className="text-sm font-semibold text-foreground">
-                  목표 등급 설정하기
-                </p>
-                <p className="text-xs text-foreground-secondary">
-                  마이페이지에서 목표를 설정하세요
-                </p>
+              <div className="mt-3 grid grid-cols-2 gap-3">
+                {currentGrade && (
+                  <div className="rounded-[var(--radius-lg)] bg-white p-3 text-center">
+                    <p className="text-xs text-foreground-muted">현재</p>
+                    <p className="mt-0.5 text-lg font-bold text-foreground">
+                      {currentGrade}
+                    </p>
+                  </div>
+                )}
+                {targetGrade && (
+                  <div className="rounded-[var(--radius-lg)] bg-white p-3 text-center">
+                    <p className="text-xs text-foreground-muted">목표</p>
+                    <p className="mt-0.5 text-lg font-bold text-primary-600">
+                      {targetGrade}
+                    </p>
+                  </div>
+                )}
               </div>
-              <ArrowRight
-                size={14}
-                className="ml-auto text-foreground-muted"
-              />
+              {dDay && (
+                <p className="mt-3 text-center text-sm font-semibold text-primary-600">
+                  시험까지 {dDay}
+                </p>
+              )}
             </div>
-          </Link>
+          ) : (
+            <Link
+              href="/mypage"
+              className="block rounded-[var(--radius-xl)] border border-border bg-surface p-5 transition-all hover:border-border-hover hover:shadow-[var(--shadow-card)]"
+            >
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-[var(--radius-lg)] bg-secondary-50 text-secondary-600">
+                  <Target size={20} />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-foreground">
+                    목표 등급 설정하기
+                  </p>
+                  <p className="text-xs text-foreground-secondary">
+                    마이페이지에서 목표를 설정하세요
+                  </p>
+                </div>
+                <ArrowRight
+                  size={14}
+                  className="ml-auto text-foreground-muted"
+                />
+              </div>
+            </Link>
+          )}
 
           {/* 전략 가이드 */}
           <div className="rounded-[var(--radius-xl)] border border-[#1f1e30]/10 bg-[#1f1e30] p-5">
@@ -305,7 +354,7 @@ export default function DashboardPage() {
               OPIc 전략, 정확히 알고 계신가요?
             </p>
             <p className="mt-1 text-xs text-white/60">
-              230건 데이터로 증명된 서베이 전략과 5-5 난이도 전략을 확인하세요.
+              데이터로 증명된 서베이 전략과 난이도 전략을 확인하세요.
             </p>
             <Link
               href="/strategy"
