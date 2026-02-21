@@ -26,7 +26,7 @@ export function Footer() {
         </div>
 
         {/* 사업자 정보 */}
-        <div className="mt-8 border-t border-white/10 pt-6 text-xs leading-relaxed text-[#6B7A8D]">
+        <div className="mt-8 border-t border-white/10 pt-6 text-xs leading-relaxed text-[#8B7E72]">
           <div className="flex flex-col gap-0.5 sm:gap-0">
             <p>상호: 스투스 OPIc</p>
             <p>대표자: 전다영</p>
@@ -41,7 +41,7 @@ export function Footer() {
             </p>
             <p>통신판매업 신고번호: 준비 중</p>
           </div>
-          <p className="mt-4 text-[#4A5568]">
+          <p className="mt-4 text-[#6E6358]">
             &copy; {new Date().getFullYear()} 오픽톡닥. All rights reserved.
           </p>
         </div>

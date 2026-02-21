@@ -349,7 +349,7 @@ export default async function DashboardPage() {
           )}
 
           {/* 전략 가이드 */}
-          <div className="rounded-[var(--radius-xl)] border border-[#1f1e30]/10 bg-[#1f1e30] p-5">
+          <div className="rounded-[var(--radius-xl)] border border-foreground/10 bg-foreground p-5">
             <p className="text-sm font-semibold text-white">
               OPIc 전략, 정확히 알고 계신가요?
             </p>
@@ -358,7 +358,7 @@ export default async function DashboardPage() {
             </p>
             <Link
               href="/strategy"
-              className="mt-3 inline-flex items-center gap-1 rounded-full bg-white px-4 py-2 text-sm font-medium text-[#1f1e30] transition-colors hover:bg-white/90"
+              className="mt-3 inline-flex items-center gap-1 rounded-full bg-white px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-white/90"
             >
               전략 가이드
               <ArrowRight size={14} />
