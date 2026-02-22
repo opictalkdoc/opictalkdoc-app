@@ -26,7 +26,7 @@ const services = [
   },
   {
     num: "02",
-    title: "내 일상이 명대사가 되는 스크립트",
+    title: "나의 일상이 스크립트로",
     badge: "스크립트",
     desc: '거창한 경험은 필요 없습니다. "퇴근 후 마시는 맥주 한 캔" 같은 당신의 평범한 일상을 가져오세요. AI가 그 진심 어린 경험을 가장 자연스럽고 돋보이는 영어 대사로 다듬어 드립니다.',
     featured: true,
@@ -68,7 +68,7 @@ const faqs = [
     a: "AI 기반 OPIc 영어 말하기 학습 플랫폼입니다. 수험생 후기 데이터로 출제 범위를 좁혀주고, 당신의 진짜 일상을 자연스러운 영어 스크립트로 만들어 드립니다. 모의고사, 튜터링, 쉐도잉까지 한곳에서 준비할 수 있습니다.",
   },
   {
-    q: "정말 내 평범한 일상으로 스크립트를 만들 수 있나요?",
+    q: "평범한 일상으로 스크립트가 되나요?",
     a: "네, 그게 핵심입니다. OPIc은 화려한 경험이 아니라 '자연스러운 나의 이야기'를 평가합니다. 퇴근 후 맥주 한 캔, 주말 넷플릭스 같은 소소한 일상이 가장 좋은 재료예요.",
   },
   {
@@ -104,7 +104,7 @@ export default function HomePage() {
             평범한 하루, 완벽한 대본.
           </span>
 
-          <h1 className="mt-8 text-[2rem] font-extrabold leading-[1.3] tracking-[-0.04em] text-[#3A2E25] sm:text-[2.8rem] md:text-[3.4rem]">
+          <h1 className="mt-8 text-[1.55rem] font-extrabold leading-[1.3] tracking-[-0.04em] text-[#3A2E25] sm:text-[2.8rem] md:text-[3.4rem]">
             화려한 필터는 끄세요.
             <br />
             <span className="text-[#D4835E]">
@@ -117,21 +117,22 @@ export default function HomePage() {
           <div className="mt-8 max-w-[720px] space-y-4 text-[0.95rem] leading-[1.9] text-[#8B7E72] sm:text-[1.05rem]">
             <p>
               OPIc은 ★스타가 아닙니다.
-              <br />
+              <br className="hidden sm:block" />{" "}
               새벽 요가로 하루를 열고, 저녁엔 루프탑에서 와인을 기울인다는
-              <br className="hidden sm:block" />
+              <br className="hidden sm:block" />{" "}
               남의 멋진 삶을 흉내 내지 마세요.
             </p>
             <p>
               당신의 평범한 하루,
-              <br />
+              <br className="hidden sm:block" />{" "}
               소파에 누워 좋아하는 예능을 보며 낄낄대던 그 소박한 이야기.
-              <br className="hidden sm:block" />그 진짜 내 이야기를 할 때,
-              당신은 가장 나다워지고 가장 돋보입니다.
+              <br className="hidden sm:block" />{" "}
+              그 진짜 내 이야기를 할 때, 당신은 가장 나다워지고 가장 돋보입니다.
             </p>
             <p className="pt-2 text-[1.05rem] font-bold leading-[1.8] text-[#3A2E25] sm:text-[1.15rem]">
               당신의 이야기를 시작하세요.
-              <br />내 삶의 대본에서는, 이미 내가 주인공이니까요.
+              <br className="hidden sm:block" />{" "}
+              내 삶의 대본에서는, 이미 내가 주인공이니까요.
             </p>
           </div>
 
@@ -233,7 +234,7 @@ export default function HomePage() {
       </section>
 
       {/* 브릿지 카피 */}
-      <div className="bg-white pb-10 text-center text-[1rem] text-[#8B7E72] sm:text-[1.05rem]">
+      <div className="bg-white px-6 pb-10 text-center text-[1rem] text-[#8B7E72] sm:text-[1.05rem]">
         그래서 오픽톡닥은{" "}
         <strong className="text-[#3A2E25]">정확한 데이터</strong>와{" "}
         <strong className="text-[#3A2E25]">당신만의 이야기</strong>로
@@ -245,8 +246,10 @@ export default function HomePage() {
         <div className="mx-auto max-w-[1080px] px-6">
           <div className="mb-14 text-center sm:mb-16">
             <Pill>당신의 무대를 돕는 방법</Pill>
-            <h2 className="mt-4 text-[1.8rem] font-extrabold tracking-[-0.03em] text-[#3A2E25] sm:text-[2.4rem]">
-              오픽톡닥이 당신의 무대를 준비합니다
+            <h2 className="mt-4 text-[1.8rem] font-extrabold tracking-[-0.03em] text-[#3A2E25] [word-break:keep-all] sm:text-[2.4rem]">
+              오픽톡닥이 당신의{" "}
+              <br className="sm:hidden" />
+              무대를 준비합니다
             </h2>
           </div>
 
@@ -270,11 +273,11 @@ export default function HomePage() {
                   {s.num}
                 </span>
                 <div className="flex-1">
-                  <h3 className="flex items-center gap-2 text-[1.15rem] font-bold sm:text-[1.25rem]">
+                  <h3 className="flex items-center justify-between gap-2 text-[1.15rem] font-bold [word-break:keep-all] sm:justify-start sm:text-[1.25rem]">
                     {s.title}
                     {s.badge && (
                       <span
-                        className={`rounded-md px-2 py-0.5 text-[0.7rem] font-bold ${
+                        className={`shrink-0 whitespace-nowrap rounded-md px-2 py-0.5 text-[0.7rem] font-bold ${
                           s.featured
                             ? "bg-[#D4835E] text-white"
                             : "bg-[#F3ECE4] text-[#8B7E72]"
@@ -303,7 +306,7 @@ export default function HomePage() {
         <div className="mx-auto max-w-[1080px] px-6">
           <div className="mb-14 text-center">
             <Pill>요금제</Pill>
-            <h2 className="mt-4 text-[1.8rem] font-extrabold tracking-[-0.03em] text-[#3A2E25] sm:text-[2.4rem]">
+            <h2 className="mt-4 text-[1.8rem] font-extrabold tracking-[-0.03em] text-[#3A2E25] [word-break:keep-all] sm:text-[2.4rem]">
               나에게 맞는 플랜을 선택하세요
             </h2>
             <p className="mt-3 text-[1rem] text-[#8B7E72]">

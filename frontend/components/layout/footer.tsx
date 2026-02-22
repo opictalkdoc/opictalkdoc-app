@@ -16,7 +16,7 @@ export function Footer() {
           </div>
 
           {/* 링크 */}
-          <div className="flex flex-wrap gap-x-8 gap-y-2 text-sm">
+          <div className="flex flex-wrap gap-x-3 gap-y-2 text-xs sm:gap-x-8 sm:text-sm">
             <Link href="/strategy">전략 가이드</Link>
             <Link href="/pricing">요금제</Link>
             <Link href="/terms">이용약관</Link>

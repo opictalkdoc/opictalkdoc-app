@@ -48,7 +48,7 @@ const misconceptions = [
     rough: '"스크립트 외우면 안 된다더라"',
     question: "그런데 대안이 뭔데?",
     precise: "AI가 내 경험으로 스크립트를 만든다",
-    proof: "남의 스크립트 암기 → 최고 NM등급 (ACTFL 공식)",
+    proof: "남의 스크립트 암기 → 최고 NM등급(ACTFL\u00a0공식)",
   },
 ];
 
@@ -359,10 +359,10 @@ export default function StrategyPage() {
           <span className="inline-flex items-center gap-1.5 rounded-full bg-white/50 px-4 py-1.5 text-[13px] font-semibold text-[#3A2E25] backdrop-blur-sm">
             오픽톡닥 데이터 전략
           </span>
-          <h1 className="mt-8 font-serif text-3xl font-semibold italic leading-[1.2] tracking-tight text-[#3A2E25] sm:text-5xl">
+          <h1 className="mt-8 font-serif text-[1.75rem] font-semibold italic leading-[1.2] tracking-tight text-[#3A2E25] sm:text-5xl">
             OPIc, 정말 알고 계신가요?
           </h1>
-          <p className="mt-6 max-w-[520px] text-[17px] leading-[1.7] text-[#4A3F36]">
+          <p className="mt-6 max-w-[520px] text-[17px] leading-[1.7] text-[#4A3F36] [word-break:keep-all]">
             사람들이 OPIc을 어려워하는 근본 원인은 영어 실력이 아닙니다.
             <br className="hidden sm:block" />
             <strong>시험 구조 자체를 모르는 것</strong>입니다.
@@ -398,7 +398,7 @@ export default function StrategyPage() {
       <section className="border-b border-[#EAE0D5] bg-white py-20 sm:py-28">
         <div className="mx-auto max-w-4xl px-4 sm:px-6">
           <SectionNum num="1" label="현실 직시" />
-          <h2 className="mt-6 text-center font-serif text-[28px] font-semibold italic leading-[1.3] tracking-tight text-[#3A2E25] sm:text-[36px]">
+          <h2 className="mt-6 text-center font-serif text-[1.55rem] font-semibold italic leading-[1.3] tracking-tight text-[#3A2E25] sm:text-[36px]">
             &ldquo;대충 안다&rdquo;는
             <br />
             &ldquo;정확히 모른다&rdquo;와 같습니다
@@ -429,7 +429,7 @@ export default function StrategyPage() {
                   <p className="text-[15px] font-bold text-primary-700">
                     {item.precise}
                   </p>
-                  <p className="mt-0.5 text-sm text-primary-500">
+                  <p className="mt-0.5 text-sm text-primary-500 [word-break:keep-all]">
                     {item.proof}
                   </p>
                 </div>
@@ -461,7 +461,7 @@ export default function StrategyPage() {
       <section className="border-b border-[#EAE0D5] bg-[#FAF6F1] py-20 sm:py-28">
         <div className="mx-auto max-w-4xl px-4 sm:px-6">
           <SectionNum num="2" label="시험 구조" />
-          <h2 className="mt-6 text-center font-serif text-[28px] font-semibold italic leading-[1.3] tracking-tight text-[#3A2E25] sm:text-[36px]">
+          <h2 className="mt-6 text-center font-serif text-[1.55rem] font-semibold italic leading-[1.3] tracking-tight text-[#3A2E25] sm:text-[36px]">
             OPIc은 내가 시험 범위를
             <br />
             직접 정하는 시험입니다
@@ -523,7 +523,7 @@ export default function StrategyPage() {
 
           {/* 다른 시험과 비교 */}
           <div className="mt-10 overflow-x-auto rounded-2xl border border-[#EAE0D5] bg-white">
-            <table className="w-full text-sm">
+            <table className="w-full text-xs sm:text-sm">
               <thead>
                 <tr className="border-b border-[#EAE0D5] bg-[#F3ECE4]">
                   <th className="px-3 py-3 text-left font-semibold text-[#3A2E25] sm:px-6">
@@ -565,7 +565,7 @@ export default function StrategyPage() {
       <section className="border-b border-[#EAE0D5] bg-white py-20 sm:py-28">
         <div className="mx-auto max-w-4xl px-4 sm:px-6">
           <SectionNum num="3" label="콤보 시스템" />
-          <h2 className="mt-6 text-center font-serif text-[28px] font-semibold italic leading-[1.3] tracking-tight text-[#3A2E25] sm:text-[36px]">
+          <h2 className="mt-6 text-center font-serif text-[1.55rem] font-semibold italic leading-[1.3] tracking-tight text-[#3A2E25] sm:text-[36px]">
             15문제는 무작위가 아닙니다
             <br />
             5개 콤보로 구성됩니다
@@ -577,19 +577,19 @@ export default function StrategyPage() {
 
           {/* 10가지 문제유형 테이블 */}
           <div className="mt-12 overflow-x-auto rounded-2xl border border-[#EAE0D5] bg-white">
-            <table className="w-full text-sm">
+            <table className="w-full text-xs sm:text-sm">
               <thead>
                 <tr className="border-b border-[#EAE0D5] bg-[#F3ECE4]">
-                  <th className="px-4 py-3 text-center font-semibold text-[#3A2E25] sm:px-5">
+                  <th className="px-2 py-2.5 text-center font-semibold text-[#3A2E25] sm:px-5 sm:py-3">
                     그룹
                   </th>
-                  <th className="px-4 py-3 text-center font-semibold text-[#3A2E25] sm:px-5">
+                  <th className="px-2 py-2.5 text-center font-semibold text-[#3A2E25] sm:px-5 sm:py-3">
                     유형
                   </th>
-                  <th className="hidden px-4 py-3 text-left font-semibold text-[#3A2E25] sm:table-cell sm:px-5">
+                  <th className="hidden px-2 py-2.5 text-left font-semibold text-[#3A2E25] sm:table-cell sm:px-5 sm:py-3">
                     내용
                   </th>
-                  <th className="px-4 py-3 text-left font-semibold text-[#3A2E25] sm:px-5">
+                  <th className="hidden px-2 py-2.5 text-left font-semibold text-[#3A2E25] sm:table-cell sm:px-5 sm:py-3">
                     예시
                   </th>
                 </tr>
@@ -606,7 +606,7 @@ export default function StrategyPage() {
                           : ""
                     }
                   >
-                    <td className="px-4 py-3 text-center sm:px-5">
+                    <td className="px-2 py-2.5 text-center sm:px-5 sm:py-3">
                       <span
                         className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${
                           qt.group === "기본"
@@ -619,13 +619,13 @@ export default function StrategyPage() {
                         {qt.group}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-center font-semibold text-[#3A2E25] sm:px-5">
+                    <td className="px-2 py-2.5 text-center font-semibold text-[#3A2E25] sm:px-5 sm:py-3">
                       {qt.num} {qt.type}
                     </td>
-                    <td className="hidden px-4 py-3 text-[#8B7E72] sm:table-cell sm:px-5">
+                    <td className="hidden px-2 py-2.5 text-[#8B7E72] sm:table-cell sm:px-5 sm:py-3">
                       {qt.content}
                     </td>
-                    <td className="px-4 py-3 text-xs text-[#B5A99D] sm:px-5 sm:text-sm">
+                    <td className="hidden px-2 py-2.5 text-xs text-[#B5A99D] sm:table-cell sm:px-5 sm:py-3 sm:text-sm">
                       &ldquo;{qt.example}&rdquo;
                     </td>
                   </tr>
@@ -735,7 +735,7 @@ export default function StrategyPage() {
       <section className="border-b border-[#EAE0D5] bg-[#FAF6F1] py-20 sm:py-28">
         <div className="mx-auto max-w-4xl px-4 sm:px-6">
           <SectionNum num="4" label="서베이 전략" />
-          <h2 className="mt-6 text-center font-serif text-[28px] font-semibold italic leading-[1.3] tracking-tight text-[#3A2E25] sm:text-[36px]">
+          <h2 className="mt-6 text-center font-serif text-[1.55rem] font-semibold italic leading-[1.3] tracking-tight text-[#3A2E25] sm:text-[36px]">
             서베이를 어떻게 해야 하는가
           </h2>
           <p className="mx-auto mt-4 max-w-[560px] text-center text-base leading-relaxed text-[#8B7E72]">
@@ -799,32 +799,32 @@ export default function StrategyPage() {
       <section className="border-b border-[#EAE0D5] bg-white py-20 sm:py-28">
         <div className="mx-auto max-w-4xl px-4 sm:px-6">
           <SectionNum num="5" label="선택형 빈도" />
-          <h2 className="mt-6 text-center font-serif text-[28px] font-semibold italic leading-[1.3] tracking-tight text-[#3A2E25] sm:text-[36px]">
+          <h2 className="mt-6 text-center font-serif text-[1.55rem] font-semibold italic leading-[1.3] tracking-tight text-[#3A2E25] sm:text-[36px]">
             실전 데이터가 증명하는
             <br />
             진짜 나오는 주제
           </h2>
-          <p className="mx-auto mt-4 max-w-[560px] text-center text-base leading-relaxed text-[#8B7E72]">
+          <p className="mx-auto mt-4 max-w-[560px] text-center text-base leading-relaxed text-[#8B7E72] [word-break:keep-all]">
             서베이로 범위를 줄인 뒤, 빈도 분석으로 학습 순서를 결정합니다.
-            <br />
+            <br className="hidden sm:block" />{" "}
             핵심 주제 4개만 완벽히 하면 선택형 콤보의 절반 이상이 대비됩니다.
           </p>
 
           {/* 빈도 테이블 */}
           <div className="mt-12 overflow-x-auto rounded-2xl border border-[#EAE0D5] bg-white">
-            <table className="w-full text-sm">
+            <table className="w-full text-xs sm:text-sm">
               <thead>
                 <tr className="border-b border-[#EAE0D5] bg-[#F3ECE4]">
-                  <th className="px-4 py-3 text-center font-semibold text-[#3A2E25] sm:px-6">
+                  <th className="px-2 py-2.5 text-center font-semibold text-[#3A2E25] sm:px-6 sm:py-3">
                     순위
                   </th>
-                  <th className="px-4 py-3 text-left font-semibold text-[#3A2E25] sm:px-6">
+                  <th className="px-2 py-2.5 text-left font-semibold text-[#3A2E25] sm:px-6 sm:py-3">
                     주제
                   </th>
-                  <th className="px-4 py-3 text-center font-semibold text-[#3A2E25] sm:px-6">
+                  <th className="px-2 py-2.5 text-center font-semibold text-[#3A2E25] sm:px-6 sm:py-3">
                     출현율
                   </th>
-                  <th className="px-4 py-3 text-center font-semibold text-[#3A2E25] sm:px-6">
+                  <th className="px-2 py-2.5 text-center font-semibold text-[#3A2E25] sm:px-6 sm:py-3">
                     분류
                   </th>
                 </tr>
@@ -837,16 +837,16 @@ export default function StrategyPage() {
                       item.tier === "핵심" ? "bg-primary-50/50" : ""
                     }
                   >
-                    <td className="px-4 py-3 text-center font-bold text-[#B5A99D] sm:px-6">
+                    <td className="px-2 py-2.5 text-center font-bold text-[#B5A99D] sm:px-6 sm:py-3">
                       {item.rank}
                     </td>
-                    <td className="px-4 py-3 font-semibold text-[#3A2E25] sm:px-6">
+                    <td className="px-2 py-2.5 font-semibold text-[#3A2E25] sm:px-6 sm:py-3">
                       {item.topic}
                     </td>
-                    <td className="px-4 py-3 text-center font-bold text-[#3A2E25] sm:px-6">
+                    <td className="px-2 py-2.5 text-center font-bold text-[#3A2E25] sm:px-6 sm:py-3">
                       {item.rate}
                     </td>
-                    <td className="px-4 py-3 text-center sm:px-6">
+                    <td className="px-2 py-2.5 text-center sm:px-6 sm:py-3">
                       <span
                         className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${
                           item.tier === "핵심"
@@ -907,32 +907,32 @@ export default function StrategyPage() {
       <section className="border-b border-[#EAE0D5] bg-[#FAF6F1] py-20 sm:py-28">
         <div className="mx-auto max-w-4xl px-4 sm:px-6">
           <SectionNum num="6" label="공통형 빈도" />
-          <h2 className="mt-6 text-center font-serif text-[28px] font-semibold italic leading-[1.3] tracking-tight text-[#3A2E25] sm:text-[36px]">
+          <h2 className="mt-6 text-center font-serif text-[1.55rem] font-semibold italic leading-[1.3] tracking-tight text-[#3A2E25] sm:text-[36px]">
             공통형 2개도
             <br />
             데이터로 대비합니다
           </h2>
           <p className="mx-auto mt-4 max-w-[560px] text-center text-base leading-relaxed text-[#8B7E72]">
             공통형은 서베이로 범위를 줄일 수 없습니다.
-            <br />
+            <br className="hidden sm:block" />{" "}
             <strong>빈도 분석만으로</strong> 우선순위를 정해야 합니다.
           </p>
 
           {/* 공통형 빈도 테이블 */}
           <div className="mt-12 overflow-x-auto rounded-2xl border border-[#EAE0D5] bg-white">
-            <table className="w-full text-sm">
+            <table className="w-full text-xs sm:text-sm">
               <thead>
                 <tr className="border-b border-[#EAE0D5] bg-[#F3ECE4]">
-                  <th className="px-4 py-3 text-center font-semibold text-[#3A2E25] sm:px-6">
+                  <th className="px-2 py-2.5 text-center font-semibold text-[#3A2E25] sm:px-6 sm:py-3">
                     순위
                   </th>
-                  <th className="px-4 py-3 text-left font-semibold text-[#3A2E25] sm:px-6">
+                  <th className="px-2 py-2.5 text-left font-semibold text-[#3A2E25] sm:px-6 sm:py-3">
                     주제
                   </th>
-                  <th className="px-4 py-3 text-center font-semibold text-[#3A2E25] sm:px-6">
+                  <th className="px-2 py-2.5 text-center font-semibold text-[#3A2E25] sm:px-6 sm:py-3">
                     출현 건수
                   </th>
-                  <th className="px-4 py-3 text-center font-semibold text-[#3A2E25] sm:px-6">
+                  <th className="px-2 py-2.5 text-center font-semibold text-[#3A2E25] sm:px-6 sm:py-3">
                     누적 커버리지
                   </th>
                 </tr>
@@ -943,20 +943,20 @@ export default function StrategyPage() {
                     key={item.rank}
                     className={item.highlight ? "bg-primary-50/50" : ""}
                   >
-                    <td className="px-4 py-3 text-center font-bold text-[#B5A99D] sm:px-6">
+                    <td className="px-2 py-2.5 text-center font-bold text-[#B5A99D] sm:px-6 sm:py-3">
                       {item.rank}
                     </td>
-                    <td className="px-4 py-3 sm:px-6">
+                    <td className="px-2 py-2.5 sm:px-6 sm:py-3">
                       <span
                         className={`font-semibold ${item.highlight ? "text-[#3A2E25]" : "text-[#8B7E72]"}`}
                       >
                         {item.topic}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-center text-[#8B7E72] sm:px-6">
+                    <td className="px-2 py-2.5 text-center text-[#8B7E72] sm:px-6 sm:py-3">
                       {item.count}
                     </td>
-                    <td className="px-4 py-3 text-center font-bold sm:px-6">
+                    <td className="px-2 py-2.5 text-center font-bold sm:px-6 sm:py-3">
                       <span
                         className={
                           item.highlight
@@ -972,7 +972,7 @@ export default function StrategyPage() {
               </tbody>
             </table>
             <div className="border-t border-[#EAE0D5] bg-[#F3ECE4] px-6 py-3 text-center text-xs text-[#B5A99D]">
-              일반 공통형 220건, 236콤보 기준 분석
+              공통형 200건+ 기준 분석
             </div>
           </div>
 
@@ -1052,7 +1052,7 @@ export default function StrategyPage() {
       <section className="border-b border-[#EAE0D5] bg-white py-20 sm:py-28">
         <div className="mx-auto max-w-4xl px-4 sm:px-6">
           <SectionNum num="7" label="5-5 전략" />
-          <h2 className="mt-6 text-center font-serif text-[28px] font-semibold italic leading-[1.3] tracking-tight text-[#3A2E25] sm:text-[36px]">
+          <h2 className="mt-6 text-center font-serif text-[1.55rem] font-semibold italic leading-[1.3] tracking-tight text-[#3A2E25] sm:text-[36px]">
             난이도 5-5를 선택하면
             <br />
             상위등급 확률이 뛴다
@@ -1100,19 +1100,19 @@ export default function StrategyPage() {
 
           {/* 5-5 vs 전체 평균 비교 테이블 */}
           <div className="mt-10 overflow-x-auto rounded-2xl border border-[#EAE0D5] bg-white">
-            <table className="w-full text-sm">
+            <table className="w-full text-xs sm:text-sm">
               <thead>
                 <tr className="border-b border-[#EAE0D5] bg-[#F3ECE4]">
-                  <th className="px-4 py-3 text-center font-semibold text-[#3A2E25] sm:px-6">
+                  <th className="px-2 py-2.5 text-center font-semibold text-[#3A2E25] sm:px-6 sm:py-3">
                     등급
                   </th>
-                  <th className="px-4 py-3 text-center font-semibold text-[#3A2E25] sm:px-6">
+                  <th className="px-2 py-2.5 text-center font-semibold text-[#3A2E25] sm:px-6 sm:py-3">
                     전체 평균
                   </th>
-                  <th className="px-4 py-3 text-center font-semibold text-[#3A2E25] sm:px-6">
+                  <th className="px-2 py-2.5 text-center font-semibold text-[#3A2E25] sm:px-6 sm:py-3">
                     5-5 선택자
                   </th>
-                  <th className="px-4 py-3 text-center font-semibold text-[#3A2E25] sm:px-6">
+                  <th className="px-2 py-2.5 text-center font-semibold text-[#3A2E25] sm:px-6 sm:py-3">
                     배율
                   </th>
                 </tr>
@@ -1123,13 +1123,13 @@ export default function StrategyPage() {
                     key={item.grade}
                     className={item.up ? "bg-primary-50/50" : ""}
                   >
-                    <td className="px-4 py-3 text-center font-bold text-[#3A2E25] sm:px-6">
+                    <td className="px-2 py-2.5 text-center font-bold text-[#3A2E25] sm:px-6 sm:py-3">
                       {item.grade}
                     </td>
-                    <td className="px-4 py-3 text-center text-[#8B7E72] sm:px-6">
+                    <td className="px-2 py-2.5 text-center text-[#8B7E72] sm:px-6 sm:py-3">
                       {item.average}
                     </td>
-                    <td className="px-4 py-3 text-center font-bold sm:px-6">
+                    <td className="px-2 py-2.5 text-center font-bold sm:px-6 sm:py-3">
                       <span
                         className={
                           item.up ? "text-primary-600" : "text-[#B5A99D]"
@@ -1138,7 +1138,7 @@ export default function StrategyPage() {
                         {item.fiveFive}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-center sm:px-6">
+                    <td className="px-2 py-2.5 text-center sm:px-6 sm:py-3">
                       <span
                         className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-bold ${
                           item.up
@@ -1226,14 +1226,14 @@ export default function StrategyPage() {
       <section className="border-b border-[#EAE0D5] bg-[#FAF6F1] py-20 sm:py-28">
         <div className="mx-auto max-w-4xl px-4 sm:px-6">
           <SectionNum num="8" label="등급별 학습" />
-          <h2 className="mt-6 text-center font-serif text-[28px] font-semibold italic leading-[1.3] tracking-tight text-[#3A2E25] sm:text-[36px]">
+          <h2 className="mt-6 text-center font-serif text-[1.55rem] font-semibold italic leading-[1.3] tracking-tight text-[#3A2E25] sm:text-[36px]">
             목표 등급에 따라
             <br />
             학습 전략이 달라집니다
           </h2>
           <p className="mx-auto mt-4 max-w-[560px] text-center text-base leading-relaxed text-[#8B7E72]">
             등급이 올라갈수록 난이도, 집중 유형, 답변 길이가 달라집니다.
-            <br />
+            <br className="hidden sm:block" />{" "}
             공통점: 모든 등급에서 쉐도잉으로 영어다운 톤과 억양 만들기가
             기본입니다.
           </p>
@@ -1319,7 +1319,7 @@ export default function StrategyPage() {
       <section className="border-b border-[#EAE0D5] bg-white py-20 sm:py-28">
         <div className="mx-auto max-w-4xl px-4 sm:px-6">
           <SectionNum num="9" label="오픽톡닥" />
-          <h2 className="mt-6 text-center font-serif text-[28px] font-semibold italic leading-[1.3] tracking-tight text-[#3A2E25] sm:text-[36px]">
+          <h2 className="mt-6 text-center font-serif text-[1.55rem] font-semibold italic leading-[1.3] tracking-tight text-[#3A2E25] sm:text-[36px]">
             그래서 오픽톡닥은
             <br />
             이렇게 학습시킵니다
@@ -1350,7 +1350,7 @@ export default function StrategyPage() {
           </div>
 
           {/* 파이프라인 시각화 */}
-          <div className="mt-10 flex flex-wrap items-center justify-center gap-2 text-sm sm:gap-3">
+          <div className="mt-10 flex items-center justify-center gap-1 text-[11px] sm:gap-3 sm:text-sm">
             {[
               "데이터 수집",
               "→",
@@ -1367,7 +1367,7 @@ export default function StrategyPage() {
               ) : (
                 <span
                   key={i}
-                  className="rounded-lg bg-primary-50 px-4 py-2 font-semibold text-primary-700"
+                  className="whitespace-nowrap rounded-lg bg-primary-50 px-2.5 py-1.5 font-semibold text-primary-700 sm:px-4 sm:py-2"
                 >
                   {item}
                 </span>
@@ -1381,14 +1381,14 @@ export default function StrategyPage() {
       <section className="border-b border-[#EAE0D5] bg-[#FAF6F1] py-20 sm:py-28">
         <div className="mx-auto max-w-4xl px-4 sm:px-6">
           <SectionNum num="10" label="데이터 플라이휠" />
-          <h2 className="mt-6 text-center font-serif text-[28px] font-semibold italic leading-[1.3] tracking-tight text-[#3A2E25] sm:text-[36px]">
+          <h2 className="mt-6 text-center font-serif text-[1.55rem] font-semibold italic leading-[1.3] tracking-tight text-[#3A2E25] sm:text-[36px]">
             사용자가 쌓을수록
             <br />
             전략이 정밀해집니다
           </h2>
           <p className="mx-auto mt-4 max-w-[560px] text-center text-base leading-relaxed text-[#8B7E72]">
             오픽톡닥의 전략은 데이터가 쌓일수록 강해지는 구조입니다.
-            <br />
+            <br className="hidden sm:block" />{" "}
             같은 서베이로 모인 데이터는 분산 없이 한 곳에 축적됩니다.
           </p>
 
