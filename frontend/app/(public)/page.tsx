@@ -159,7 +159,7 @@ export default function HomePage() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.3, ease: "easeOut" }}
-            className="mt-8 w-[300px] rounded-2xl border border-[#EAE0D5] bg-white/50 px-6 py-7 backdrop-blur-sm sm:w-[530px] sm:px-10 sm:py-9"
+            className="mt-8 w-[310px] rounded-2xl border border-[#EAE0D5] bg-white/50 px-6 py-7 backdrop-blur-sm sm:w-[530px] sm:px-10 sm:py-9"
           >
             <div className="space-y-4 text-[0.8rem] leading-[1.9] text-[#8B7E72] sm:text-[1.05rem]">
               <p>
@@ -219,14 +219,14 @@ export default function HomePage() {
               이 모든 순간이, 당신만의 대본입니다
             </p>
           </ScrollReveal>
-          <div className="flex gap-3 overflow-x-auto px-5 pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:gap-4 md:grid md:grid-cols-5 md:overflow-visible md:px-6">
+          <div className="flex gap-3 overflow-x-auto px-4 pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:gap-4 md:grid md:grid-cols-5 md:overflow-visible md:px-6">
             {illustrations.map((ill, i) => (
               <ScrollReveal
                 key={ill.caption}
                 preset="fade-left"
                 delay={i * 0.12}
                 duration={0.6}
-                className="w-[42vw] flex-shrink-0 sm:w-[28vw] md:w-auto"
+                className="w-[36vw] flex-shrink-0 sm:w-[28vw] md:w-auto"
               >
                 <div className="overflow-hidden rounded-2xl">
                   <Image
@@ -261,19 +261,15 @@ export default function HomePage() {
             </ScrollReveal>
             <div className="mt-8 space-y-2.5">
               {[
-                { quote: "\u201c서베이가 중요하다더라\u201d", nudge: "\u2192 얼마나?" },
-                { quote: "\u201c5-5가 좋다더라\u201d", nudge: "\u2192 왜?" },
-                {
-                  quote: "\u201c스크립트 외우면 안 된대\u201d",
-                  nudge: "\u2192 대안이 뭔데?",
-                },
+                { quote: "\u201c서베이가 중요하다더라\u201d", nudge: "얼마나?" },
+                { quote: "\u201c5-5가 좋다더라\u201d", nudge: "왜?" },
+                { quote: "\u201c스크립트 외우면 안 된대\u201d", nudge: "대안이 뭔데?" },
               ].map((item, i) => (
                 <ScrollReveal key={item.quote} preset="fade-left" delay={i * 0.1} duration={0.5}>
-                  <div className="flex items-center justify-between rounded-[14px] bg-[#FAF6F1] px-5 py-5 text-[0.95rem] text-[#8B7E72] transition-colors hover:bg-[#F3ECE4] sm:px-6 sm:text-[1rem]">
-                    <span>{item.quote}</span>
-                    <strong className="ml-4 font-bold text-[#3A2E25]">
-                      {item.nudge}
-                    </strong>
+                  <div className="grid grid-cols-[13fr_auto_7fr] items-center rounded-[14px] bg-[#FAF6F1] px-3 py-5 text-[0.95rem] text-[#8B7E72] transition-colors hover:bg-[#F3ECE4] sm:px-4 sm:text-[1rem]">
+                    <span className="text-left">{item.quote}</span>
+                    <span className="px-3 font-bold text-[#3A2E25]">→</span>
+                    <strong className="text-right font-bold text-[#3A2E25]">{item.nudge}</strong>
                   </div>
                 </ScrollReveal>
               ))}
