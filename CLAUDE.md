@@ -154,7 +154,7 @@ docs/
 | **상태관리** | Zustand |
 | **데이터 페칭** | TanStack React Query |
 | **폼** | React Hook Form + Zod |
-| **백엔드** | Server Actions + Server Components (T-8 결정) |
+| **백엔드** | Server Actions(CRUD) + Edge Functions(AI) 하이브리드 (T-9 결정) |
 | **DB** | Supabase PostgreSQL + RLS |
 | **인증** | Supabase Auth |
 | **배포** | Vercel (프론트) + Supabase (백엔드) |
@@ -404,20 +404,21 @@ origin: https://opictalkdoc@github.com/opictalkdoc/opictalkdoc-app.git
   - Part B: 소리담→오픽톡닥 변경 사항 매핑 (12항목)
   - Part C: 오픽톡닥 구현 설계 (기존)
 
-### 2026-02-23 - Phase 3 Step 1: 시험후기 모듈 구현
-- **DB 마이그레이션** (`003_submissions.sql`):
+### 2026-02-23 - Phase 3 Step 1: 시험후기 모듈 완료 + T-9 결정
+- **DB 마이그레이션 생성 + 실행** (`003_submissions.sql`):
   - `custom_mode_questions` DROP + `find_similar_questions_by_frequency` DROP (M-1)
   - `submissions` 테이블 (16컬럼: 시험정보 + 설문 7개 + 후기 + 상태관리)
   - `submission_questions` 테이블 (14개 질문 기록, FK → submissions + master_questions)
   - `submission_combos` 테이블 (통합 콤보, combo_type 영어 5종)
-  - RLS 정책: 본인 CRUD + complete 전체 SELECT (M-4), anon은 advance만
+  - RLS 정책: 본인 CRUD + complete 전체 SELECT (M-4)
   - `increment_script_credits` RPC 함수 (크레딧 보상용)
+  - psql로 Supabase에 직접 실행 완료 (3테이블 확인됨)
 - **TypeScript 타입** (`lib/types/reviews.ts`): DB 매핑 타입 + ENUM 리터럴 + 한글 레이블 매핑
 - **Zod 스키마** (`lib/validations/reviews.ts`): Step 1/2/3 검증 스키마 (한국어 에러 메시지)
 - **콤보 추출기** (`lib/utils/combo-extractor.ts`): 소리담 이식, General 3분할, 제외 주제 적용
 - **Server Actions** (`lib/actions/reviews.ts`): 12개 액션 (createDraft, saveQuestions, completeSubmission, delete, updateGrade, getMySubmissions, getSubmissionDetail, getFrequency, getPublicReviews, getStats)
 - **쿼리 유틸** (`lib/queries/master-questions.ts`): 주제 목록 + 질문 목록 조회
-- **UI 컴포넌트** (7개 신규):
+- **UI 컴포넌트** (8개 신규):
   - TopicPagination: 주제 그리드 (이모지 + 페이지네이션 + 기억안남/직접입력)
   - QuestionSelector: 질문 선택 (answer_type 뱃지 + 커스텀 입력 + 기억안남)
   - WizardStep1: React Hook Form (시험일 + 등급 + 설문 9개, Pill 선택 UI)
@@ -427,11 +428,17 @@ origin: https://opictalkdoc@github.com/opictalkdoc/opictalkdoc-app.git
   - FrequencyTab: 서브탭(일반/롤플레이/어드밴스) + 통계 카드 + 빈도 바
   - ListTab: 등급 필터 + 후기 카드 + "더 보기" 페이지네이션
 - **기존 파일 수정**: reviews-content.tsx (props 추가), page.tsx (서버 컴포넌트 전환)
+- **빈도 분석 미인증 분기 제거**: /reviews는 (dashboard) 레이아웃이므로 로그인 필수 → isAuthenticated 불필요
+- **빌드 테스트 통과** + **커밋/푸시** (355954f)
+- **T-9 의사결정 확정**: 하이브리드 백엔드 — Server Actions(CRUD) + Edge Functions(AI API)
+  - 시험후기: Server Actions only (AI 호출 없음)
+  - 스크립트/모의고사/튜터링: CRUD=SA, AI=EF (GPT/Whisper/Gemini TTS/Azure)
+  - 비용 영향 없음 (Vercel Hobby $0 + Supabase Pro $25)
 
 ## 🔮 현재 상태 & 다음 단계
 
-**현재**: Phase 3 (핵심 모듈 이관) — Step 1 시험후기 모듈 구현 완료 (DB + Server Actions + UI 위저드)
-**다음 작업**: Step 1 검증 (DB 마이그레이션 실행 + 브라우저 테스트) → Step 2 스크립트 모듈 이관
+**현재**: Phase 3 (핵심 모듈 이관) — Step 1 시험후기 완료 (DB 실행 + 빌드 + 배포 완료)
+**다음 작업**: Step 2 — 스크립트+쉐도잉 모듈 이관 (Server Actions + Edge Functions 하이브리드)
 
 ### 네비게이션 구조 (확정)
 ```
@@ -508,4 +515,4 @@ PGPASSWORD='opictalk2026' PGCLIENTENCODING='UTF8' "/c/Program Files/PostgreSQL/1
 
 ---
 *최종 업데이트: 2026-02-23*
-*상태: Phase 3 Step 1 시험후기 모듈 구현 완료 — DB 마이그레이션 실행 + 브라우저 테스트 대기*
+*상태: Phase 3 Step 1 시험후기 완료 + T-9 하이브리드 백엔드 결정 — Step 2 스크립트 이관 대기*
