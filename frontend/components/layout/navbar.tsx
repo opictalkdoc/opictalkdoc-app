@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 import { UserMenu } from "./user-menu";
@@ -78,9 +79,13 @@ export function Navbar() {
           onClick={handleLogoClick}
           className="flex items-center gap-2"
         >
-          <span className="font-display text-xl text-primary-500">
-            오픽톡닥
-          </span>
+          <Image
+            src="/images/logo-bandaid-terracotta.png"
+            alt="오픽톡닥"
+            width={130}
+            height={34}
+            priority
+          />
         </Link>
 
         {/* 데스크톱 네비게이션 */}
