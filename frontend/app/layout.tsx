@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
-import { Inter, Fraunces, Noto_Serif_KR } from "next/font/google";
+import { Fraunces, Noto_Serif_KR } from "next/font/google";
 import localFont from "next/font/local";
 import "./globals.css";
 
-const inter = Inter({
-  subsets: ["latin"],
+const pretendard = localFont({
+  src: "./fonts/PretendardVariable.woff2",
   display: "swap",
-  variable: "--font-inter",
+  weight: "45 920",
+  variable: "--font-pretendard",
 });
 
 const jua = localFont({
@@ -53,15 +54,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ko" className={`${inter.variable} ${jua.variable} ${fraunces.variable} ${notoSerifKR.variable}`}>
-      <head>
-        <link
-          rel="stylesheet"
-          as="style"
-          crossOrigin="anonymous"
-          href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"
-        />
-      </head>
+    <html lang="ko" className={`${pretendard.variable} ${jua.variable} ${fraunces.variable} ${notoSerifKR.variable}`}>
       <body>{children}</body>
     </html>
   );
