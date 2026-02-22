@@ -20,8 +20,15 @@
 - 단순 버그 수정, 사소한 스타일 변경
 - 대화만 하고 코드 변경이 없을 때
 
-**함께 업데이트할 문서:**
-- `오픽톡닥_개발계획서.md`의 "현재 진행 상태" 섹션도 같이 갱신
+**연쇄 업데이트 원칙 (IMPORTANT):**
+작업이 완료되면 관련된 **모든** 문서를 함께 갱신한다. 하나만 바꾸고 끝내지 않는다.
+
+| 문서 | 갱신 내용 |
+|------|----------|
+| `CLAUDE.md` | 개발 이력, 현재 상태 & 다음 단계, DB 현황 |
+| `docs/실행계획.md` | 현재 진행 상태, Phase/Step 상태, 바로 다음 작업 |
+| `docs/의사결정.md` | 구현 현황, 새 결정 사항, 미결 항목 변경 |
+| `docs/설계/*.md` | 해당 모듈 설계와 실제 구현이 다르면 설계 문서 수정 |
 
 ---
 
@@ -46,56 +53,96 @@
 
 ## 📚 프로젝트 문서 체계
 
-> **이 섹션이 프로젝트 문서의 전체 지도다. 어떤 문서가 무슨 역할인지 여기서 파악한다.**
+> **IMPORTANT**: 의사결정 및 진행사항 확인 시 반드시 `docs/의사결정.md`를 참조한다.
 
 ### 문서 구조도
 
 ```
-오픽톡닥_개발계획서.md  ← 마스터 실행 가이드 (무엇을, 어떤 순서로, 어떻게)
-    │
-    ├── 참조 → 소리담_기능_분석.md     ← 이관 요약 + 분석결과 인덱스
-    │              │
-    │              └── 참조 → 소리담_분석_결과.md  ← 상세 레퍼런스 (스키마, API, 타입, 플로우)
-    │
-    ├── 참조 → 오픽톡닥_런칭_마스터플랜.md  ← 사업/행정/결제 (PG사 계약, 브랜드)
-    │
-    ├── 참조 → 오픽톡닥_아토믹_디자인_시스템.md  ← UI 디자인 시스템
-    │
-    └── 참조 → 오픽톡닥_로고_에셋_가이드.md  ← 로고/브랜드 에셋
+docs/
+├── 의사결정.md          ← 모든 의사결정 기록 (제품 P-1~4, 기술 T-1~8, 이관 M-1~4)
+├── 실행계획.md          ← 마스터 실행 가이드 (Phase별 할 일, 순서, 참조 문서)
+├── 사업운영.md          ← 사업/행정/결제 (PG사, 브랜드, 사업자 정보)
+├── 디자인시스템.md       ← 아토믹 디자인 원칙, 컴포넌트 설계
+├── 로고에셋.md          ← 로고 사용 가이드, 에셋 파일 경로
+├── 설계철학.md          ← 서베이 중요성, 설계 방향
+├── 설계/               ← 기능별 상세 설계 (DB, API, 데이터 플로우)
+│   ├── 공통기반.md      ← DB 원칙, 백엔드 아키텍처, CORS
+│   ├── 시험후기.md      ← submissions 3테이블, 콤보 생성
+│   ├── 모의고사.md      ← 5테이블, V7 규칙엔진, Realtime
+│   ├── 스크립트.md      ← scripts 통합 테이블, RCTF 프롬프트
+│   ├── 튜터링.md        ← 6테이블, 4레벨 재설계
+│   └── 쉐도잉.md        ← 2테이블, 클라이언트 완결
+└── 참조/               ← 소리담 원본 분석 (읽기 전용 레퍼런스)
+    ├── 소리담_기능분석.md  ← 이관 요약 + 분석결과 인덱스
+    └── 소리담_분석결과.md  ← 상세 레퍼런스 (스키마, API, 타입, 플로우)
 ```
-
-### 문서별 상세 역할
-
-| 문서 | 크기 | 역할 | 핵심 내용 | 언제 보는가 |
-|------|------|------|----------|------------|
-| **오픽톡닥_개발계획서.md** | ~12KB | 마스터 실행 가이드 | Phase 1~5 개발 순서, 모듈별 할 일 (페이지/DB/API), 각 단계에서 어떤 문서의 몇 번 섹션을 참조할지 | **항상 — "다음에 뭘 하지?" 여기서 확인** |
-| **소리담_기능_분석.md** | ~4KB | 이관 요약 + 인덱스 | 이관/미이관/신규 기능 목록, 분석결과 15개 섹션 인덱스 (§번호로 빠른 탐색) | 분석결과에서 어느 섹션을 봐야 하는지 찾을 때 |
-| **소리담_분석_결과.md** | ~60KB | 상세 레퍼런스 | 소리담 코드 레벨 분석 — DB 스키마, Edge Function, TypeScript 타입, 데이터 플로우, master_questions 핵심 코어 | **실제 코드 작성 시 — 구현 디테일이 필요할 때** |
-| **오픽톡닥_런칭_마스터플랜.md** | ~14KB | 사업/행정/결제 | 브랜드(톡닥이 AI 주치의), 결제(포트원, KG이니시스, 카카오페이), PG사 계약 현황, 사업자 정보 | 결제 연동, PG사 계약 확인 시 |
-| **오픽톡닥_아토믹_디자인_시스템.md** | ~53KB | UI 디자인 시스템 | 아토믹 디자인 원칙, 컴포넌트 설계, 디자인 토큰 | UI 컴포넌트 구현 시 |
-| **오픽톡닥_로고_에셋_가이드.md** | ~9KB | 로고/브랜드 에셋 | 로고 사용 가이드, 에셋 파일 경로 | 디자인 작업 시 |
 
 ### 문서 사용 시나리오
 
-**"다음 개발 단계가 뭐지?"**
-→ `오픽톡닥_개발계획서.md`의 "현재 진행 상태" 섹션 확인
+| 질문 | 참조 문서 |
+|------|----------|
+| "다음 개발 단계가 뭐지?" | `docs/실행계획.md` → "현재 진행 상태" |
+| "이 기능 어떻게 결정됐지?" | `docs/의사결정.md` → 해당 P/T/M 번호 |
+| "모의고사 DB 설계는?" | `docs/설계/모의고사.md` |
+| "소리담에선 어떻게 했지?" | `docs/참조/소리담_분석결과.md` |
+| "PG사 계약 상태는?" | `docs/사업운영.md` |
+| "UI 컴포넌트 규칙은?" | `docs/디자인시스템.md` |
 
-**"모의고사 DB를 어떻게 설계하지?"**
-→ `오픽톡닥_개발계획서.md` Step 3 → "📖 분석결과 §7 참조" → `소리담_분석_결과.md` 섹션 7
-
-**"분석결과에서 뭘 봐야 하지?"**
-→ `소리담_기능_분석.md`의 "분석 결과 문서 안내" 인덱스 테이블
-
-**"PG사 계약 상태가 어떻게 되지?"**
-→ `오픽톡닥_런칭_마스터플랜.md` §4
-
-### 핵심 개념 (반드시 기억)
+### 핵심 개념
 
 - **master_questions (510개)**: 시스템 전체의 SSOT. 모든 모듈이 이 테이블에서 시작됨
 - **answer_type (10가지)**: 평가 체크박스, AI 튜터 진단, 스크립트 전략이 모두 이 값으로 분기
-- **custom_mode_questions**: DB 트리거로 자동 생성되는 콤보 데이터, 모의고사 출제에 사용
-- **이관 순서**: 데이터랩 → 스크립트 → 모의고사 → AI 튜터 → 내 스크립트 → 쉐도잉
-- **모든 모듈 이관 절차**: DB → RLS → Edge Function → 타입 → API → 상태관리 → UI → 테스트
+- **백엔드 아키텍처 (T-8)**: Server Components + Server Actions. Edge Functions 사용 안 함
+- **이관 순서**: 시험후기 → 스크립트 → 모의고사 → 튜터링 → 쉐도잉
+
+## 🎨 디자인 시스템 (현재 적용 중)
+
+> 정의 파일: `frontend/app/globals.css` (@theme 블록)
+
+### 컬러 팔레트
+
+| 역할 | 토큰 | 값 | 용도 |
+|------|------|-----|------|
+| **Primary** | `primary-500` | `#D4835E` (테라코타) | 메인 CTA, 강조, 브랜드 컬러 |
+| **Primary Light** | `primary-50` | `#FDF5F0` | 하이라이트 배경, 뱃지 |
+| **Primary Dark** | `primary-700` | `#A5603F` | 호버, 진한 강조 |
+| **Secondary** | `secondary-500` | `#B8945A` (웜 앰버) | 보조 강조 |
+| **Accent** | `accent-500` | `#BF5B43` (웜 로즈) | 경고성 강조 |
+| **Background** | `background` | `#FAF6F1` (크림) | 페이지 기본 배경 |
+| **Surface** | `surface` | `#FFFCF8` | 카드, 모달 배경 |
+| **Surface Secondary** | `surface-secondary` | `#F3ECE4` | 섹션 배경, 호버 |
+| **Foreground** | `foreground` | `#3A2E25` (다크 브라운) | 제목, 본문 텍스트 |
+| **Foreground Secondary** | `foreground-secondary` | `#8B7E72` | 보조 텍스트, 설명 |
+| **Foreground Muted** | `foreground-muted` | `#B5A99D` | 비활성, 힌트 |
+| **Border** | `border` | `#EAE0D5` | 카드/섹션 테두리 |
+
+### 폰트
+
+| 역할 | CSS 변수 | 폰트 | 용도 |
+|------|----------|------|------|
+| **본문** | `--font-sans` | Pretendard Variable (CDN) | 모든 본문 텍스트 |
+| **디스플레이** | `--font-display` (= `--font-jua`) | Jua (로컬 TTF) | 로고, 브랜드 텍스트 |
+| **세리프** | `--font-serif` | Fraunces + Noto Serif KR | 숫자 강조, 인용 |
+
+### 로고
+
+| 파일 | 용도 | 비고 |
+|------|------|------|
+| `logo-bandaid-terracotta.png` | **Navbar (현재 적용)** | 반창고 아이콘 + "오픽톡닥" 테라코타 |
+| `logo-heart-terracotta.png` | 대체 로고 | 하트십자 아이콘 + 테라코타 |
+| `logo-text-terracotta.png` | 텍스트 전용 | "오픽톡닥" 테라코타 |
+| `logo-text-dark.png` | 텍스트 전용 (다크) | "오픽톡닥" 다크 브라운 |
+| `logo-white.png` | 다크 배경용 | 흰색 버전 |
+| `logo-large-4x.png` | 고해상도 | 4x 스케일 |
+
+- **로고 생성 방식**: Canvas API + Jua 폰트 로컬 렌더링 (AI 생성 X)
+- **로고 생성기**: `temp/generate-logo.html`
+
+### 디자인 톤 & 키워드
+- **톤**: 웜톤, 크림, 테라코타 — "따뜻한 진료실" 느낌
+- **슬로건**: "말하다, 나답게."
+- **브랜딩 컨셉**: "나는 내 삶의 주인공이다" — 평범한 일상이 완벽한 OPIc 대본
+- **아이콘**: Lucide React 통일
 
 ## 🏗️ 기술 스택
 
@@ -107,7 +154,7 @@
 | **상태관리** | Zustand |
 | **데이터 페칭** | TanStack React Query |
 | **폼** | React Hook Form + Zod |
-| **백엔드** | Supabase Edge Functions (Deno) |
+| **백엔드** | Server Actions + Server Components (T-8 결정) |
 | **DB** | Supabase PostgreSQL + RLS |
 | **인증** | Supabase Auth |
 | **배포** | Vercel (프론트) + Supabase (백엔드) |
@@ -151,11 +198,28 @@ opictalkdoc/
 ├── CLAUDE.md              # 프로젝트 가이드 (이 파일)
 ├── .gitignore
 ├── README.md
+├── supabase/
+│   └── migrations/        # DB 마이그레이션
+│       ├── 001_master_questions.sql
+│       ├── 002_payment_tables.sql
+│       └── 003_submissions.sql
 └── frontend/              # Next.js 앱
     ├── app/               # App Router 페이지
+    ├── components/
+    │   └── reviews/       # 시험후기 모듈 UI
+    │       ├── reviews-content.tsx
+    │       ├── frequency/frequency-tab.tsx
+    │       ├── submit/{submit-tab,wizard-step1~3,topic-pagination,question-selector}.tsx
+    │       └── list/list-tab.tsx
     ├── lib/
-    │   ├── supabase.ts        # 브라우저 클라이언트
-    │   └── supabase-server.ts # 서버 클라이언트
+    │   ├── actions/reviews.ts     # Server Actions (12개)
+    │   ├── queries/master-questions.ts
+    │   ├── types/reviews.ts       # 타입 정의
+    │   ├── validations/reviews.ts # Zod 스키마
+    │   ├── utils/combo-extractor.ts
+    │   ├── auth.ts
+    │   ├── supabase.ts
+    │   └── supabase-server.ts
     ├── middleware.ts       # 인증 세션 관리
     ├── .env.local         # 환경변수 (git 제외)
     ├── package.json
@@ -190,6 +254,30 @@ PORTONE_API_SECRET=XFGThRDJX2...
 ```
 
 ## 🚨 Critical Development Workflow
+
+### ⚠️ 모듈 이관 시 필수 원칙: 소리담 먼저 파악
+- **코드 구현에 들어가기 전에**, 반드시 소리담(`C:\Users\js777\Desktop\soridam`)의 해당 모듈 소스코드를 먼저 파악한다
+- 파악한 내용을 `docs/설계/{모듈}.md`에 **소리담 원본 구현** 섹션으로 정리한다
+- **설계 문서 하나만 보면 구현할 수 있는 상태**가 된 후에야 구현을 시작한다
+- 절차:
+  1. 소리담 소스코드 파악 (Edge Functions, 컴포넌트, DB, 타입, 로직)
+  2. `설계/{모듈}.md`에 소리담 원본 구현 정보 추가
+  3. 소리담 → 오픽톡닥 변경 사항 매핑 확인
+  4. 설계 문서 완성 확인 후 구현 시작
+
+### ⚠️ 기술 제안 시 필수 원칙: 업계 표준 우선
+- 기술 방식, 아키텍처, 패턴을 제안할 때는 **현재 기술 스택에서 업계에서 가장 보편적이고 검증된 표준 방식**을 먼저 확인한 후 제안한다
+- 편의성이나 단순함보다 **품질과 안정성이 검증된 정석 방식**을 우선한다
+- 확신이 없으면 표준 방식을 조사한 후 제안하고, 추측으로 제안하지 않는다
+
+### ⚠️ 문제 해결 시 필수 원칙: 환경 제약사항 먼저 확인
+- **코드 수정에 들어가기 전에**, 문제의 원인이 코드가 아닌 **실행 환경 자체의 제약사항**인지 먼저 확인한다
+- 예시:
+  - 네이버 앱 인앱 브라우저: 웹폰트를 시스템 폰트로 강제 교체 (CSS로 해결 불가)
+  - iOS Safari: 특정 Web API 미지원
+  - 인앱 WebView: CSP, CORS, 리소스 로딩 제한 등
+- **"특정 환경에서만 안 된다"는 보고 → 해당 환경의 알려진 제약사항부터 조사**
+- 환경 제약이면 사용자에게 즉시 알리고, 불필요한 코드 수정을 반복하지 않는다
 
 1. **코드 수정** - 필요한 변경사항 구현
 2. **사용자가 요청한 경우에만**:
@@ -284,10 +372,66 @@ origin: https://opictalkdoc@github.com/opictalkdoc/opictalkdoc-app.git
   - 사이드 패널: 등급 설정됨 → 목표 요약 카드 / 미설정 → 마이페이지 유도
 - **논의사항 문서 작성**: 4개 논의 항목 결정 및 구현 상태 문서화
 
+### 2026-02-22 - 로고 적용 + 모바일 UI 개선 + 디자인 문서 정비
+- **로고 이미지 시스템 구축**: Canvas API + Jua 폰트 기반 로고 생성기 (`temp/generate-logo.html`)
+  - 8종 로고 에셋 생성 (반창고/하트십자/말풍선/텍스트/화이트/4x)
+  - Navbar 텍스트 로고 → 반창고 로고 이미지(`logo-bandaid-terracotta.png`) 교체
+- **전략 가이드 서버/클라이언트 분리**: page.tsx → StrategyContent.tsx (Framer Motion 애니메이션)
+- **랜딩 페이지 모바일 개선**:
+  - Hero 선언문 카드 너비 310px 조정
+  - 일러스트 갤러리 카드 36vw로 축소 (3번째 카드 스와이프 힌트)
+  - "서베이가 중요하다더라 → 얼마나?" 화살표 그리드 정렬
+  - Pill 뱃지 모바일 축소 (0.7rem) — 랜딩 + 전략 가이드 공통 적용
+- **디자인 문서 정비**: CLAUDE.md 디자인 시스템 섹션 추가, 로고 에셋 가이드 현행화
+- **프로젝트 문서 전면 재구성**:
+  - `docs/` 폴더 구조 신규 구축 (설계/, 참조/ 하위 폴더)
+  - `docs/의사결정.md` 생성 (논의사항 + 아키텍처리뷰 통합, P/T/M 번호 체계)
+  - 기능별 설계 문서 6개 분리 생성 (공통기반, 시험후기, 모의고사, 스크립트, 튜터링, 쉐도잉)
+  - 기존 문서 7개 이동 + 이름 정리 (오픽톡닥_ 접두사 제거)
+  - 구 문서 3개 삭제 (논의사항, 아키텍처리뷰, plan.md)
+  - CLAUDE.md 문서 체계 섹션 갱신
+- **M-4 의사결정 확정 + 시험후기 설문 설계**:
+  - M-4 결정: 완료된 후기(complete) = **전체 공개** (기출 문제 + 설문 + 자유 후기)
+  - 설문 9개 항목 설계 (통계 활용 목적):
+    - 시험 배경 4개: 시험 목적, 공부 방법(복수선택), 준비 기간, 응시 횟수
+    - 체감 후기 3개: 체감 난이도, 시간 여유, 실제 소요 시간
+    - 자유 후기 2개: 한줄 후기(100자 필수), 팁/조언(300자 선택)
+  - `docs/설계/시험후기.md` 전면 재작성 (submissions 스키마 + 위저드 3단계 + 통계 쿼리)
+  - 소리담 대비 변경: 서베이 8필드 삭제, exam_difficulty 삭제, 설문 7컬럼 신규 추가
+- **CLAUDE.md 이관 규칙 추가**: "모듈 이관 시 소리담 먼저 파악" 필수 원칙
+- **시험후기 설계 문서 보강**: 소리담 원본 구현 섹션 추가 (Part A/B/C 3파트 구조)
+  - Part A: 소리담 DB 4테이블, Edge Functions 16개, 콤보 추출 로직, 위저드 UI, 타입, 데이터 플로우
+  - Part B: 소리담→오픽톡닥 변경 사항 매핑 (12항목)
+  - Part C: 오픽톡닥 구현 설계 (기존)
+
+### 2026-02-23 - Phase 3 Step 1: 시험후기 모듈 구현
+- **DB 마이그레이션** (`003_submissions.sql`):
+  - `custom_mode_questions` DROP + `find_similar_questions_by_frequency` DROP (M-1)
+  - `submissions` 테이블 (16컬럼: 시험정보 + 설문 7개 + 후기 + 상태관리)
+  - `submission_questions` 테이블 (14개 질문 기록, FK → submissions + master_questions)
+  - `submission_combos` 테이블 (통합 콤보, combo_type 영어 5종)
+  - RLS 정책: 본인 CRUD + complete 전체 SELECT (M-4), anon은 advance만
+  - `increment_script_credits` RPC 함수 (크레딧 보상용)
+- **TypeScript 타입** (`lib/types/reviews.ts`): DB 매핑 타입 + ENUM 리터럴 + 한글 레이블 매핑
+- **Zod 스키마** (`lib/validations/reviews.ts`): Step 1/2/3 검증 스키마 (한국어 에러 메시지)
+- **콤보 추출기** (`lib/utils/combo-extractor.ts`): 소리담 이식, General 3분할, 제외 주제 적용
+- **Server Actions** (`lib/actions/reviews.ts`): 12개 액션 (createDraft, saveQuestions, completeSubmission, delete, updateGrade, getMySubmissions, getSubmissionDetail, getFrequency, getPublicReviews, getStats)
+- **쿼리 유틸** (`lib/queries/master-questions.ts`): 주제 목록 + 질문 목록 조회
+- **UI 컴포넌트** (7개 신규):
+  - TopicPagination: 주제 그리드 (이모지 + 페이지네이션 + 기억안남/직접입력)
+  - QuestionSelector: 질문 선택 (answer_type 뱃지 + 커스텀 입력 + 기억안남)
+  - WizardStep1: React Hook Form (시험일 + 등급 + 설문 9개, Pill 선택 UI)
+  - WizardStep2: 5단계 콤보 진행 (TopicPagination → QuestionSelector)
+  - WizardStep3: 한줄 후기 + 팁/조언 + 크레딧 보상 안내
+  - SubmitTab: 위저드 래퍼 + 내 제출 이력
+  - FrequencyTab: 서브탭(일반/롤플레이/어드밴스) + 통계 카드 + 빈도 바
+  - ListTab: 등급 필터 + 후기 카드 + "더 보기" 페이지네이션
+- **기존 파일 수정**: reviews-content.tsx (props 추가), page.tsx (서버 컴포넌트 전환)
+
 ## 🔮 현재 상태 & 다음 단계
 
-**현재**: Phase 3 (핵심 모듈 이관) — Step 0 DB + 결제 + 브랜딩/대시보드 완료, Step 1 대기
-**다음 작업**: Step 1 — 시험후기 모듈 이관 (submissions 테이블 + Edge Function + 프론트 연결)
+**현재**: Phase 3 (핵심 모듈 이관) — Step 1 시험후기 모듈 구현 완료 (DB + Server Actions + UI 위저드)
+**다음 작업**: Step 1 검증 (DB 마이그레이션 실행 + 브라우저 테스트) → Step 2 스크립트 모듈 이관
 
 ### 네비게이션 구조 (확정)
 ```
@@ -306,10 +450,13 @@ origin: https://opictalkdoc@github.com/opictalkdoc/opictalkdoc-app.git
 
 ### DB 현황
 - **master_questions**: 510행 (시드 로드 완료)
-- **custom_mode_questions**: 0행 (DB 트리거로 자동 생성 예정)
 - **orders**: 결제 기록 테이블 (RLS: 본인 조회만)
 - **user_credits**: 사용자 이용권 테이블 (회원가입 트리거로 자동 생성)
+- **submissions**: 후기 마스터 (16컬럼, RLS: 본인 CRUD + complete 전체 SELECT)
+- **submission_questions**: 14개 질문 기록 (FK → submissions, master_questions)
+- **submission_combos**: 통합 콤보 (인증: 전체 SELECT, 비인증: advance만)
 - **Storage**: audio-recordings 버킷 (공개, RLS 설정 완료)
+- ~~custom_mode_questions~~: 삭제됨 (M-1) → submission_combos로 대체 완료
 
 ### 결제 시스템 현황
 - **결제 SDK**: 포트원(PortOne) V2 — `@portone/browser-sdk`
@@ -356,8 +503,9 @@ PGPASSWORD='opictalk2026' PGCLIENTENCODING='UTF8' "/c/Program Files/PostgreSQL/1
   -c "SQL문"
 ```
 
-> 상세 진행 상황은 `오픽톡닥_개발계획서.md`의 "현재 진행 상태" 참조
+> 상세 진행 상황은 `docs/실행계획.md`의 "현재 진행 상태" 참조
+> 의사결정 기록은 `docs/의사결정.md` 참조
 
 ---
-*최종 업데이트: 2026-02-21*
-*상태: Phase 3 Step 0 + 결제 + 브랜딩/대시보드 완료 — Step 1 시험후기 이관 대기*
+*최종 업데이트: 2026-02-23*
+*상태: Phase 3 Step 1 시험후기 모듈 구현 완료 — DB 마이그레이션 실행 + 브라우저 테스트 대기*
