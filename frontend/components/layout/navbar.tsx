@@ -38,6 +38,14 @@ export function Navbar() {
     }
   }, [pathname]);
 
+  const handleNavClick = useCallback((e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    if (href.startsWith("/#") && pathname === "/") {
+      e.preventDefault();
+      const id = href.replace("/#", "");
+      document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [pathname]);
+
   useEffect(() => {
     const supabase = createClient();
 
@@ -81,6 +89,7 @@ export function Navbar() {
             <Link
               key={item.label}
               href={item.href}
+              onClick={(e) => handleNavClick(e, item.href)}
               className="relative rounded-[var(--radius-md)] px-3 py-2 text-sm font-medium text-foreground-secondary transition-colors hover:bg-surface-secondary hover:text-foreground"
             >
               {item.label}
@@ -101,7 +110,7 @@ export function Navbar() {
           ) : isLoggedIn ? (
             <UserMenu name={userName} />
           ) : (
-            <div className="hidden items-center gap-2 md:flex">
+            <div className="flex items-center gap-2">
               <Link
                 href="/login"
                 className="inline-flex h-8 items-center justify-center rounded-[var(--radius-md)] px-3 text-sm font-medium text-foreground transition-colors hover:bg-surface-secondary"

@@ -11,7 +11,7 @@ export function Footer() {
               오픽톡닥
             </span>
             <p className="text-sm">
-              말하다, 나답게.
+              당신의 일상이 대본입니다.
             </p>
           </div>
 
@@ -26,7 +26,7 @@ export function Footer() {
         </div>
 
         {/* 사업자 정보 */}
-        <div className="mt-8 border-t border-white/10 pt-6 text-xs leading-relaxed text-[#8B7E72]">
+        <div className="mt-8 border-t border-white/10 pt-6 text-[13px] leading-relaxed text-[#8B7E72]">
           <div className="flex flex-col gap-0.5 sm:gap-0">
             <p>상호: 스투스 OPIc</p>
             <p>대표자: 전다영</p>

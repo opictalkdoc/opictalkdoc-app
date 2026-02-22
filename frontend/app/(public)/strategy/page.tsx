@@ -1,6 +1,21 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, Check, X } from "lucide-react";
+import {
+  ArrowRight,
+  Check,
+  X,
+  BarChart3,
+  FileText,
+  ClipboardList,
+  Headphones,
+  ClipboardCheck,
+  TrendingUp,
+  Database,
+  Target,
+  Microscope,
+  Trophy,
+  RefreshCw,
+} from "lucide-react";
 
 export const metadata: Metadata = {
   title: "OPIc 전략 가이드 | 오픽톡닥",
@@ -15,7 +30,7 @@ const misconceptions = [
     rough: '"서베이가 중요하다더라"',
     question: "그런데 얼마나?",
     precise: "서베이가 시험의 60%를 결정한다",
-    proof: "84건 실제 시험 데이터 증명",
+    proof: "실전 응시 데이터 기반 분석",
   },
   {
     rough: '"말할 수 있는 주제를 골라라"',
@@ -266,7 +281,7 @@ const gradeStrategies = [
 
 const flywheelScaleEffects = [
   {
-    scale: "230건",
+    scale: "현재",
     precision: "3:2 비율 확인, 빈출 주제 파악",
     effect: "핵심 10개 주제 집중",
     current: true,
@@ -293,24 +308,24 @@ const flywheelScaleEffects = [
 
 const modules = [
   {
-    emoji: "📊",
+    icon: BarChart3,
     name: "데이터랩",
-    desc: "실제 시험 후기를 수집·분석하여 출제 빈도를 파악합니다. 230건+ 데이터로 증명된 전략.",
+    desc: "실제 시험 후기를 수집·분석하여 출제 빈도를 파악합니다. 어떤 주제가 자주 나오는지 데이터로 확인할 수 있습니다.",
   },
   {
-    emoji: "🤖",
+    icon: FileText,
     name: "AI 훈련소",
-    desc: "빈도 순으로 정렬된 주제에서, 내 경험 기반 스크립트를 AI가 생성합니다.",
+    desc: "빈출 주제를 기반으로 내 경험이 담긴 스크립트를 생성합니다. 남의 답변이 아닌, 나만의 영어 대본을 만들 수 있습니다.",
   },
   {
-    emoji: "📝",
+    icon: ClipboardList,
     name: "모의고사",
-    desc: "실제 OPIc과 동일한 5콤보 15문제 구조. 빈출 모드로 실전 출제 경향을 재현합니다.",
+    desc: "실제 OPIc과 동일한 5콤보 15문제로 실전을 재현합니다. 빈출 모드로 출제 경향에 맞춘 연습이 가능합니다.",
   },
   {
-    emoji: "🎧",
+    icon: Headphones,
     name: "쉐도잉",
-    desc: "내 스크립트로 발음·억양·유창성을 훈련합니다. 목표 등급에 맞는 발화량 달성.",
+    desc: "내 스크립트로 발음·억양·유창성을 반복 훈련합니다. 목표 등급에 맞는 발화량을 자연스럽게 채울 수 있습니다.",
   },
 ];
 
@@ -342,7 +357,7 @@ export default function StrategyPage() {
       <section className="hero-gradient">
         <div className="mx-auto flex max-w-3xl flex-col items-center px-4 pt-20 pb-16 text-center sm:px-6 sm:pt-28 sm:pb-20">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-white/50 px-4 py-1.5 text-[13px] font-semibold text-[#3A2E25] backdrop-blur-sm">
-            📊 오픽톡닥 데이터 전략
+            오픽톡닥 데이터 전략
           </span>
           <h1 className="mt-8 font-serif text-3xl font-semibold italic leading-[1.2] tracking-tight text-[#3A2E25] sm:text-5xl">
             OPIc, 정말 알고 계신가요?
@@ -423,18 +438,18 @@ export default function StrategyPage() {
           </div>
 
           {/* 등급 분포 */}
-          <div className="mt-16 rounded-2xl bg-[#3A2E25] p-8 text-center sm:p-10">
+          <div className="mt-16 rounded-2xl bg-[#3A2E25] p-6 text-center sm:p-10">
             <p className="text-sm font-medium text-[#B5A99D]">
               실제 OPIc 등급 분포
             </p>
-            <p className="mt-3 font-serif text-[48px] font-bold italic text-white sm:text-[56px]">
+            <p className="mt-3 font-serif text-[36px] font-bold italic text-white sm:text-[48px] md:text-[56px]">
               68%
             </p>
             <p className="mt-1 text-base text-[#B5A99D]">
               의 응시자가 IM2 이하에 머뭅니다
             </p>
             <p className="mt-4 text-sm leading-relaxed text-[#8B7E72]">
-              대기업 인문계 커트라인 IH 이상은 28%만 달성.
+              전체 응시자 중 IH 이상 달성률은 28%.
               <br />
               원인은 영어 실력이 아니라, 시험 전략의 부재입니다.
             </p>
@@ -459,7 +474,9 @@ export default function StrategyPage() {
           {/* 두 변수 */}
           <div className="mt-12 grid gap-6 sm:grid-cols-2">
             <div className="rounded-2xl border border-[#EAE0D5] bg-white p-8">
-              <span className="text-3xl">📋</span>
+              <div className="flex h-11 w-11 items-center justify-center rounded-[var(--radius-lg)] bg-primary-50 text-primary-500">
+                <ClipboardCheck size={22} />
+              </div>
               <h3 className="mt-4 text-lg font-bold text-[#3A2E25]">
                 변수 1: Background Survey
               </h3>
@@ -475,12 +492,14 @@ export default function StrategyPage() {
                   시험의 60%
                 </p>
                 <p className="mt-1 text-center text-xs text-primary-500">
-                  84건 시험 데이터로 증명
+                  실전 응시 데이터 기반 분석
                 </p>
               </div>
             </div>
             <div className="rounded-2xl border border-[#EAE0D5] bg-white p-8">
-              <span className="text-3xl">⚡</span>
+              <div className="flex h-11 w-11 items-center justify-center rounded-[var(--radius-lg)] bg-amber-50 text-amber-600">
+                <Target size={22} />
+              </div>
               <h3 className="mt-4 text-lg font-bold text-[#3A2E25]">
                 변수 2: Self-Assessment
               </h3>
@@ -781,7 +800,7 @@ export default function StrategyPage() {
         <div className="mx-auto max-w-4xl px-4 sm:px-6">
           <SectionNum num="5" label="선택형 빈도" />
           <h2 className="mt-6 text-center font-serif text-[28px] font-semibold italic leading-[1.3] tracking-tight text-[#3A2E25] sm:text-[36px]">
-            230건 데이터가 증명하는
+            실전 데이터가 증명하는
             <br />
             진짜 나오는 주제
           </h2>
@@ -843,7 +862,7 @@ export default function StrategyPage() {
               </tbody>
             </table>
             <div className="border-t border-[#EAE0D5] bg-[#F3ECE4] px-6 py-3 text-center text-xs text-[#B5A99D]">
-              실제 OPIc 시험 후기 230건 (3,343개 문항) 기준 분석
+              실제 OPIc 시험 후기 기반 분석
             </div>
           </div>
 
@@ -854,7 +873,7 @@ export default function StrategyPage() {
             </p>
             <div className="mt-6 flex flex-col items-center justify-center gap-4 sm:flex-row sm:gap-8">
               <div className="text-center">
-                <p className="font-serif text-[48px] font-bold italic text-primary-400">
+                <p className="font-serif text-[32px] font-bold italic text-primary-400 sm:text-[48px]">
                   60%
                 </p>
                 <p className="mt-1 text-sm text-[#8B7E72]">
@@ -863,7 +882,7 @@ export default function StrategyPage() {
               </div>
               <span className="text-2xl text-[#6E6358]">+</span>
               <div className="text-center">
-                <p className="font-serif text-[48px] font-bold italic text-purple-400">
+                <p className="font-serif text-[32px] font-bold italic text-purple-400 sm:text-[48px]">
                   30%
                 </p>
                 <p className="mt-1 text-sm text-[#8B7E72]">
@@ -872,7 +891,7 @@ export default function StrategyPage() {
               </div>
               <span className="text-2xl text-[#6E6358]">=</span>
               <div className="text-center">
-                <p className="font-serif text-[56px] font-bold italic text-white">
+                <p className="font-serif text-[40px] font-bold italic text-white sm:text-[56px]">
                   90%+
                 </p>
                 <p className="mt-1 text-sm text-[#B5A99D]">
@@ -963,7 +982,7 @@ export default function StrategyPage() {
               <p className="text-sm font-medium text-[#B5A99D]">
                 상위 6개 주제만 학습하면
               </p>
-              <p className="mt-2 font-serif text-[40px] font-bold italic text-primary-600">
+              <p className="mt-2 font-serif text-[32px] font-bold italic text-primary-600 sm:text-[40px]">
                 44.5%
               </p>
               <p className="mt-1 text-sm text-[#8B7E72]">
@@ -974,7 +993,7 @@ export default function StrategyPage() {
               <p className="text-sm font-medium text-[#B5A99D]">
                 상위 10개로 확장하면
               </p>
-              <p className="mt-2 font-serif text-[40px] font-bold italic text-[#3A2E25]">
+              <p className="mt-2 font-serif text-[32px] font-bold italic text-[#3A2E25] sm:text-[40px]">
                 61.4%
               </p>
               <p className="mt-1 text-sm text-[#8B7E72]">
@@ -1047,7 +1066,7 @@ export default function StrategyPage() {
           <div className="mt-12 grid gap-6 sm:grid-cols-2">
             <div className="rounded-2xl border border-[#EAE0D5] bg-[#F3ECE4] p-6">
               <div className="flex items-center gap-2">
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#F3ECE4] text-sm font-bold text-[#B5A99D]">
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#EAE0D5] text-sm font-bold text-[#8B7E72]">
                   3-4
                 </span>
                 <h3 className="font-bold text-[#8B7E72]">난이도 3~4</h3>
@@ -1141,7 +1160,7 @@ export default function StrategyPage() {
             <p className="text-sm font-medium text-[#B5A99D]">
               5-5 선택자의 상위 3등급 (AL+IH+IM3) 달성률
             </p>
-            <p className="mt-3 font-serif text-[56px] font-bold italic text-white">
+            <p className="mt-3 font-serif text-[40px] font-bold italic text-white sm:text-[56px]">
               87%
             </p>
             <p className="mt-2 text-base text-[#8B7E72]">
@@ -1315,9 +1334,11 @@ export default function StrategyPage() {
             {modules.map((m) => (
               <div
                 key={m.name}
-                className="rounded-2xl border border-[#EAE0D5] bg-[#F3ECE4] p-6"
+                className="rounded-2xl border border-[#EAE0D5] bg-[#F3ECE4] p-6 text-center"
               >
-                <span className="text-3xl">{m.emoji}</span>
+                <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-[var(--radius-lg)] bg-primary-50 text-primary-500">
+                  <m.icon size={22} />
+                </div>
                 <h3 className="mt-3 text-lg font-bold text-[#3A2E25]">
                   {m.name}
                 </h3>
@@ -1376,55 +1397,55 @@ export default function StrategyPage() {
             <p className="text-center text-sm font-medium text-[#B5A99D]">
               데이터 선순환 구조
             </p>
-            <div className="mt-6 space-y-0">
+            <div className="mx-auto mt-6 w-fit space-y-0">
               {[
                 {
                   step: "1",
                   text: "추천 서베이로 시험 응시",
-                  icon: "📋",
+                  Icon: ClipboardCheck,
                 },
                 {
                   step: "2",
                   text: "데이터랩에 시험 후기 제출",
-                  icon: "📊",
+                  Icon: TrendingUp,
                 },
                 {
                   step: "3",
                   text: "같은 서베이 기준의 데이터 축적",
-                  icon: "📦",
+                  Icon: Database,
                 },
                 {
                   step: "4",
                   text: "통계 분석 정밀도 향상",
-                  icon: "🎯",
+                  Icon: Target,
                 },
                 {
                   step: "5",
                   text: "학습 범위 더 정밀하게 축소",
-                  icon: "🔬",
+                  Icon: Microscope,
                 },
                 {
                   step: "6",
                   text: "더 효율적인 학습 → 더 좋은 성적",
-                  icon: "🏆",
+                  Icon: Trophy,
                 },
                 {
                   step: "7",
                   text: "더 많은 사용자 → 더 많은 데이터",
-                  icon: "🔄",
+                  Icon: RefreshCw,
                 },
               ].map((item, i) => (
                 <div key={item.step} className="flex items-stretch gap-4">
                   {/* 연결선 */}
                   <div className="flex w-10 flex-col items-center">
                     <div
-                      className={`flex h-10 w-10 items-center justify-center rounded-full text-lg ${
+                      className={`flex h-10 w-10 items-center justify-center rounded-full ${
                         i === 6
-                          ? "bg-primary-500"
-                          : "bg-white/10"
+                          ? "bg-primary-500 text-white"
+                          : "bg-white/10 text-white/70"
                       }`}
                     >
-                      {item.icon}
+                      <item.Icon size={18} />
                     </div>
                     {i < 6 && (
                       <div className="h-4 w-px bg-white/20" />
@@ -1510,7 +1531,7 @@ export default function StrategyPage() {
 
       {/* ━━━ Final CTA ━━━ */}
       <section
-        className="py-24 sm:py-32"
+        className="py-16 sm:py-32"
         style={{
           background:
             "linear-gradient(180deg, #FAF6F1 0%, #FAEADD 30%, #F0D0B8 60%, #FAEADD 100%)",
@@ -1518,9 +1539,9 @@ export default function StrategyPage() {
       >
         <div className="mx-auto max-w-2xl px-4 text-center sm:px-6">
           <h2 className="font-serif text-3xl font-semibold italic tracking-tight text-[#3A2E25] sm:text-[44px] sm:leading-[1.2]">
-            &ldquo;대충&rdquo;에서
+            &ldquo;막연함&rdquo;에서
             <br />
-            &ldquo;정확히&rdquo;로.
+            &ldquo;선명함&rdquo;으로.
           </h2>
           <p className="mt-5 text-[17px] leading-relaxed text-[#4A3F36]">
             데이터 기반 전략으로, 시험의 90% 이상을 대비한 상태로 응시하세요.
@@ -1541,7 +1562,7 @@ export default function StrategyPage() {
             </Link>
           </div>
           <p className="mt-6 text-[13px] text-[#B5A99D]">
-            카드 등록 없이 무료로 시작 · 언제든 해지 가능
+            지금 바로, 부담 없이 시작하세요
           </p>
         </div>
       </section>

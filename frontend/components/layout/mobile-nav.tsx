@@ -48,7 +48,14 @@ export function MobileNav({
                   <Link
                     key={item.label}
                     href={item.href}
-                    onClick={() => setOpen(false)}
+                    onClick={(e) => {
+                      if (item.href.startsWith("/#") && pathname === "/") {
+                        e.preventDefault();
+                        const id = item.href.replace("/#", "");
+                        document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+                      }
+                      setOpen(false);
+                    }}
                     className={`flex items-center justify-between rounded-[var(--radius-lg)] px-3 py-2.5 text-sm font-medium transition-colors ${
                       active
                         ? "bg-primary-50 text-primary-600"
@@ -101,25 +108,6 @@ export function MobileNav({
               </div>
             )}
 
-            {/* 비로그인 시 CTA */}
-            {!isLoggedIn && (
-              <div className="mt-3 flex gap-2 border-t border-border pt-3">
-                <Link
-                  href="/login"
-                  onClick={() => setOpen(false)}
-                  className="flex-1 rounded-[var(--radius-md)] border border-border py-2 text-center text-sm font-medium text-foreground transition-colors hover:bg-surface-secondary"
-                >
-                  로그인
-                </Link>
-                <Link
-                  href="/signup"
-                  onClick={() => setOpen(false)}
-                  className="flex-1 rounded-[var(--radius-md)] bg-primary-500 py-2 text-center text-sm font-medium text-white transition-colors hover:bg-primary-600"
-                >
-                  무료 시작
-                </Link>
-              </div>
-            )}
           </div>
         </>
       )}

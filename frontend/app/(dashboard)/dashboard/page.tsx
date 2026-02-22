@@ -255,9 +255,9 @@ export default async function DashboardPage() {
       </div>
 
       {/* 학습 로드맵 + 사이드 패널 */}
-      <div className="grid gap-6 lg:grid-cols-5">
+      <div className="grid gap-6 md:grid-cols-5">
         {/* 학습 로드맵 */}
-        <div className="rounded-[var(--radius-xl)] border border-border bg-surface p-6 lg:col-span-3">
+        <div className="rounded-[var(--radius-xl)] border border-border bg-surface p-6 md:col-span-3">
           <h2 className="flex items-center gap-2 text-lg font-bold text-foreground">
             <TrendingUp size={20} className="text-primary-500" />
             학습 로드맵
@@ -291,7 +291,7 @@ export default async function DashboardPage() {
         </div>
 
         {/* 사이드 패널 */}
-        <div className="space-y-4 lg:col-span-2">
+        <div className="space-y-4 md:col-span-2">
           {/* 목표 등급 요약 */}
           {(targetGrade || currentGrade) ? (
             <div className="rounded-[var(--radius-xl)] border border-primary-200 bg-primary-50/50 p-5">

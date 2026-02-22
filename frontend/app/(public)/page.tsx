@@ -42,14 +42,14 @@ const services = [
     num: "04",
     title: "디테일을 살리는 튜터링",
     badge: "튜터링",
-    desc: "전문가가 발음과 억양의 미세한 빈틈을 잡아줍니다. 당신의 진심이 채점관에게 더 깊이 닿도록 돕는 섬세한 디렉팅입니다.",
+    desc: "모의고사 결과에서 약점을 진단하고, 미세한 빈틈을 잡아줍니다. 당신의 진심이 채점관에게 더 깊이 닿도록 돕는 섬세한 디렉팅입니다.",
     featured: false,
   },
   {
     num: "05",
-    title: "큐 사인, 그리고 나다운 15분",
+    title: "큐 사인, 그리고 나다운 40분",
     badge: null,
-    desc: "이제 시험장에서는 억지 연기를 멈추고, 그냥 당신의 진짜 모습을 보여주세요. 가장 나다울 때, 당신의 점수는 가장 빛납니다.",
+    desc: "이제 시험장에 남의 이야기를 멈추고, 그냥 당신의 진짜 모습을 보여주세요. 가장 나다울 때, 당신의 점수는 가장 빛납니다.",
     featured: false,
   },
 ];
@@ -216,7 +216,7 @@ export default function HomePage() {
           {/* 오른쪽: 68% */}
           <div className="text-center">
             <p className="text-[1.05rem] text-[#8B7E72]">대충 아는 사람의</p>
-            <p className="font-serif text-[5rem] font-bold leading-none tracking-[-0.05em] text-[#D4835E] sm:text-[9rem]">
+            <p className="font-serif text-[4rem] font-bold leading-none tracking-[-0.05em] text-[#D4835E] sm:text-[7rem] md:text-[9rem]">
               68%
             </p>
             <p className="mt-2 text-[1.05rem] text-[#8B7E72]">
@@ -241,7 +241,7 @@ export default function HomePage() {
       </div>
 
       {/* ━━━ 3. Journey (서비스) — 핵심 02/03 강조 ━━━ */}
-      <section className="rounded-t-[32px] bg-[#F3ECE4] py-20 sm:rounded-t-[48px] sm:py-[120px]">
+      <section id="features" className="rounded-t-[32px] bg-[#F3ECE4] py-20 sm:rounded-t-[48px] sm:py-[120px]">
         <div className="mx-auto max-w-[1080px] px-6">
           <div className="mb-14 text-center sm:mb-16">
             <Pill>당신의 무대를 돕는 방법</Pill>
@@ -311,7 +311,7 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="grid gap-5 lg:grid-cols-3">
+          <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
             {/* 체험 */}
             <div className="flex flex-col rounded-[20px] border border-[#EAE0D5] bg-white p-8">
               <span className="text-[15px] font-semibold text-[#8B7E72]">
@@ -499,7 +499,7 @@ export default function HomePage() {
             무료로 시작하기 <ArrowRight className="h-5 w-5" />
           </Link>
           <p className="mt-[18px] text-[0.85rem] text-[#B5A99D]">
-            카드 등록 없이 무료로 시작할 수 있습니다
+            지금 바로, 부담 없이 시작하세요
           </p>
         </div>
       </section>

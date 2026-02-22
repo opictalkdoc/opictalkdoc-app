@@ -72,7 +72,7 @@ export default function PricingPage() {
       </div>
 
       {/* 요금제 카드 */}
-      <div className="mt-12 grid gap-6 lg:grid-cols-3">
+      <div className="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {plans.map((plan) => (
           <div
             key={plan.name}
@@ -156,7 +156,7 @@ export default function PricingPage() {
       <div className="mt-20">
         <h2 className="text-center text-2xl font-bold">기능 비교</h2>
         <div className="mt-8 overflow-x-auto rounded-[var(--radius-xl)] border border-border">
-          <table className="w-full min-w-[480px] text-left text-sm">
+          <table className="w-full min-w-[360px] text-left text-sm">
             <thead className="bg-surface-secondary">
               <tr>
                 <th className="px-3 py-3 font-semibold text-foreground sm:px-4">
@@ -245,12 +245,12 @@ export default function PricingPage() {
       </div>
 
       {/* 전략 가이드 CTA */}
-      <div className="mt-16 rounded-[var(--radius-xl)] border border-primary-200 bg-gradient-to-br from-primary-50 to-primary-100/50 p-8 text-center">
+      <div className="mt-16 rounded-[var(--radius-xl)] border border-primary-200 bg-gradient-to-br from-primary-50 to-primary-100/50 p-6 text-center sm:p-8">
         <p className="text-lg font-bold text-foreground">
           왜 이 요금제가 효과적인지 궁금하신가요?
         </p>
         <p className="mt-2 text-sm text-foreground-secondary">
-          230건 실제 시험 데이터로 증명된 OPIc 전략을 확인해 보세요.
+          실전 데이터로 증명된 OPIc 전략을 확인해 보세요.
         </p>
         <Link
           href="/strategy"
