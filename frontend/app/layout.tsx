@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { Inter, Jua, Fraunces, Noto_Serif_KR } from "next/font/google";
+import { Inter, Fraunces, Noto_Serif_KR } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 
 const inter = Inter({
@@ -8,9 +9,9 @@ const inter = Inter({
   variable: "--font-inter",
 });
 
-const jua = Jua({
+const jua = localFont({
+  src: "./fonts/Jua-Regular.ttf",
   weight: "400",
-  subsets: ["latin"],
   display: "swap",
   variable: "--font-jua",
 });

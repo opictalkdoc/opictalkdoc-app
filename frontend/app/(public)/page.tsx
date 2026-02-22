@@ -1,6 +1,11 @@
+"use client";
+
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight, Plus, Check } from "lucide-react";
+import ScrollReveal from "@/components/motion/ScrollReveal";
+import { motion, useInView } from "framer-motion";
+import { useRef, useEffect, useState } from "react";
 
 /* ── 컬러 팔레트 (웜 톤) ──
    accent:  #D4835E (테라코타 코랄)
@@ -28,7 +33,7 @@ const services = [
     num: "02",
     title: "나의 일상이 스크립트로",
     badge: "스크립트",
-    desc: '거창한 경험은 필요 없습니다. "퇴근 후 마시는 맥주 한 캔" 같은 당신의 평범한 일상을 가져오세요. AI가 그 진심 어린 경험을 가장 자연스럽고 돋보이는 영어 대사로 다듬어 드립니다.',
+    desc: '"퇴근 후 마시는 맥주 한 캔" 같은 당신의 평범한 일상을 가져오세요. AI가 그 진심 어린 경험을 가장 자연스럽고 돋보이는 영어 대사로 다듬어 드립니다.',
     featured: true,
   },
   {
@@ -81,6 +86,32 @@ const faqs = [
   },
 ];
 
+/* ── 카운트업 컴포넌트 ── */
+function CountUp({ target, suffix = "" }: { target: number; suffix?: string }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const isInView = useInView(ref, { once: true, amount: 0.5 });
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    if (!isInView) return;
+    let start = 0;
+    const duration = 1500;
+    const step = Math.ceil(target / (duration / 16));
+    const timer = setInterval(() => {
+      start += step;
+      if (start >= target) {
+        setCount(target);
+        clearInterval(timer);
+      } else {
+        setCount(start);
+      }
+    }, 16);
+    return () => clearInterval(timer);
+  }, [isInView, target]);
+
+  return <span ref={ref}>{count}{suffix}</span>;
+}
+
 /* ── 라벨 필 컴포넌트 ── */
 function Pill({ children }: { children: React.ReactNode }) {
   return (
@@ -100,11 +131,21 @@ export default function HomePage() {
         <div className="pointer-events-none absolute left-1/2 top-[-100px] h-[600px] w-[600px] -translate-x-1/2 bg-[radial-gradient(circle,rgba(212,131,94,0.08)_0%,transparent_70%)]" />
 
         <div className="relative mx-auto flex max-w-4xl flex-col items-center text-center">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-[#EAE0D5] bg-white/60 px-[18px] py-2 text-[0.85rem] font-bold tracking-wide text-[#8B7E72]">
+          <motion.span
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
+            className="inline-flex items-center gap-1.5 rounded-full border border-[#EAE0D5] bg-white/60 px-[18px] py-2 text-[0.85rem] font-bold tracking-wide text-[#8B7E72]"
+          >
             평범한 하루, 완벽한 대본.
-          </span>
+          </motion.span>
 
-          <h1 className="mt-8 text-[1.55rem] font-extrabold leading-[1.3] tracking-[-0.04em] text-[#3A2E25] sm:text-[2.8rem] md:text-[3.4rem]">
+          <motion.h1
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.15, ease: "easeOut" }}
+            className="mt-8 text-[26px] font-extrabold leading-[1.3] tracking-[-0.04em] text-[#3A2E25] sm:text-[2.8rem] md:text-[3.4rem]"
+          >
             화려한 필터는 끄세요.
             <br />
             <span className="text-[#D4835E]">
@@ -112,31 +153,50 @@ export default function HomePage() {
             </span>
             <br />
             가장 완벽한 대본입니다.
-          </h1>
+          </motion.h1>
 
-          <div className="mt-8 max-w-[720px] space-y-4 text-[0.95rem] leading-[1.9] text-[#8B7E72] sm:text-[1.05rem]">
-            <p>
-              OPIc은 ★스타가 아닙니다.
-              <br className="hidden sm:block" />{" "}
-              새벽 요가로 하루를 열고, 저녁엔 루프탑에서 와인을 기울인다는
-              <br className="hidden sm:block" />{" "}
-              남의 멋진 삶을 흉내 내지 마세요.
-            </p>
-            <p>
-              당신의 평범한 하루,
-              <br className="hidden sm:block" />{" "}
-              소파에 누워 좋아하는 예능을 보며 낄낄대던 그 소박한 이야기.
-              <br className="hidden sm:block" />{" "}
-              그 진짜 내 이야기를 할 때, 당신은 가장 나다워지고 가장 돋보입니다.
-            </p>
-            <p className="pt-2 text-[1.05rem] font-bold leading-[1.8] text-[#3A2E25] sm:text-[1.15rem]">
-              당신의 이야기를 시작하세요.
-              <br className="hidden sm:block" />{" "}
-              내 삶의 대본에서는, 이미 내가 주인공이니까요.
-            </p>
-          </div>
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.3, ease: "easeOut" }}
+            className="mt-8 w-[300px] rounded-2xl border border-[#EAE0D5] bg-white/50 px-6 py-7 backdrop-blur-sm sm:w-[530px] sm:px-10 sm:py-9"
+          >
+            <div className="space-y-4 text-[0.8rem] leading-[1.9] text-[#8B7E72] sm:text-[1.05rem]">
+              <p>
+                OPIc은 ★스타가 아닙니다.
+                <br className="hidden sm:block" />{" "}
+                새벽 요가로 하루를 열고, 저녁엔 루프탑에서 와인을 기울인다는
+                <br className="hidden sm:block" />{" "}
+                남의 멋진 삶을 흉내 내지 마세요.
+              </p>
+              <p>
+                당신의 평범한 하루,
+                <br className="hidden sm:block" />{" "}
+                소파에 누워 좋아하는 예능을 보며 낄낄대던 그 소박한 이야기.
+                <br className="hidden sm:block" />{" "}
+                그 진짜 내 이야기를 할 때, 당신은 가장 나다워지고 가장 돋보입니다.
+              </p>
+            </div>
+          </motion.div>
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.45, ease: "easeOut" }}
+            className="mt-6 text-[1.05rem] font-bold leading-[1.8] text-[#3A2E25] sm:text-[1.15rem]"
+          >
+            당신의 이야기를 시작하세요.
+            <br className="hidden sm:block" />{" "}
+            내 삶의 대본에서는,
+            <br className="sm:hidden" />{" "}
+            이미 내가 주인공이니까요.
+          </motion.p>
 
-          <div className="mt-9 flex flex-col items-center gap-3 sm:flex-row">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.6, ease: "easeOut" }}
+            className="mt-9 flex flex-col items-center gap-3 sm:flex-row"
+          >
             <Link
               href="/signup"
               className="inline-flex items-center gap-2 rounded-full bg-[#D4835E] px-8 py-[15px] text-[15px] font-bold text-white shadow-[0_4px_20px_rgba(212,131,94,0.25)] transition-all hover:-translate-y-px hover:bg-[#C07350]"
@@ -149,18 +209,23 @@ export default function HomePage() {
             >
               요금제 보기
             </Link>
-          </div>
+          </motion.div>
         </div>
 
-        {/* 일상 일러스트 갤러리 */}
+        {/* 일상 일러스트 갤러리 — Staggered Slide-in */}
         <div className="relative mx-auto mt-16 max-w-[1100px] sm:mt-20">
-          <p className="mb-6 text-center text-[0.85rem] text-[#B5A99D]">
-            이 모든 순간이, 당신만의 대본입니다
-          </p>
+          <ScrollReveal preset="fade-up" duration={0.5}>
+            <p className="mb-6 text-center text-[0.85rem] text-[#B5A99D]">
+              이 모든 순간이, 당신만의 대본입니다
+            </p>
+          </ScrollReveal>
           <div className="flex gap-3 overflow-x-auto px-5 pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:gap-4 md:grid md:grid-cols-5 md:overflow-visible md:px-6">
-            {illustrations.map((ill) => (
-              <div
+            {illustrations.map((ill, i) => (
+              <ScrollReveal
                 key={ill.caption}
+                preset="fade-left"
+                delay={i * 0.12}
+                duration={0.6}
                 className="w-[42vw] flex-shrink-0 sm:w-[28vw] md:w-auto"
               >
                 <div className="overflow-hidden rounded-2xl">
@@ -175,7 +240,7 @@ export default function HomePage() {
                 <p className="mt-2.5 text-center text-[0.8rem] font-medium text-[#8B7E72]">
                   {ill.caption}
                 </p>
-              </div>
+              </ScrollReveal>
             ))}
           </div>
         </div>
@@ -186,12 +251,14 @@ export default function HomePage() {
         <div className="mx-auto grid max-w-[1080px] grid-cols-1 items-center gap-12 px-6 md:grid-cols-2 md:gap-20">
           {/* 왼쪽: 질문 카드 */}
           <div>
-            <Pill>전략 점검</Pill>
-            <h2 className="mt-5 text-[1.8rem] font-extrabold leading-[1.3] tracking-[-0.03em] text-[#3A2E25] sm:text-[2.4rem]">
-              OPIc, 정말 알고
-              <br />
-              준비하고 계세요?
-            </h2>
+            <ScrollReveal preset="fade-up">
+              <Pill>전략 점검</Pill>
+              <h2 className="mt-5 text-[1.8rem] font-extrabold leading-[1.3] tracking-[-0.03em] text-[#3A2E25] sm:text-[2.4rem]">
+                OPIc, 정말 알고
+                <br />
+                준비하고 계세요?
+              </h2>
+            </ScrollReveal>
             <div className="mt-8 space-y-2.5">
               {[
                 { quote: "\u201c서베이가 중요하다더라\u201d", nudge: "\u2192 얼마나?" },
@@ -200,102 +267,111 @@ export default function HomePage() {
                   quote: "\u201c스크립트 외우면 안 된대\u201d",
                   nudge: "\u2192 대안이 뭔데?",
                 },
-              ].map((item) => (
-                <div
-                  key={item.quote}
-                  className="flex items-center justify-between rounded-[14px] bg-[#FAF6F1] px-5 py-5 text-[0.95rem] text-[#8B7E72] transition-colors hover:bg-[#F3ECE4] sm:px-6 sm:text-[1rem]"
-                >
-                  <span>{item.quote}</span>
-                  <strong className="ml-4 font-bold text-[#3A2E25]">
-                    {item.nudge}
-                  </strong>
-                </div>
+              ].map((item, i) => (
+                <ScrollReveal key={item.quote} preset="fade-left" delay={i * 0.1} duration={0.5}>
+                  <div className="flex items-center justify-between rounded-[14px] bg-[#FAF6F1] px-5 py-5 text-[0.95rem] text-[#8B7E72] transition-colors hover:bg-[#F3ECE4] sm:px-6 sm:text-[1rem]">
+                    <span>{item.quote}</span>
+                    <strong className="ml-4 font-bold text-[#3A2E25]">
+                      {item.nudge}
+                    </strong>
+                  </div>
+                </ScrollReveal>
               ))}
             </div>
           </div>
 
-          {/* 오른쪽: 68% */}
-          <div className="text-center">
-            <p className="text-[1.05rem] text-[#8B7E72]">대충 아는 사람의</p>
-            <p className="font-serif text-[4rem] font-bold leading-none tracking-[-0.05em] text-[#D4835E] sm:text-[7rem] md:text-[9rem]">
-              68%
-            </p>
-            <p className="mt-2 text-[1.05rem] text-[#8B7E72]">
-              가 IM2 이하입니다
-            </p>
-            <Link
-              href="/strategy"
-              className="mt-7 inline-flex items-center gap-1.5 rounded-full bg-[#3A2E25] px-8 py-3.5 text-[15px] font-bold text-white transition-all hover:-translate-y-px hover:bg-[#4A3F36]"
-            >
-              정확히 알아보기 <ArrowRight className="h-4 w-4" />
-            </Link>
-          </div>
+          {/* 오른쪽: 68% — 카운트업 */}
+          <ScrollReveal preset="fade-up" delay={0.2}>
+            <div className="text-center">
+              <p className="text-[1.05rem] text-[#8B7E72]">대충 아는 사람의</p>
+              <p className="font-serif text-[4rem] font-bold leading-none tracking-[-0.05em] text-[#D4835E] sm:text-[7rem] md:text-[9rem]">
+                <CountUp target={68} suffix="%" />
+              </p>
+              <p className="mt-2 text-[1.05rem] text-[#8B7E72]">
+                가 IM2 이하입니다
+              </p>
+              <Link
+                href="/strategy"
+                className="mt-7 inline-flex items-center gap-1.5 rounded-full bg-[#3A2E25] px-8 py-3.5 text-[15px] font-bold text-white transition-all hover:-translate-y-px hover:bg-[#4A3F36]"
+              >
+                정확히 알아보기 <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
+          </ScrollReveal>
         </div>
       </section>
 
       {/* 브릿지 카피 */}
-      <div className="bg-white px-6 pb-10 text-center text-[1rem] text-[#8B7E72] sm:text-[1.05rem]">
-        그래서 오픽톡닥은{" "}
-        <strong className="text-[#3A2E25]">정확한 데이터</strong>와{" "}
-        <strong className="text-[#3A2E25]">당신만의 이야기</strong>로
-        준비합니다.
-      </div>
+      <ScrollReveal preset="fade-in" duration={0.8}>
+        <div className="bg-white px-6 pb-10 text-center text-[1rem] text-[#8B7E72] sm:text-[1.05rem]">
+          그래서 오픽톡닥은{" "}
+          <strong className="text-[#3A2E25]">정확한 데이터</strong>와{" "}
+          <strong className="text-[#3A2E25]">당신만의 이야기</strong>로
+          준비합니다.
+        </div>
+      </ScrollReveal>
 
       {/* ━━━ 3. Journey (서비스) — 핵심 02/03 강조 ━━━ */}
       <section id="features" className="rounded-t-[32px] bg-[#F3ECE4] py-20 sm:rounded-t-[48px] sm:py-[120px]">
         <div className="mx-auto max-w-[1080px] px-6">
-          <div className="mb-14 text-center sm:mb-16">
+          <ScrollReveal preset="fade-up" className="mb-14 text-center sm:mb-16">
             <Pill>당신의 무대를 돕는 방법</Pill>
             <h2 className="mt-4 text-[1.8rem] font-extrabold tracking-[-0.03em] text-[#3A2E25] [word-break:keep-all] sm:text-[2.4rem]">
               오픽톡닥이 당신의{" "}
               <br className="sm:hidden" />
               무대를 준비합니다
             </h2>
-          </div>
+          </ScrollReveal>
 
           <div className="mx-auto flex max-w-[800px] flex-col gap-3.5">
-            {services.map((s) => (
-              <div
+            {services.map((s, i) => (
+              <ScrollReveal
                 key={s.num}
-                className={`flex flex-col gap-3 rounded-[20px] p-7 transition-all sm:flex-row sm:gap-8 sm:p-10 ${
-                  s.featured
-                    ? "bg-[#3A2E25] text-white shadow-[0_20px_48px_rgba(58,46,37,0.12)]"
-                    : "border border-transparent bg-white hover:-translate-y-[3px] hover:border-[#EAE0D5] hover:shadow-[0_16px_40px_rgba(58,46,37,0.06)]"
-                }`}
+                preset="fade-up"
+                delay={i * 0.08}
+                duration={0.5}
               >
-                <span
-                  className={`font-serif text-[2rem] font-bold leading-[0.85] sm:text-[3rem] ${
+                <div
+                  className={`flex flex-col gap-3 rounded-[20px] p-7 transition-all sm:flex-row sm:gap-8 sm:p-10 ${
                     s.featured
-                      ? "text-[rgba(212,131,94,0.35)]"
-                      : "text-[rgba(212,131,94,0.15)]"
+                      ? "bg-[#3A2E25] text-white shadow-[0_20px_48px_rgba(58,46,37,0.12)]"
+                      : "border border-transparent bg-white hover:-translate-y-[3px] hover:border-[#EAE0D5] hover:shadow-[0_16px_40px_rgba(58,46,37,0.06)]"
                   }`}
                 >
-                  {s.num}
-                </span>
-                <div className="flex-1">
-                  <h3 className="flex items-center justify-between gap-2 text-[1.15rem] font-bold [word-break:keep-all] sm:justify-start sm:text-[1.25rem]">
-                    {s.title}
-                    {s.badge && (
-                      <span
-                        className={`shrink-0 whitespace-nowrap rounded-md px-2 py-0.5 text-[0.7rem] font-bold ${
-                          s.featured
-                            ? "bg-[#D4835E] text-white"
-                            : "bg-[#F3ECE4] text-[#8B7E72]"
-                        }`}
-                      >
-                        {s.badge}
-                      </span>
-                    )}
-                  </h3>
-                  <p
-                    className={`mt-2 text-[0.95rem] leading-[1.75] sm:text-[1rem] ${
-                      s.featured ? "text-white/60" : "text-[#8B7E72]"
+                  <span
+                    className={`font-serif text-[2rem] font-bold leading-[0.85] sm:text-[3rem] ${
+                      s.featured
+                        ? "text-[rgba(212,131,94,0.35)]"
+                        : "text-[rgba(212,131,94,0.15)]"
                     }`}
                   >
-                    {s.desc}
-                  </p>
+                    {s.num}
+                  </span>
+                  <div className="flex-1">
+                    <h3 className="flex items-center justify-between gap-2 text-[1.15rem] font-bold [word-break:keep-all] sm:justify-start sm:text-[1.25rem]">
+                      {s.title}
+                      {s.badge && (
+                        <span
+                          className={`shrink-0 whitespace-nowrap rounded-md px-2 py-0.5 text-[0.7rem] font-bold ${
+                            s.featured
+                              ? "bg-[#D4835E] text-white"
+                              : "bg-[#F3ECE4] text-[#8B7E72]"
+                          }`}
+                        >
+                          {s.badge}
+                        </span>
+                      )}
+                    </h3>
+                    <p
+                      className={`mt-2 text-[0.95rem] leading-[1.75] sm:text-[1rem] ${
+                        s.featured ? "text-white/60" : "text-[#8B7E72]"
+                      }`}
+                    >
+                      {s.desc}
+                    </p>
+                  </div>
                 </div>
-              </div>
+              </ScrollReveal>
             ))}
           </div>
         </div>
@@ -304,7 +380,7 @@ export default function HomePage() {
       {/* ━━━ 4. Pricing — 요금제 3단 ━━━ */}
       <section className="bg-[#FAF6F1] py-20 sm:py-[120px]">
         <div className="mx-auto max-w-[1080px] px-6">
-          <div className="mb-14 text-center">
+          <ScrollReveal preset="fade-up" className="mb-14 text-center">
             <Pill>요금제</Pill>
             <h2 className="mt-4 text-[1.8rem] font-extrabold tracking-[-0.03em] text-[#3A2E25] [word-break:keep-all] sm:text-[2.4rem]">
               나에게 맞는 플랜을 선택하세요
@@ -312,171 +388,178 @@ export default function HomePage() {
             <p className="mt-3 text-[1rem] text-[#8B7E72]">
               무료 플랜으로 바로 시작하세요.
             </p>
-          </div>
+          </ScrollReveal>
 
           <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
             {/* 체험 */}
-            <div className="flex flex-col rounded-[20px] border border-[#EAE0D5] bg-white p-8">
-              <span className="text-[15px] font-semibold text-[#8B7E72]">
-                체험
-              </span>
-              <div className="mt-2 flex items-baseline">
-                <span className="font-serif text-[2.5rem] font-bold text-[#3A2E25]">
-                  ₩0
+            <ScrollReveal preset="fade-up" delay={0}>
+              <div className="flex h-full flex-col rounded-[20px] border border-[#EAE0D5] bg-white p-8">
+                <span className="text-[15px] font-semibold text-[#8B7E72]">
+                  체험
                 </span>
+                <div className="mt-2 flex items-baseline">
+                  <span className="font-serif text-[2.5rem] font-bold text-[#3A2E25]">
+                    ₩0
+                  </span>
+                </div>
+                <p className="mt-1 text-sm text-[#B5A99D]">
+                  OPIc이 어떤 시험인지 경험해 보세요
+                </p>
+                <div className="my-6 h-px bg-[#EAE0D5]" />
+                <ul className="flex-1 space-y-3">
+                  {[
+                    "샘플 모의고사 1회 (고정문제)",
+                    "AI 진단 · 튜터링 무료",
+                    "체화 · 쉐도잉 훈련 무제한",
+                  ].map((f) => (
+                    <li
+                      key={f}
+                      className="flex items-center gap-2.5 text-sm text-[#4A3F36]"
+                    >
+                      <Check className="h-4 w-4 shrink-0 text-[#D4835E]" />
+                      {f}
+                    </li>
+                  ))}
+                </ul>
+                <Link
+                  href="/signup"
+                  className="mt-8 flex h-12 items-center justify-center rounded-full bg-[#3A2E25] text-[15px] font-bold text-white transition-colors hover:bg-[#4A3F36]"
+                >
+                  무료로 시작하기
+                </Link>
               </div>
-              <p className="mt-1 text-sm text-[#B5A99D]">
-                OPIc이 어떤 시험인지 경험해 보세요
-              </p>
-              <div className="my-6 h-px bg-[#EAE0D5]" />
-              <ul className="flex-1 space-y-3">
-                {[
-                  "샘플 모의고사 1회 (고정문제)",
-                  "AI 진단 · 튜터링 무료",
-                  "체화 · 쉐도잉 훈련 무제한",
-                ].map((f) => (
-                  <li
-                    key={f}
-                    className="flex items-center gap-2.5 text-sm text-[#4A3F36]"
-                  >
-                    <Check className="h-4 w-4 shrink-0 text-[#D4835E]" />
-                    {f}
-                  </li>
-                ))}
-              </ul>
-              <Link
-                href="/signup"
-                className="mt-8 flex h-12 items-center justify-center rounded-full bg-[#3A2E25] text-[15px] font-bold text-white transition-colors hover:bg-[#4A3F36]"
-              >
-                무료로 시작하기
-              </Link>
-            </div>
+            </ScrollReveal>
 
             {/* 베이직 (인기) */}
-            <div className="relative flex flex-col rounded-[20px] bg-[#3A2E25] p-8 text-white shadow-[0_16px_48px_-8px_rgba(58,46,37,0.2)]">
-              <span className="mb-3 inline-flex w-fit rounded-full bg-[#D4835E] px-3 py-1 text-xs font-bold text-white">
-                인기
-              </span>
-              <span className="text-[15px] font-semibold text-[#B5A99D]">
-                베이직
-              </span>
-              <div className="mt-2 flex items-baseline gap-1">
-                <span className="font-serif text-[2.5rem] font-bold">
-                  ₩19,900
+            <ScrollReveal preset="fade-up" delay={0.1}>
+              <div className="relative flex h-full flex-col rounded-[20px] bg-[#3A2E25] p-8 text-white shadow-[0_16px_48px_-8px_rgba(58,46,37,0.2)]">
+                <span className="mb-3 inline-flex w-fit rounded-full bg-[#D4835E] px-3 py-1 text-xs font-bold text-white">
+                  인기
                 </span>
-                <span className="text-sm text-[#8B7E72]">/ 3회권</span>
+                <span className="text-[15px] font-semibold text-[#B5A99D]">
+                  베이직
+                </span>
+                <div className="mt-2 flex items-baseline gap-1">
+                  <span className="font-serif text-[2.5rem] font-bold">
+                    ₩19,900
+                  </span>
+                  <span className="text-sm text-[#8B7E72]">/ 3회권</span>
+                </div>
+                <p className="mt-1 text-sm text-[#8B7E72]">
+                  본격적인 실전 감각을 키우세요
+                </p>
+                <span className="mt-2 inline-flex w-fit rounded-full bg-[#4A3F36] px-2.5 py-0.5 text-xs font-medium text-[#B5A99D]">
+                  1개월 이용
+                </span>
+                <div className="my-6 h-px bg-[#4A3F36]" />
+                <ul className="flex-1 space-y-3">
+                  {[
+                    "실전 모의고사 3회",
+                    "스크립트 패키지 생성 30회",
+                    "AI 진단 · 튜터링 무료",
+                    "체화 · 쉐도잉 훈련 무제한",
+                    "성적 진단 리포트",
+                  ].map((f) => (
+                    <li
+                      key={f}
+                      className="flex items-center gap-2.5 text-sm text-[#D4CEC7]"
+                    >
+                      <Check className="h-4 w-4 shrink-0 text-[#D4835E]" />
+                      {f}
+                    </li>
+                  ))}
+                </ul>
+                <Link
+                  href="/store"
+                  className="mt-8 flex h-12 items-center justify-center rounded-full bg-[#D4835E] text-[15px] font-bold text-white shadow-[0_4px_16px_rgba(212,131,94,0.3)] transition-colors hover:bg-[#C07350]"
+                >
+                  구매하기
+                </Link>
               </div>
-              <p className="mt-1 text-sm text-[#8B7E72]">
-                본격적인 실전 감각을 키우세요
-              </p>
-              <span className="mt-2 inline-flex w-fit rounded-full bg-[#4A3F36] px-2.5 py-0.5 text-xs font-medium text-[#B5A99D]">
-                1개월 이용
-              </span>
-              <div className="my-6 h-px bg-[#4A3F36]" />
-              <ul className="flex-1 space-y-3">
-                {[
-                  "실전 모의고사 3회",
-                  "스크립트 패키지 생성 30회",
-                  "AI 진단 · 튜터링 무료",
-                  "체화 · 쉐도잉 훈련 무제한",
-                  "성적 진단 리포트",
-                ].map((f) => (
-                  <li
-                    key={f}
-                    className="flex items-center gap-2.5 text-sm text-[#D4CEC7]"
-                  >
-                    <Check className="h-4 w-4 shrink-0 text-[#D4835E]" />
-                    {f}
-                  </li>
-                ))}
-              </ul>
-              <Link
-                href="/store"
-                className="mt-8 flex h-12 items-center justify-center rounded-full bg-[#D4835E] text-[15px] font-bold text-white shadow-[0_4px_16px_rgba(212,131,94,0.3)] transition-colors hover:bg-[#C07350]"
-              >
-                구매하기
-              </Link>
-            </div>
+            </ScrollReveal>
 
             {/* 프리미엄 */}
-            <div className="flex flex-col rounded-[20px] border border-[#EAE0D5] bg-white p-8">
-              <span className="text-[15px] font-semibold text-[#8B7E72]">
-                프리미엄
-              </span>
-              <div className="mt-2 flex items-baseline gap-1">
-                <span className="font-serif text-[2.5rem] font-bold text-[#3A2E25]">
-                  ₩49,900
+            <ScrollReveal preset="fade-up" delay={0.2}>
+              <div className="flex h-full flex-col rounded-[20px] border border-[#EAE0D5] bg-white p-8">
+                <span className="text-[15px] font-semibold text-[#8B7E72]">
+                  프리미엄
                 </span>
-                <span className="text-sm text-[#B5A99D]">/ 10회권</span>
+                <div className="mt-2 flex items-baseline gap-1">
+                  <span className="font-serif text-[2.5rem] font-bold text-[#3A2E25]">
+                    ₩49,900
+                  </span>
+                  <span className="text-sm text-[#B5A99D]">/ 10회권</span>
+                </div>
+                <p className="mt-1 text-sm text-[#B5A99D]">
+                  목표 등급 달성을 위한 완벽 준비
+                </p>
+                <span className="mt-2 inline-flex w-fit rounded-full bg-[#F3ECE4] px-2.5 py-0.5 text-xs font-medium text-[#8B7E72]">
+                  2개월 이용
+                </span>
+                <div className="my-6 h-px bg-[#EAE0D5]" />
+                <ul className="flex-1 space-y-3">
+                  {[
+                    "실전 모의고사 10회",
+                    "스크립트 패키지 생성 100회",
+                    "AI 진단 · 튜터링 무료",
+                    "체화 · 쉐도잉 훈련 무제한",
+                    "성장 데이터 리포트",
+                  ].map((f) => (
+                    <li
+                      key={f}
+                      className="flex items-center gap-2.5 text-sm text-[#4A3F36]"
+                    >
+                      <Check className="h-4 w-4 shrink-0 text-[#D4835E]" />
+                      {f}
+                    </li>
+                  ))}
+                </ul>
+                <Link
+                  href="/store"
+                  className="mt-8 flex h-12 items-center justify-center rounded-full border border-[#EAE0D5] text-[15px] font-bold text-[#3A2E25] transition-colors hover:bg-[#F3ECE4]"
+                >
+                  구매하기
+                </Link>
               </div>
-              <p className="mt-1 text-sm text-[#B5A99D]">
-                목표 등급 달성을 위한 완벽 준비
-              </p>
-              <span className="mt-2 inline-flex w-fit rounded-full bg-[#F3ECE4] px-2.5 py-0.5 text-xs font-medium text-[#8B7E72]">
-                2개월 이용
-              </span>
-              <div className="my-6 h-px bg-[#EAE0D5]" />
-              <ul className="flex-1 space-y-3">
-                {[
-                  "실전 모의고사 10회",
-                  "스크립트 패키지 생성 100회",
-                  "AI 진단 · 튜터링 무료",
-                  "체화 · 쉐도잉 훈련 무제한",
-                  "성장 데이터 리포트",
-                ].map((f) => (
-                  <li
-                    key={f}
-                    className="flex items-center gap-2.5 text-sm text-[#4A3F36]"
-                  >
-                    <Check className="h-4 w-4 shrink-0 text-[#D4835E]" />
-                    {f}
-                  </li>
-                ))}
-              </ul>
-              <Link
-                href="/store"
-                className="mt-8 flex h-12 items-center justify-center rounded-full border border-[#EAE0D5] text-[15px] font-bold text-[#3A2E25] transition-colors hover:bg-[#F3ECE4]"
-              >
-                구매하기
-              </Link>
-            </div>
+            </ScrollReveal>
           </div>
 
-          <div className="mt-10 text-center">
-            <Link
-              href="/pricing"
-              className="text-sm font-medium text-[#D4835E] hover:underline"
-            >
-              전체 기능 비교 보기 &rarr;
-            </Link>
-          </div>
+          <ScrollReveal preset="fade-in" delay={0.3}>
+            <div className="mt-10 text-center">
+              <Link
+                href="/pricing"
+                className="text-sm font-medium text-[#D4835E] hover:underline"
+              >
+                전체 기능 비교 보기 &rarr;
+              </Link>
+            </div>
+          </ScrollReveal>
         </div>
       </section>
 
       {/* ━━━ 5. FAQ ━━━ */}
       <section className="bg-[#F3ECE4] py-20 sm:py-[100px]">
         <div className="mx-auto max-w-[680px] px-6">
-          <div className="mb-12 text-center">
+          <ScrollReveal preset="fade-up" className="mb-12 text-center">
             <Pill>자주 묻는 질문</Pill>
             <h2 className="mt-4 text-[1.6rem] font-extrabold tracking-[-0.02em] text-[#3A2E25] sm:text-[2rem]">
               궁금한 점이 있으신가요?
             </h2>
-          </div>
+          </ScrollReveal>
 
           <div>
-            {faqs.map((faq) => (
-              <details
-                key={faq.q}
-                className="group border-b border-[#EAE0D5]"
-              >
-                <summary className="flex cursor-pointer items-center justify-between py-[22px] text-[1rem] font-semibold text-[#3A2E25] sm:text-[1.05rem] [&::-webkit-details-marker]:hidden">
-                  {faq.q}
-                  <Plus className="h-5 w-5 flex-shrink-0 text-[#B5A99D] transition-transform group-open:rotate-45" />
-                </summary>
-                <div className="pb-[22px] text-[0.95rem] leading-[1.7] text-[#8B7E72]">
-                  {faq.a}
-                </div>
-              </details>
+            {faqs.map((faq, i) => (
+              <ScrollReveal key={faq.q} preset="fade-up" delay={i * 0.06} duration={0.4}>
+                <details className="group border-b border-[#EAE0D5]">
+                  <summary className="flex cursor-pointer items-center justify-between py-[22px] text-[1rem] font-semibold text-[#3A2E25] sm:text-[1.05rem] [&::-webkit-details-marker]:hidden">
+                    {faq.q}
+                    <Plus className="h-5 w-5 flex-shrink-0 text-[#B5A99D] transition-transform group-open:rotate-45" />
+                  </summary>
+                  <div className="pb-[22px] text-[0.95rem] leading-[1.7] text-[#8B7E72]">
+                    {faq.a}
+                  </div>
+                </details>
+              </ScrollReveal>
             ))}
           </div>
         </div>
@@ -486,24 +569,32 @@ export default function HomePage() {
       <section className="cta-gradient relative overflow-hidden py-24 text-center sm:py-[120px]">
         <div className="pointer-events-none absolute right-[-100px] top-[-100px] h-[400px] w-[400px] bg-[radial-gradient(circle,rgba(212,131,94,0.08)_0%,transparent_70%)]" />
         <div className="relative mx-auto max-w-3xl px-6">
-          <h2 className="text-[1.8rem] font-extrabold leading-[1.35] tracking-[-0.03em] text-[#3A2E25] sm:text-[2.8rem]">
-            당신의 이야기가,
-            <br />
-            가장 완벽한 대본입니다.
-          </h2>
-          <p className="mt-4 text-[1rem] leading-[1.7] text-[#8B7E72] sm:text-[1.1rem]">
-            남의 삶을 흉내내지 마세요.
-            <br />내 삶의 무대에서, 가장 나답게 말하세요.
-          </p>
-          <Link
-            href="/signup"
-            className="mt-9 inline-flex items-center gap-2 rounded-full bg-[#D4835E] px-11 py-[18px] text-[1.1rem] font-extrabold text-white shadow-[0_4px_20px_rgba(212,131,94,0.3)] transition-all hover:-translate-y-0.5 hover:bg-[#C07350]"
-          >
-            무료로 시작하기 <ArrowRight className="h-5 w-5" />
-          </Link>
-          <p className="mt-[18px] text-[0.85rem] text-[#B5A99D]">
-            지금 바로, 부담 없이 시작하세요
-          </p>
+          <ScrollReveal preset="fade-up">
+            <h2 className="text-[1.8rem] font-extrabold leading-[1.35] tracking-[-0.03em] text-[#3A2E25] sm:text-[2.8rem]">
+              당신의 이야기가,
+              <br />
+              가장 완벽한 대본입니다.
+            </h2>
+          </ScrollReveal>
+          <ScrollReveal preset="fade-up" delay={0.15}>
+            <p className="mt-4 text-[1rem] leading-[1.7] text-[#8B7E72] sm:text-[1.1rem]">
+              남의 삶을 흉내내지 마세요.
+              <br />내 삶의 무대에서, 가장 나답게 말하세요.
+            </p>
+          </ScrollReveal>
+          <ScrollReveal preset="scale-up" delay={0.3}>
+            <Link
+              href="/signup"
+              className="mt-9 inline-flex items-center gap-2 rounded-full bg-[#D4835E] px-11 py-[18px] text-[1.1rem] font-extrabold text-white shadow-[0_4px_20px_rgba(212,131,94,0.3)] transition-all hover:-translate-y-0.5 hover:bg-[#C07350]"
+            >
+              무료로 시작하기 <ArrowRight className="h-5 w-5" />
+            </Link>
+          </ScrollReveal>
+          <ScrollReveal preset="fade-in" delay={0.4}>
+            <p className="mt-[18px] text-[0.85rem] text-[#B5A99D]">
+              지금 바로, 부담 없이 시작하세요
+            </p>
+          </ScrollReveal>
         </div>
       </section>
     </>

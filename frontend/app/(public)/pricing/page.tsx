@@ -63,10 +63,10 @@ export default function PricingPage() {
     <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
       {/* 헤더 */}
       <div className="text-center">
-        <h1 className="text-3xl font-bold sm:text-4xl">
+        <h1 className="text-[1.55rem] font-bold sm:text-4xl">
           나에게 맞는 플랜을 선택하세요
         </h1>
-        <p className="mt-3 text-foreground-secondary">
+        <p className="mt-3 text-[0.9rem] text-foreground-secondary sm:text-base">
           무료 체험으로 시작하고, 필요할 때 업그레이드하세요.
         </p>
       </div>
@@ -246,7 +246,7 @@ export default function PricingPage() {
 
       {/* 전략 가이드 CTA */}
       <div className="mt-16 rounded-[var(--radius-xl)] border border-primary-200 bg-gradient-to-br from-primary-50 to-primary-100/50 p-6 text-center sm:p-8">
-        <p className="text-lg font-bold text-foreground">
+        <p className="text-[17px] font-bold text-foreground sm:text-lg">
           왜 이 요금제가 효과적인지 궁금하신가요?
         </p>
         <p className="mt-2 text-sm text-foreground-secondary">
@@ -263,7 +263,8 @@ export default function PricingPage() {
       {/* 하단 안내 */}
       <div className="mt-12 text-center text-sm text-foreground-muted">
         <p>
-          결제는 KG이니시스를 통해 안전하게 처리됩니다.{" "}
+          모든 결제는 안전하게 처리됩니다.
+          <br className="sm:hidden" />{" "}
           <Link href="/refund" className="text-primary-500 hover:underline">
             환불 규정
           </Link>
