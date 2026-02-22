@@ -115,7 +115,7 @@ function CountUp({ target, suffix = "" }: { target: number; suffix?: string }) {
 /* ── 라벨 필 컴포넌트 ── */
 function Pill({ children }: { children: React.ReactNode }) {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full bg-[#D4835E]/[0.1] px-[18px] py-2 text-[0.85rem] font-bold tracking-wide text-[#D4835E]">
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-[#D4835E]/[0.1] px-3 py-1 text-[0.7rem] font-bold tracking-wide text-[#D4835E] sm:px-[18px] sm:py-2 sm:text-[0.85rem]">
       {children}
     </span>
   );
@@ -135,7 +135,7 @@ export default function HomePage() {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: "easeOut" }}
-            className="inline-flex items-center gap-1.5 rounded-full border border-[#EAE0D5] bg-white/60 px-[18px] py-2 text-[0.85rem] font-bold tracking-wide text-[#8B7E72]"
+            className="inline-flex items-center gap-1.5 rounded-full border border-[#EAE0D5] bg-white/60 px-3 py-1 text-[0.7rem] font-bold tracking-wide text-[#8B7E72] sm:px-[18px] sm:py-2 sm:text-[0.85rem]"
           >
             평범한 하루, 완벽한 대본.
           </motion.span>

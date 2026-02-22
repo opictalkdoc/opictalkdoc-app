@@ -153,7 +153,7 @@ export default function StrategyContent() {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="inline-flex items-center gap-1.5 rounded-full bg-white/50 px-4 py-1.5 text-[13px] font-semibold text-[#3A2E25] backdrop-blur-sm"
+            className="inline-flex items-center gap-1.5 rounded-full bg-white/50 px-3 py-1 text-[0.7rem] font-semibold text-[#3A2E25] backdrop-blur-sm sm:px-4 sm:py-1.5 sm:text-[13px]"
           >
             오픽톡닥 데이터 전략
           </motion.span>
