@@ -1,13 +1,30 @@
 @import "tailwindcss";
 
+/* ── 폰트 직접 선언 (인앱 WebView 호환) ── */
+@font-face {
+  font-family: "Pretendard Variable";
+  font-weight: 45 920;
+  font-style: normal;
+  font-display: swap;
+  src: url("/fonts/PretendardVariable.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Jua";
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  src: url("/fonts/Jua-Regular.ttf") format("truetype");
+}
+
 @theme {
   /* 폰트 */
-  --font-sans: var(--font-pretendard), -apple-system, BlinkMacSystemFont,
+  --font-sans: "Pretendard Variable", -apple-system, BlinkMacSystemFont,
     system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo",
     "Noto Sans KR", "Malgun Gothic", "Apple Color Emoji", "Segoe UI Emoji",
     "Segoe UI Symbol", sans-serif;
-  --font-display: var(--font-jua);
-  --font-serif: var(--font-fraunces), var(--font-noto-serif-kr);
+  --font-display: "Jua", sans-serif;
+  --font-serif: "Fraunces", "Noto Serif KR", serif;
 
   /* Primary - 테라코타 */
   --color-primary-50: #FDF5F0;

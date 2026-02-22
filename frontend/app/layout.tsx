@@ -1,34 +1,5 @@
 import type { Metadata } from "next";
-import { Fraunces, Noto_Serif_KR } from "next/font/google";
-import localFont from "next/font/local";
 import "./globals.css";
-
-const pretendard = localFont({
-  src: "./fonts/PretendardVariable.woff2",
-  display: "swap",
-  weight: "45 920",
-  variable: "--font-pretendard",
-});
-
-const jua = localFont({
-  src: "./fonts/Jua-Regular.ttf",
-  weight: "400",
-  display: "swap",
-  variable: "--font-jua",
-});
-
-const fraunces = Fraunces({
-  subsets: ["latin"],
-  display: "swap",
-  variable: "--font-fraunces",
-});
-
-const notoSerifKR = Noto_Serif_KR({
-  weight: ["400", "700"],
-  subsets: ["latin"],
-  display: "swap",
-  variable: "--font-noto-serif-kr",
-});
 
 export const metadata: Metadata = {
   title: {
@@ -54,7 +25,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ko" className={`${pretendard.variable} ${jua.variable} ${fraunces.variable} ${notoSerifKR.variable}`}>
+    <html lang="ko">
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,100..900;1,9..144,100..900&family=Noto+Serif+KR:wght@400;700&display=swap"
+        />
+      </head>
       <body>{children}</body>
     </html>
   );
