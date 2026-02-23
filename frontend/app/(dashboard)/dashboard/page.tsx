@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import {
   BarChart3,
@@ -108,14 +109,12 @@ const learningSteps = [
   },
 ];
 
-/* ── 페이지 ── */
+/* ── 비동기 서버 컴포넌트: 통계 카드 (Suspense로 감싸서 사용) ── */
 
-export default async function DashboardPage() {
-  // 사용자 정보 + 크레딧 조회
+async function DashboardStats() {
   const user = await getUser();
   const supabase = await createServerSupabaseClient();
 
-  // user_credits 조회 (없으면 기본값)
   const { data: credits } = user
     ? await supabase
         .from("user_credits")
@@ -124,13 +123,6 @@ export default async function DashboardPage() {
         .single()
     : { data: null };
 
-  // 메타데이터
-  const targetGrade = user?.user_metadata?.target_grade || "";
-  const currentGrade = user?.user_metadata?.current_grade || "";
-  const examDate = user?.user_metadata?.exam_date || "";
-  const dDay = getDday(examDate || null);
-
-  // 통계 데이터
   const plan = credits?.current_plan || "free";
   const totalMockExam =
     (credits?.plan_mock_exam_credits || 0) +
@@ -174,8 +166,184 @@ export default async function DashboardPage() {
   ];
 
   return (
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {stats.map((s) => {
+        const inner = (
+          <>
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-foreground-secondary">{s.label}</p>
+              <div
+                className={`flex h-9 w-9 items-center justify-center rounded-[var(--radius-lg)] ${s.color}`}
+              >
+                <s.icon size={18} />
+              </div>
+            </div>
+            <p className="mt-3 text-2xl font-bold text-foreground">
+              {s.value}
+            </p>
+            <p className="mt-0.5 text-xs text-foreground-muted">{s.sub}</p>
+          </>
+        );
+
+        return s.href ? (
+          <Link
+            key={s.label}
+            href={s.href}
+            className="rounded-[var(--radius-xl)] border border-border bg-surface p-5 transition-all hover:border-border-hover hover:shadow-[var(--shadow-card)]"
+          >
+            {inner}
+          </Link>
+        ) : (
+          <div
+            key={s.label}
+            className="rounded-[var(--radius-xl)] border border-border bg-surface p-5"
+          >
+            {inner}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ── 비동기 서버 컴포넌트: 사이드 패널 (Suspense로 감싸서 사용) ── */
+
+async function SidePanel() {
+  const user = await getUser();
+  const targetGrade = user?.user_metadata?.target_grade || "";
+  const currentGrade = user?.user_metadata?.current_grade || "";
+  const examDate = user?.user_metadata?.exam_date || "";
+  const dDay = getDday(examDate || null);
+
+  return (
+    <div className="space-y-4 md:col-span-2">
+      {/* 목표 등급 요약 */}
+      {(targetGrade || currentGrade) ? (
+        <div className="rounded-[var(--radius-xl)] border border-primary-200 bg-primary-50/50 p-5">
+          <div className="flex items-center gap-2">
+            <Target size={18} className="text-primary-500" />
+            <p className="font-semibold text-foreground">나의 목표</p>
+          </div>
+          <div className="mt-3 grid grid-cols-2 gap-3">
+            {currentGrade && (
+              <div className="rounded-[var(--radius-lg)] bg-white p-3 text-center">
+                <p className="text-xs text-foreground-muted">현재</p>
+                <p className="mt-0.5 text-lg font-bold text-foreground">
+                  {currentGrade}
+                </p>
+              </div>
+            )}
+            {targetGrade && (
+              <div className="rounded-[var(--radius-lg)] bg-white p-3 text-center">
+                <p className="text-xs text-foreground-muted">목표</p>
+                <p className="mt-0.5 text-lg font-bold text-primary-600">
+                  {targetGrade}
+                </p>
+              </div>
+            )}
+          </div>
+          {dDay && (
+            <p className="mt-3 text-center text-sm font-semibold text-primary-600">
+              시험까지 {dDay}
+            </p>
+          )}
+        </div>
+      ) : (
+        <Link
+          href="/mypage"
+          className="block rounded-[var(--radius-xl)] border border-border bg-surface p-5 transition-all hover:border-border-hover hover:shadow-[var(--shadow-card)]"
+        >
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-[var(--radius-lg)] bg-secondary-50 text-secondary-600">
+              <Target size={20} />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-foreground">
+                목표 등급 설정하기
+              </p>
+              <p className="text-xs text-foreground-secondary">
+                마이페이지에서 목표를 설정하세요
+              </p>
+            </div>
+            <ArrowRight
+              size={14}
+              className="ml-auto text-foreground-muted"
+            />
+          </div>
+        </Link>
+      )}
+
+      {/* 전략 가이드 */}
+      <div className="rounded-[var(--radius-xl)] border border-foreground/10 bg-foreground p-5">
+        <p className="text-sm font-semibold text-white">
+          OPIc 전략, 정확히 알고 계신가요?
+        </p>
+        <p className="mt-1 text-xs text-white/60">
+          데이터로 증명된 서베이 전략과 난이도 전략을 확인하세요.
+        </p>
+        <Link
+          href="/strategy"
+          className="mt-3 inline-flex items-center gap-1 rounded-full bg-white px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-white/90"
+        >
+          전략 가이드
+          <ArrowRight size={14} />
+        </Link>
+      </div>
+
+      {/* Store CTA */}
+      <div className="rounded-[var(--radius-xl)] border border-primary-200 bg-gradient-to-br from-primary-50 to-primary-100/50 p-5">
+        <p className="text-sm font-semibold text-primary-700">
+          더 많은 학습이 필요하신가요?
+        </p>
+        <p className="mt-1 text-xs text-primary-600/80">
+          베이직 플랜으로 업그레이드하면 실전 모의고사 3회 + 스크립트 30회를
+          이용할 수 있어요.
+        </p>
+        <Link
+          href="/store"
+          className="mt-3 inline-flex items-center gap-1 rounded-full bg-primary-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-600"
+        >
+          Store
+          <ArrowRight size={14} />
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+/* ── Suspense Fallback: 통계 카드 플레이스홀더 ── */
+
+function StatsPlaceholder() {
+  return (
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {[1, 2, 3, 4].map((i) => (
+        <div
+          key={i}
+          className="h-[118px] rounded-[var(--radius-xl)] border border-border bg-surface p-5"
+        />
+      ))}
+    </div>
+  );
+}
+
+/* ── Suspense Fallback: 사이드 패널 플레이스홀더 ── */
+
+function SidePanelPlaceholder() {
+  return (
+    <div className="space-y-4 md:col-span-2">
+      <div className="h-[120px] rounded-[var(--radius-xl)] border border-border bg-surface" />
+      <div className="h-[120px] rounded-[var(--radius-xl)] border border-foreground/10 bg-foreground" />
+      <div className="h-[120px] rounded-[var(--radius-xl)] border border-primary-200 bg-gradient-to-br from-primary-50 to-primary-100/50" />
+    </div>
+  );
+}
+
+/* ── 페이지 ── */
+
+export default function DashboardPage() {
+  return (
     <div className="space-y-8 pb-8 pt-2 lg:pt-0">
-      {/* 헤더 */}
+      {/* 헤더 — 즉시 렌더 */}
       <div>
         <h1 className="text-2xl font-bold text-foreground">대시보드</h1>
         <p className="mt-1 text-foreground-secondary">
@@ -183,46 +351,12 @@ export default async function DashboardPage() {
         </p>
       </div>
 
-      {/* 통계 카드 */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {stats.map((s) => {
-          const inner = (
-            <>
-              <div className="flex items-center justify-between">
-                <p className="text-sm text-foreground-secondary">{s.label}</p>
-                <div
-                  className={`flex h-9 w-9 items-center justify-center rounded-[var(--radius-lg)] ${s.color}`}
-                >
-                  <s.icon size={18} />
-                </div>
-              </div>
-              <p className="mt-3 text-2xl font-bold text-foreground">
-                {s.value}
-              </p>
-              <p className="mt-0.5 text-xs text-foreground-muted">{s.sub}</p>
-            </>
-          );
+      {/* 통계 카드 — 데이터 로드 후 스트리밍 */}
+      <Suspense fallback={<StatsPlaceholder />}>
+        <DashboardStats />
+      </Suspense>
 
-          return s.href ? (
-            <Link
-              key={s.label}
-              href={s.href}
-              className="rounded-[var(--radius-xl)] border border-border bg-surface p-5 transition-all hover:border-border-hover hover:shadow-[var(--shadow-card)]"
-            >
-              {inner}
-            </Link>
-          ) : (
-            <div
-              key={s.label}
-              className="rounded-[var(--radius-xl)] border border-border bg-surface p-5"
-            >
-              {inner}
-            </div>
-          );
-        })}
-      </div>
-
-      {/* 모듈 바로가기 */}
+      {/* 모듈 바로가기 — 즉시 렌더 */}
       <div>
         <h2 className="mb-4 text-lg font-bold text-foreground">
           학습 모듈
@@ -256,7 +390,7 @@ export default async function DashboardPage() {
 
       {/* 학습 로드맵 + 사이드 패널 */}
       <div className="grid gap-6 md:grid-cols-5">
-        {/* 학습 로드맵 */}
+        {/* 학습 로드맵 — 즉시 렌더 */}
         <div className="rounded-[var(--radius-xl)] border border-border bg-surface p-6 md:col-span-3">
           <h2 className="flex items-center gap-2 text-lg font-bold text-foreground">
             <TrendingUp size={20} className="text-primary-500" />
@@ -290,99 +424,10 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-        {/* 사이드 패널 */}
-        <div className="space-y-4 md:col-span-2">
-          {/* 목표 등급 요약 */}
-          {(targetGrade || currentGrade) ? (
-            <div className="rounded-[var(--radius-xl)] border border-primary-200 bg-primary-50/50 p-5">
-              <div className="flex items-center gap-2">
-                <Target size={18} className="text-primary-500" />
-                <p className="font-semibold text-foreground">나의 목표</p>
-              </div>
-              <div className="mt-3 grid grid-cols-2 gap-3">
-                {currentGrade && (
-                  <div className="rounded-[var(--radius-lg)] bg-white p-3 text-center">
-                    <p className="text-xs text-foreground-muted">현재</p>
-                    <p className="mt-0.5 text-lg font-bold text-foreground">
-                      {currentGrade}
-                    </p>
-                  </div>
-                )}
-                {targetGrade && (
-                  <div className="rounded-[var(--radius-lg)] bg-white p-3 text-center">
-                    <p className="text-xs text-foreground-muted">목표</p>
-                    <p className="mt-0.5 text-lg font-bold text-primary-600">
-                      {targetGrade}
-                    </p>
-                  </div>
-                )}
-              </div>
-              {dDay && (
-                <p className="mt-3 text-center text-sm font-semibold text-primary-600">
-                  시험까지 {dDay}
-                </p>
-              )}
-            </div>
-          ) : (
-            <Link
-              href="/mypage"
-              className="block rounded-[var(--radius-xl)] border border-border bg-surface p-5 transition-all hover:border-border-hover hover:shadow-[var(--shadow-card)]"
-            >
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-[var(--radius-lg)] bg-secondary-50 text-secondary-600">
-                  <Target size={20} />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-foreground">
-                    목표 등급 설정하기
-                  </p>
-                  <p className="text-xs text-foreground-secondary">
-                    마이페이지에서 목표를 설정하세요
-                  </p>
-                </div>
-                <ArrowRight
-                  size={14}
-                  className="ml-auto text-foreground-muted"
-                />
-              </div>
-            </Link>
-          )}
-
-          {/* 전략 가이드 */}
-          <div className="rounded-[var(--radius-xl)] border border-foreground/10 bg-foreground p-5">
-            <p className="text-sm font-semibold text-white">
-              OPIc 전략, 정확히 알고 계신가요?
-            </p>
-            <p className="mt-1 text-xs text-white/60">
-              데이터로 증명된 서베이 전략과 난이도 전략을 확인하세요.
-            </p>
-            <Link
-              href="/strategy"
-              className="mt-3 inline-flex items-center gap-1 rounded-full bg-white px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-white/90"
-            >
-              전략 가이드
-              <ArrowRight size={14} />
-            </Link>
-          </div>
-
-          {/* Store CTA */}
-          <div className="rounded-[var(--radius-xl)] border border-primary-200 bg-gradient-to-br from-primary-50 to-primary-100/50 p-5">
-            <p className="text-sm font-semibold text-primary-700">
-              더 많은 학습이 필요하신가요?
-            </p>
-            <p className="mt-1 text-xs text-primary-600/80">
-              베이직 플랜으로 업그레이드하면 실전 모의고사 3회 + 스크립트 30회를
-              이용할 수 있어요.
-            </p>
-            <Link
-              href="/store"
-              className="mt-3 inline-flex items-center gap-1 rounded-full bg-primary-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-600"
-            >
-              Store
-              <ArrowRight size={14} />
-            </Link>
-          </div>
-        </div>
+        {/* 사이드 패널 — 데이터 로드 후 스트리밍 */}
+        <Suspense fallback={<SidePanelPlaceholder />}>
+          <SidePanel />
+        </Suspense>
       </div>
     </div>
   );
