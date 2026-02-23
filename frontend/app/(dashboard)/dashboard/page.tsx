@@ -12,7 +12,6 @@ import {
   Calendar,
   Crown,
 } from "lucide-react";
-import { getUser } from "@/lib/auth";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 
 export const metadata = {
@@ -112,14 +111,14 @@ const learningSteps = [
 /* ── 비동기 서버 컴포넌트: 통계 카드 (Suspense로 감싸서 사용) ── */
 
 async function DashboardStats() {
-  const user = await getUser();
   const supabase = await createServerSupabaseClient();
+  const { data: { session } } = await supabase.auth.getSession();
 
-  const { data: credits } = user
+  const { data: credits } = session?.user
     ? await supabase
         .from("user_credits")
         .select("*")
-        .eq("user_id", user.id)
+        .eq("user_id", session.user.id)
         .single()
     : { data: null };
 
@@ -209,7 +208,9 @@ async function DashboardStats() {
 /* ── 비동기 서버 컴포넌트: 사이드 패널 (Suspense로 감싸서 사용) ── */
 
 async function SidePanel() {
-  const user = await getUser();
+  const supabase = await createServerSupabaseClient();
+  const { data: { session } } = await supabase.auth.getSession();
+  const user = session?.user;
   const targetGrade = user?.user_metadata?.target_grade || "";
   const currentGrade = user?.user_metadata?.current_grade || "";
   const examDate = user?.user_metadata?.exam_date || "";
