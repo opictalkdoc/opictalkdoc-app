@@ -12,7 +12,7 @@ import {
   Calendar,
   Crown,
 } from "lucide-react";
-import { getUser } from "@/lib/auth";
+import { getAuthClaims } from "@/lib/auth";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 
 export const metadata = {
@@ -112,14 +112,14 @@ const learningSteps = [
 /* ── 비동기 서버 컴포넌트: 통계 카드 (Suspense로 감싸서 사용) ── */
 
 async function DashboardStats() {
-  const user = await getUser();
+  const claims = await getAuthClaims();
   const supabase = await createServerSupabaseClient();
 
-  const { data: credits } = user
+  const { data: credits } = claims?.sub
     ? await supabase
         .from("user_credits")
         .select("*")
-        .eq("user_id", user.id)
+        .eq("user_id", claims.sub)
         .single()
     : { data: null };
 
@@ -209,10 +209,10 @@ async function DashboardStats() {
 /* ── 비동기 서버 컴포넌트: 사이드 패널 (Suspense로 감싸서 사용) ── */
 
 async function SidePanel() {
-  const user = await getUser();
-  const targetGrade = user?.user_metadata?.target_grade || "";
-  const currentGrade = user?.user_metadata?.current_grade || "";
-  const examDate = user?.user_metadata?.exam_date || "";
+  const claims = await getAuthClaims();
+  const targetGrade = claims?.user_metadata?.target_grade || "";
+  const currentGrade = claims?.user_metadata?.current_grade || "";
+  const examDate = claims?.user_metadata?.exam_date || "";
   const dDay = getDday(examDate || null);
 
   return (
