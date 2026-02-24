@@ -154,40 +154,42 @@ export default function HomePage() {
             <br />
             가장 완벽한 대본입니다.
           </motion.h1>
+        </div>
 
-          {/* 일상 포토카드 갤러리 */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.3, ease: "easeOut" }}
-            className="relative mx-auto mt-8 w-full max-w-[1100px]"
-          >
-            <p className="mb-6 text-center text-[0.85rem] text-[#B5A99D]">
-              이 모든 순간이, 당신만의 대본입니다
-            </p>
-            <div className="flex gap-3 overflow-x-auto px-4 pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:gap-4 md:grid md:grid-cols-5 md:overflow-visible md:px-6">
-              {illustrations.map((ill) => (
-                <div
-                  key={ill.caption}
-                  className="w-[36vw] flex-shrink-0 sm:w-[28vw] md:w-auto"
-                >
-                  <div className="overflow-hidden rounded-2xl">
-                    <Image
-                      src={ill.src}
-                      alt={ill.caption}
-                      width={900}
-                      height={1200}
-                      className="h-full w-full object-cover transition-transform duration-300 hover:scale-105"
-                    />
-                  </div>
-                  <p className="mt-2.5 text-center text-[0.8rem] font-medium text-[#8B7E72]">
-                    {ill.caption}
-                  </p>
+        {/* 일상 포토카드 갤러리 */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, delay: 0.3, ease: "easeOut" }}
+          className="relative mx-auto mt-8 max-w-[1100px]"
+        >
+          <p className="mb-6 text-center text-[0.85rem] text-[#B5A99D]">
+            이 모든 순간이, 당신만의 대본입니다
+          </p>
+          <div className="flex gap-3 overflow-x-auto px-4 pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:gap-4 md:grid md:grid-cols-5 md:overflow-visible md:px-6">
+            {illustrations.map((ill) => (
+              <div
+                key={ill.caption}
+                className="w-[36vw] flex-shrink-0 sm:w-[28vw] md:w-auto"
+              >
+                <div className="overflow-hidden rounded-2xl">
+                  <Image
+                    src={ill.src}
+                    alt={ill.caption}
+                    width={900}
+                    height={1200}
+                    className="h-full w-full object-cover transition-transform duration-300 hover:scale-105"
+                  />
                 </div>
-              ))}
-            </div>
-          </motion.div>
+                <p className="mt-2.5 text-center text-[0.8rem] font-medium text-[#8B7E72]">
+                  {ill.caption}
+                </p>
+              </div>
+            ))}
+          </div>
+        </motion.div>
 
+        <div className="relative mx-auto flex max-w-4xl flex-col items-center text-center">
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
