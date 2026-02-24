@@ -4,13 +4,14 @@ import { revalidatePath } from "next/cache";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { step1Schema, step2Schema, step3Schema } from "@/lib/validations/reviews";
 import { extractCombos } from "@/lib/utils/combo-extractor";
-import type {
-  Submission,
-  SubmissionWithQuestions,
-  FrequencyItem,
-  QuestionFrequencyItem,
-  ReviewStats,
-  ComboType,
+import {
+  ANSWER_TYPE_ORDER,
+  type Submission,
+  type SubmissionWithQuestions,
+  type FrequencyItem,
+  type QuestionFrequencyItem,
+  type ReviewStats,
+  type ComboType,
 } from "@/lib/types/reviews";
 
 type ActionResult<T = null> = {
@@ -607,7 +608,14 @@ export async function getQuestionFrequency(topic: string): Promise<ActionResult<
     }
   }
 
-  const result = Array.from(freqMap.values()).sort((a, b) => b.frequency - a.frequency);
+  // 빈도순 → 같은 빈도면 answer_type순 → 같은 타입이면 가나다순
+  const result = Array.from(freqMap.values()).sort((a, b) => {
+    if (a.frequency !== b.frequency) return b.frequency - a.frequency;
+    const orderA = ANSWER_TYPE_ORDER[a.answer_type || ""] ?? 99;
+    const orderB = ANSWER_TYPE_ORDER[b.answer_type || ""] ?? 99;
+    if (orderA !== orderB) return orderA - orderB;
+    return (a.question_korean || "").localeCompare(b.question_korean || "", "ko");
+  });
   return { data: result };
 }
 

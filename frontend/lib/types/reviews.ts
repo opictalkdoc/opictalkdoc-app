@@ -343,6 +343,21 @@ export interface QuestionFrequencyItem {
   frequency: number;
 }
 
+// answer_type 정렬 순서 (묘사 → 루틴 → 비교 → 경험(어린시절) → 경험(최근) → 경험(인상) ...)
+export const ANSWER_TYPE_ORDER: Record<string, number> = {
+  description: 1,
+  routine: 2,
+  comparison: 3,
+  past_experience_childhood: 4,
+  past_experience_recent: 5,
+  past_experience_memorable: 6,
+  roleplay_11: 7,
+  roleplay_12: 8,
+  roleplay_13: 9,
+  advanced_14: 10,
+  advanced_15: 11,
+};
+
 // answer_type 한글 레이블
 export const ANSWER_TYPE_LABELS: Record<string, string> = {
   description: "묘사",
