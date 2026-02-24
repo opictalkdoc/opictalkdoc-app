@@ -338,11 +338,51 @@ export interface SubmissionWithQuestions extends Submission {
   })[];
 }
 
+export type SurveyType = '선택형' | '공통형' | '롤플레이';
+
 export interface FrequencyItem {
   topic: string;
   combo_type: ComboType;
   frequency: number;
+  survey_type?: SurveyType;
 }
+
+export interface QuestionFrequencyItem {
+  question_english: string;
+  question_korean: string;
+  answer_type: string | null;
+  frequency: number;
+}
+
+// answer_type 한글 레이블
+export const ANSWER_TYPE_LABELS: Record<string, string> = {
+  description: "묘사",
+  routine: "루틴",
+  comparison: "비교",
+  past_experience_memorable: "경험(인상)",
+  past_experience_recent: "경험(최근)",
+  past_experience_childhood: "경험(어린시절)",
+  roleplay_11: "상황설명",
+  roleplay_12: "문제해결",
+  roleplay_13: "대안제시",
+  advanced_14: "비교/의견",
+  advanced_15: "경험/변화",
+};
+
+// answer_type 뱃지 색상
+export const ANSWER_TYPE_COLORS: Record<string, string> = {
+  description: "bg-blue-100 text-blue-700",
+  routine: "bg-green-100 text-green-700",
+  comparison: "bg-purple-100 text-purple-700",
+  past_experience_memorable: "bg-amber-100 text-amber-700",
+  past_experience_recent: "bg-orange-100 text-orange-700",
+  past_experience_childhood: "bg-rose-100 text-rose-700",
+  roleplay_11: "bg-teal-100 text-teal-700",
+  roleplay_12: "bg-cyan-100 text-cyan-700",
+  roleplay_13: "bg-indigo-100 text-indigo-700",
+  advanced_14: "bg-red-100 text-red-700",
+  advanced_15: "bg-pink-100 text-pink-700",
+};
 
 export interface ReviewStats {
   totalReviews: number;
