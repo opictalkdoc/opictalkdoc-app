@@ -164,11 +164,11 @@ export default function HomePage() {
             <div className="text-[0.8rem] leading-[1.9] text-[#8B7E72] sm:text-[1.05rem]">
               <p>
                 퇴근길에 듣는 플레이리스트,
-                <br className="hidden sm:block" />{" "}
+                <br />
                 주말마다 찾는 단골 카페의 아메리카노,
-                <br className="hidden sm:block" />{" "}
+                <br />
                 친구와 나누는 쓸데없이 긴 수다.
-                <br className="hidden sm:block" />{" "}
+                <br />
                 그 익숙한 일상이 OPIc에서 가장 빛나는 대본입니다.
               </p>
             </div>
@@ -180,10 +180,8 @@ export default function HomePage() {
             className="mt-6 text-[1.05rem] font-bold leading-[1.8] text-[#3A2E25] sm:text-[1.15rem]"
           >
             당신의 이야기를 시작하세요.
-            <br className="hidden sm:block" />{" "}
-            내 삶의 대본에서는,
-            <br className="sm:hidden" />{" "}
-            이미 내가 주인공이니까요.
+            <br />
+            내 삶의 대본에서는, 이미 내가 주인공이니까요.
           </motion.p>
 
           <motion.div
