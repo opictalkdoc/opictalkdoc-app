@@ -8,16 +8,18 @@ import type { Submission } from "@/lib/types/reviews";
 import {
   ACHIEVED_LEVELS,
   ACHIEVED_LEVEL_LABELS,
-  ACHIEVED_LEVEL_OPTION_LABELS,
-  PRE_EXAM_LEVEL_LABELS,
   EXAM_PURPOSE_LABELS,
+  STUDY_METHOD_LABELS,
   PREP_DURATION_LABELS,
+  ATTEMPT_COUNT_LABELS,
   PERCEIVED_DIFFICULTY_LABELS,
-  type AchievedLevelOption,
-  type PreExamLevel,
+  ACTUAL_DURATION_LABELS,
   type ExamPurpose,
+  type StudyMethod,
   type PrepDuration,
+  type AttemptCount,
   type PerceivedDifficulty,
+  type ActualDuration,
 } from "@/lib/types/reviews";
 
 interface ListTabProps {
@@ -113,28 +115,40 @@ export function ListTab({ initialData: initialPublicReviews }: ListTabProps) {
               className="rounded-[var(--radius-xl)] border border-border bg-surface p-5"
             >
               {/* 헤더 */}
-              <div className="flex flex-wrap items-center gap-2">
-                <div className="flex items-center gap-1 text-xs text-foreground-secondary">
-                  <Calendar size={12} />
-                  {review.exam_date}
-                </div>
-                <span className="rounded-full bg-surface-secondary px-2 py-0.5 text-xs text-foreground-muted">
-                  {PRE_EXAM_LEVEL_LABELS[review.pre_exam_level as PreExamLevel]}
+              <div className="flex items-center gap-1.5 text-xs">
+                <Calendar size={12} className="text-foreground-secondary" />
+                <span className="text-foreground-secondary">{review.exam_date}</span>
+                <span className="rounded-full bg-surface-secondary px-1.5 py-0.5 text-[10px] font-medium text-foreground-muted">
+                  {review.pre_exam_level === 'none' ? '첫 응시' : review.pre_exam_level}
                 </span>
-                <span className="text-xs text-foreground-muted">→</span>
-                <span className="rounded-full bg-primary-50 px-2 py-0.5 text-xs font-medium text-primary-700">
-                  {review.achieved_level
-                    ? ACHIEVED_LEVEL_OPTION_LABELS[review.achieved_level as AchievedLevelOption]
-                    : '발표 전'}
+                <span className="text-foreground-muted">→</span>
+                <span className="rounded-full bg-primary-50 px-1.5 py-0.5 text-[10px] font-medium text-primary-700">
+                  {review.achieved_level || '발표 전'}
                 </span>
-                <span className="rounded-full bg-surface-secondary px-2 py-0.5 text-xs text-foreground-muted">
+              </div>
+              <div className="mt-1.5 flex flex-wrap gap-1.5">
+                {review.exam_difficulty && (
+                  <span className="rounded-full bg-surface-secondary px-2 py-0.5 text-[10px] text-foreground-muted">
+                    난이도 {review.exam_difficulty}
+                  </span>
+                )}
+                <span className="rounded-full bg-surface-secondary px-2 py-0.5 text-[10px] text-foreground-muted">
                   {EXAM_PURPOSE_LABELS[review.exam_purpose as ExamPurpose]}
                 </span>
-                <span className="rounded-full bg-surface-secondary px-2 py-0.5 text-xs text-foreground-muted">
+                <span className="rounded-full bg-surface-secondary px-2 py-0.5 text-[10px] text-foreground-muted">
+                  {(review.study_methods || []).map((m: string) => STUDY_METHOD_LABELS[m as StudyMethod] || m).join(', ')}
+                </span>
+                <span className="rounded-full bg-surface-secondary px-2 py-0.5 text-[10px] text-foreground-muted">
                   {PREP_DURATION_LABELS[review.prep_duration as PrepDuration]}
                 </span>
-                <span className="rounded-full bg-surface-secondary px-2 py-0.5 text-xs text-foreground-muted">
+                <span className="rounded-full bg-surface-secondary px-2 py-0.5 text-[10px] text-foreground-muted">
+                  {ATTEMPT_COUNT_LABELS[review.attempt_count as AttemptCount]}
+                </span>
+                <span className="rounded-full bg-surface-secondary px-2 py-0.5 text-[10px] text-foreground-muted">
                   {PERCEIVED_DIFFICULTY_LABELS[review.perceived_difficulty as PerceivedDifficulty]}
+                </span>
+                <span className="rounded-full bg-surface-secondary px-2 py-0.5 text-[10px] text-foreground-muted">
+                  {ACTUAL_DURATION_LABELS[review.actual_duration as ActualDuration]}
                 </span>
               </div>
 
