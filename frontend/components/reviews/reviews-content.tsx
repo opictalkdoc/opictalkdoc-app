@@ -23,9 +23,10 @@ interface ReviewsContentProps {
   initialStats: ReviewStats;
   initialFrequency: FrequencyItem[];
   initialSubmissions: Submission[];
+  initialPublicReviews: { reviews: Submission[]; total: number };
 }
 
-export function ReviewsContent({ initialStats, initialFrequency, initialSubmissions }: ReviewsContentProps) {
+export function ReviewsContent({ initialStats, initialFrequency, initialSubmissions, initialPublicReviews }: ReviewsContentProps) {
   const [activeTab, setActiveTab] = useState<TabId>("frequency");
 
   return (
@@ -58,7 +59,7 @@ export function ReviewsContent({ initialStats, initialFrequency, initialSubmissi
         <FrequencyTab initialStats={initialStats} initialFrequency={initialFrequency} />
       )}
       {activeTab === "submit" && <SubmitTab initialSubmissions={initialSubmissions} />}
-      {activeTab === "list" && <ListTab />}
+      {activeTab === "list" && <ListTab initialData={initialPublicReviews} />}
     </div>
   );
 }

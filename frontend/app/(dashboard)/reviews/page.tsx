@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { ReviewsContent } from "@/components/reviews/reviews-content";
-import { getStatsAndFrequency, getMySubmissions } from "@/lib/actions/reviews";
+import { getStatsAndFrequency, getMySubmissions, getPublicReviews } from "@/lib/actions/reviews";
 
 export const metadata = {
   title: "시험후기 | 오픽톡닥",
@@ -8,15 +8,17 @@ export const metadata = {
 
 // 비동기 서버 컴포넌트: 통계 + 내 제출 이력을 병렬 조회하여 전달
 async function ReviewsDataLoader() {
-  const [{ stats, frequency }, submissionsResult] = await Promise.all([
+  const [{ stats, frequency }, submissionsResult, publicReviewsResult] = await Promise.all([
     getStatsAndFrequency(),
     getMySubmissions(),
+    getPublicReviews({ page: 1, limit: 10 }),
   ]);
   return (
     <ReviewsContent
       initialStats={stats}
       initialFrequency={frequency}
       initialSubmissions={submissionsResult.data || []}
+      initialPublicReviews={publicReviewsResult.data || { reviews: [], total: 0 }}
     />
   );
 }

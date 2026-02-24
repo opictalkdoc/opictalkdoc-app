@@ -20,7 +20,11 @@ import {
   type PerceivedDifficulty,
 } from "@/lib/types/reviews";
 
-export function ListTab() {
+interface ListTabProps {
+  initialData?: { reviews: Submission[]; total: number };
+}
+
+export function ListTab({ initialData: initialPublicReviews }: ListTabProps) {
   const [levelFilter, setLevelFilter] = useState<string>("");
 
   const limit = 10;
@@ -46,6 +50,9 @@ export function ListTab() {
       const loaded = allPages.reduce((acc, p) => acc + p.reviews.length, 0);
       return loaded < lastPage.total ? allPages.length + 1 : undefined;
     },
+    initialData: levelFilter === "" && initialPublicReviews
+      ? { pages: [initialPublicReviews], pageParams: [1] }
+      : undefined,
     staleTime: 5 * 60 * 1000, // 5분
   });
 
