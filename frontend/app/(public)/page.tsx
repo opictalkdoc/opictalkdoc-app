@@ -282,11 +282,9 @@ export default function HomePage() {
       <section id="features" className="rounded-t-[32px] bg-[#F3ECE4] py-20 sm:rounded-t-[48px] sm:py-[120px]">
         <div className="mx-auto max-w-[1080px] px-6">
           <ScrollReveal preset="fade-up" className="mb-14 text-center sm:mb-16">
-            <Pill>당신의 무대를 돕는 방법</Pill>
+            <Pill>막이 오르기 전</Pill>
             <h2 className="mt-4 text-[1.8rem] font-extrabold tracking-[-0.03em] text-[#3A2E25] [word-break:keep-all] sm:text-[2.4rem]">
-              오픽톡닥이 당신의{" "}
-              <br className="sm:hidden" />
-              무대를 준비합니다
+              이렇게 준비합니다
             </h2>
           </ScrollReveal>
 
