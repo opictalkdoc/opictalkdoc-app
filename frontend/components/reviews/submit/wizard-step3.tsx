@@ -7,9 +7,14 @@ import { ChevronLeft, Loader2, Send, Gift } from "lucide-react";
 import { step3Schema, type Step3Input } from "@/lib/validations/reviews";
 import { completeSubmission } from "@/lib/actions/reviews";
 
+export interface CreditResult {
+  creditGranted: boolean;
+  nextCreditDate: string | null;
+}
+
 interface WizardStep3Props {
   submissionId: number;
-  onComplete: () => void;
+  onComplete: (creditResult: CreditResult) => void;
   onBack: () => void;
 }
 
@@ -51,7 +56,10 @@ export function WizardStep3({ submissionId, onComplete, onBack }: WizardStep3Pro
       return;
     }
 
-    onComplete();
+    onComplete({
+      creditGranted: result.data?.creditGranted ?? false,
+      nextCreditDate: result.data?.nextCreditDate ?? null,
+    });
   };
 
   return (
@@ -64,7 +72,7 @@ export function WizardStep3({ submissionId, onComplete, onBack }: WizardStep3Pro
             후기를 완료하면 스크립트 크레딧 2개를 드려요!
           </p>
           <p className="mt-0.5 text-xs text-foreground-secondary">
-            매월 2건까지 보상이 제공됩니다
+            OPIc 응시 주기(25일)에 맞춰 크레딧이 지급됩니다
           </p>
         </div>
       </div>

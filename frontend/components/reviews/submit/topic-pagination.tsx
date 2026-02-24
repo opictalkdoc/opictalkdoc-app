@@ -61,10 +61,10 @@ export function TopicPagination({
     staleTime: Infinity, // 고정 데이터, 세션 내 1회 로드
   });
 
-  // category 변경 시 page 리셋
+  // category 또는 제외 주제 변경 시 page 리셋
   useEffect(() => {
     setPage(0);
-  }, [category]);
+  }, [category, excludedTopics.length]);
 
   // 이전 콤보에서 선택한 주제 제외 (같은 카테고리 내)
   const filteredTopics = excludedTopics.length > 0

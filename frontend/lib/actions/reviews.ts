@@ -229,7 +229,7 @@ export async function saveQuestions(
 
 export async function completeSubmission(
   formData: Record<string, unknown>
-): Promise<ActionResult> {
+): Promise<ActionResult<{ creditGranted: boolean; nextCreditDate: string | null }>> {
   const parsed = step3Schema.safeParse(formData);
   if (!parsed.success) {
     return { error: parsed.error.issues[0].message };
@@ -240,17 +240,18 @@ export async function completeSubmission(
 
     const { submission_id, one_line_review, tips } = parsed.data;
 
-    // 소유권 확인
+    // 소유권 + draft 상태 확인 (중복 완료 방지)
     const { data: submission } = await supabase
       .from("submissions")
-      .select("id")
+      .select("id, status")
       .eq("id", submission_id)
       .eq("user_id", userId)
       .single();
 
     if (!submission) return { error: "후기를 찾을 수 없습니다" };
+    if (submission.status === "complete") return { error: "이미 완료된 후기입니다" };
 
-    // submissions 업데이트
+    // submissions 업데이트 (status='draft'인 경우에만)
     const { error: updateError } = await supabase
       .from("submissions")
       .update({
@@ -260,7 +261,8 @@ export async function completeSubmission(
         status: "complete",
         submitted_at: new Date().toISOString(),
       })
-      .eq("id", submission_id);
+      .eq("id", submission_id)
+      .eq("status", "draft");
 
     if (updateError) return { error: "후기 완료에 실패했습니다" };
 
@@ -295,31 +297,116 @@ export async function completeSubmission(
       // 콤보 추출 실패해도 후기 자체는 저장됨
     }
 
-    // 크레딧 보상 (P-2: 월 2건 제한, script_credits +2)
+    // 크레딧 보상 (25일 룰: 최초 2회 무조건 지급, 3회차부터 마지막 지급일로부터 25일 경과 필요)
+    let creditGranted = false;
+    let nextCreditDate: string | null = null;
     try {
-      const now = new Date();
-      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-
-      const { count } = await supabase
+      // 크레딧이 지급된 이전 완료 건수 + 마지막 지급일 조회
+      // (방금 완료한 건 제외: submitted_at < 현재 시각 직전)
+      const { data: creditHistory } = await supabase
         .from("submissions")
-        .select("id", { count: "exact", head: true })
+        .select("submitted_at")
         .eq("user_id", userId)
         .eq("status", "complete")
-        .gte("submitted_at", monthStart);
+        .eq("credit_granted", true)
+        .order("submitted_at", { ascending: false });
 
-      // 이번 달 complete 건수 2 이하이면 크레딧 지급 (방금 완료한 것 포함)
-      if ((count ?? 0) <= 2) {
+      const creditCount = creditHistory?.length ?? 0;
+
+      if (creditCount < 2) {
+        // 최초 2회: 무조건 지급
+        creditGranted = true;
+      } else {
+        // 3회차부터: 마지막 지급일로부터 25일 경과 확인
+        const lastGrantedAt = creditHistory![0].submitted_at;
+        if (lastGrantedAt) {
+          const lastDate = new Date(lastGrantedAt);
+          const daysSince = Math.floor(
+            (Date.now() - lastDate.getTime()) / (1000 * 60 * 60 * 24)
+          );
+          if (daysSince >= 25) {
+            creditGranted = true;
+          } else {
+            const next = new Date(lastDate);
+            next.setDate(next.getDate() + 25);
+            nextCreditDate = `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, "0")}-${String(next.getDate()).padStart(2, "0")}`;
+          }
+        }
+      }
+
+      if (creditGranted) {
         await supabase.rpc("increment_script_credits", {
           p_user_id: userId,
           p_amount: 2,
         });
+        // 크레딧 지급 여부 기록
+        await supabase
+          .from("submissions")
+          .update({ credit_granted: true })
+          .eq("id", submission_id);
       }
     } catch {
       // 크레딧 지급 실패해도 후기 자체는 유지
     }
 
     revalidatePath("/reviews");
-    return {};
+    return { data: { creditGranted, nextCreditDate } };
+  } catch {
+    return { error: "로그인이 필요합니다" };
+  }
+}
+
+// ============================================================
+// Draft 질문 로드 (이어쓰기용)
+// ============================================================
+
+export async function getDraftQuestions(
+  submissionId: number
+): Promise<ActionResult<{
+  combo_type: string;
+  topic: string;
+  master_question_id: string | null;
+  custom_question_text: string | null;
+  is_not_remembered: boolean;
+  question_title: string | null;
+  question_korean: string | null;
+}[]>> {
+  try {
+    const { supabase, userId } = await requireUser();
+
+    // 소유권 확인
+    const { data: submission } = await supabase
+      .from("submissions")
+      .select("id")
+      .eq("id", submissionId)
+      .eq("user_id", userId)
+      .single();
+
+    if (!submission) return { error: "후기를 찾을 수 없습니다" };
+
+    const { data, error } = await supabase
+      .from("submission_questions")
+      .select("combo_type, topic, master_question_id, custom_question_text, is_not_remembered, master_questions(question_title, question_korean)")
+      .eq("submission_id", submissionId)
+      .order("question_number");
+
+    if (error) return { error: "질문 로드에 실패했습니다" };
+
+    // master_questions 조인 결과를 플랫하게 변환
+    const flat = (data || []).map((q: Record<string, unknown>) => {
+      const mq = q.master_questions as { question_title: string; question_korean: string } | null;
+      return {
+        combo_type: q.combo_type as string,
+        topic: q.topic as string,
+        master_question_id: q.master_question_id as string | null,
+        custom_question_text: q.custom_question_text as string | null,
+        is_not_remembered: q.is_not_remembered as boolean,
+        question_title: mq?.question_title || null,
+        question_korean: mq?.question_korean || null,
+      };
+    });
+
+    return { data: flat };
   } catch {
     return { error: "로그인이 필요합니다" };
   }
@@ -335,11 +422,23 @@ export async function deleteSubmission(
   try {
     const { supabase, userId } = await requireUser();
 
+    // 완료된 후기는 삭제 불가 (크레딧 악용 방지 + 빈도 분석 데이터 보존)
+    const { data: submission } = await supabase
+      .from("submissions")
+      .select("id, status")
+      .eq("id", submissionId)
+      .eq("user_id", userId)
+      .single();
+
+    if (!submission) return { error: "후기를 찾을 수 없습니다" };
+    if (submission.status === "complete") return { error: "완료된 후기는 삭제할 수 없습니다" };
+
     const { error } = await supabase
       .from("submissions")
       .delete()
       .eq("id", submissionId)
-      .eq("user_id", userId);
+      .eq("user_id", userId)
+      .eq("status", "draft");
 
     if (error) return { error: "삭제에 실패했습니다" };
 
