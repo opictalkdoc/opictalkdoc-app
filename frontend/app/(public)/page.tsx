@@ -126,7 +126,7 @@ export default function HomePage() {
   return (
     <>
       {/* ━━━ 1. Hero — 따뜻한 크림, 편안한 일상 ━━━ */}
-      <section className="relative flex min-h-[100svh] flex-col items-center overflow-hidden bg-[#FAF6F1] px-5 pb-16 pt-24 sm:pb-20 sm:pt-32">
+      <section className="relative flex min-h-[100svh] flex-col items-center overflow-hidden bg-[#FAF6F1] px-5 pb-16 pt-20 sm:pb-20 sm:pt-32">
         {/* 배경 — 따뜻한 조명 글로우 */}
         <div className="pointer-events-none absolute left-1/2 top-[-100px] h-[600px] w-[600px] -translate-x-1/2 bg-[radial-gradient(circle,rgba(212,131,94,0.08)_0%,transparent_70%)]" />
 
@@ -161,15 +161,18 @@ export default function HomePage() {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.3, ease: "easeOut" }}
-          className="relative mx-auto mt-8 max-w-[1100px]"
+          className="relative mx-auto mt-8 w-full max-w-[1100px]"
         >
           <p className="mb-6 text-center text-[0.85rem] font-medium text-[#8B7E72] sm:text-[1rem]">
             어떤 일상을 보내셨나요? 있는 그대로의 당신을 들려주세요.
           </p>
           <div className="flex gap-3 overflow-x-auto px-4 pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:gap-4 md:grid md:grid-cols-5 md:overflow-visible md:px-6">
-            {illustrations.map((ill) => (
-              <div
+            {illustrations.map((ill, i) => (
+              <ScrollReveal
                 key={ill.caption}
+                preset="fade-left"
+                delay={i * 0.12}
+                duration={0.6}
                 className="w-[36vw] flex-shrink-0 sm:w-[28vw] md:w-auto"
               >
                 <div className="overflow-hidden rounded-2xl">
@@ -184,7 +187,7 @@ export default function HomePage() {
                 <p className="mt-2.5 text-center text-[0.8rem] font-medium text-[#8B7E72]">
                   {ill.caption}
                 </p>
-              </div>
+              </ScrollReveal>
             ))}
           </div>
         </motion.div>
