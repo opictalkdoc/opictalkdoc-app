@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { BarChart3, Send, MessageSquare } from "lucide-react";
 import { FrequencyTab } from "./frequency/frequency-tab";
 import { SubmitTab } from "./submit/submit-tab";
 import { ListTab } from "./list/list-tab";
+import { getSubmissionWithQuestions } from "@/lib/actions/reviews";
 import type { ReviewStats, FrequencyItem, Submission } from "@/lib/types/reviews";
 
 /* ── 상수 ── */
@@ -27,7 +29,23 @@ interface ReviewsContentProps {
 }
 
 export function ReviewsContent({ initialStats, initialFrequency, initialSubmissions, initialPublicReviews }: ReviewsContentProps) {
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<TabId>("frequency");
+
+  // 완료된 후기 상세 Prefetch — 페이지 진입 시 바로 실행 (탭 무관)
+  useEffect(() => {
+    for (const sub of initialSubmissions) {
+      if (sub.status !== "complete") continue;
+      queryClient.prefetchQuery({
+        queryKey: ["submission-detail", sub.id],
+        queryFn: async () => {
+          const result = await getSubmissionWithQuestions(sub.id);
+          return result.data || null;
+        },
+        staleTime: Infinity,
+      });
+    }
+  }, [initialSubmissions, queryClient]);
 
   return (
     <div>

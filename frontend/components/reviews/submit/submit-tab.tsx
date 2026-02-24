@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Send, FileText, Trash2, ChevronRight, ChevronDown, CheckCircle2 } from "lucide-react";
 import { SubmissionDetail } from "./submission-detail";
 import { WizardStep1 } from "./wizard-step1";
 import { WizardStep2, type ComboResult } from "./wizard-step2";
 import { WizardStep3, type CreditResult } from "./wizard-step3";
-import { getMySubmissions, deleteSubmission, getDraftQuestions, getSubmissionWithQuestions } from "@/lib/actions/reviews";
+import { getMySubmissions, deleteSubmission, getDraftQuestions } from "@/lib/actions/reviews";
 import type { Submission } from "@/lib/types/reviews";
 import {
   ACHIEVED_LEVEL_OPTION_LABELS,
@@ -39,21 +39,6 @@ export function SubmitTab({ initialSubmissions }: SubmitTabProps) {
     initialData: initialSubmissions,
     staleTime: 5 * 60 * 1000, // 5분
   });
-
-  // 완료된 후기 상세 데이터 Prefetch — 클릭 시 0ms 즉시 표시
-  useEffect(() => {
-    const completeSubmissions = submissions.filter((s) => s.status === "complete");
-    for (const sub of completeSubmissions) {
-      queryClient.prefetchQuery({
-        queryKey: ["submission-detail", sub.id],
-        queryFn: async () => {
-          const result = await getSubmissionWithQuestions(sub.id);
-          return result.data || null;
-        },
-        staleTime: Infinity,
-      });
-    }
-  }, [submissions, queryClient]);
 
   const handleDelete = async (id: number) => {
     if (!confirm("정말 삭제하시겠습니까?")) return;
