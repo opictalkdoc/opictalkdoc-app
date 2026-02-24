@@ -422,6 +422,37 @@ export async function getSubmissionWithQuestions(
 }
 
 // ============================================================
+// 제출 상세 일괄 조회 (N+1 방지 — page.tsx 서버 사전 로딩용)
+// ============================================================
+
+export async function getSubmissionsWithQuestionsBatch(
+  submissionIds: number[]
+): Promise<Record<number, SubmissionWithQuestions>> {
+  if (submissionIds.length === 0) return {};
+
+  try {
+    const { supabase, userId } = await requireUser();
+
+    const { data, error } = await supabase
+      .from("submissions")
+      .select("*, submission_questions(*, master_questions(question_id, question_title, question_english, question_korean, answer_type, topic))")
+      .in("id", submissionIds)
+      .eq("user_id", userId)
+      .order("question_number", { referencedTable: "submission_questions" });
+
+    if (error || !data) return {};
+
+    const result: Record<number, SubmissionWithQuestions> = {};
+    for (const row of data) {
+      result[row.id] = row as SubmissionWithQuestions;
+    }
+    return result;
+  } catch {
+    return {};
+  }
+}
+
+// ============================================================
 // Draft 질문 로드 (이어쓰기용)
 // ============================================================
 
@@ -604,21 +635,16 @@ export async function getSubmissionDetail(
   return { data: data as unknown as SubmissionWithQuestions };
 }
 
-// ============================================================
-// 빈도 분석
-// ============================================================
+// ── 내부 헬퍼: 콤보 + survey_type 조회 (getFrequency, getStatsAndFrequency 공유) ──
 
-export async function getFrequency(): Promise<ActionResult<FrequencyItem[]>> {
-  const supabase = await createServerSupabaseClient();
-
+async function fetchCombosAndSurveyTypes(
+  supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>
+) {
   const [combosResult, surveyTypeResult] = await Promise.all([
     supabase.from("submission_combos").select("topic, combo_type"),
     supabase.from("master_questions").select("topic, survey_type"),
   ]);
 
-  if (combosResult.error) return { error: "빈도 분석에 실패했습니다" };
-
-  // 주제 → survey_type 매핑
   const surveyTypeMap = new Map<string, string>();
   for (const row of surveyTypeResult.data || []) {
     if (!surveyTypeMap.has(row.topic)) {
@@ -626,9 +652,15 @@ export async function getFrequency(): Promise<ActionResult<FrequencyItem[]>> {
     }
   }
 
-  // GROUP BY + COUNT 집계
+  return { combos: combosResult.data || [], surveyTypeMap, error: combosResult.error };
+}
+
+function buildFrequencyList(
+  combos: { topic: string; combo_type: string }[],
+  surveyTypeMap: Map<string, string>
+): FrequencyItem[] {
   const freqMap = new Map<string, FrequencyItem>();
-  for (const row of combosResult.data || []) {
+  for (const row of combos) {
     const key = `${row.combo_type}:${row.topic}`;
     const existing = freqMap.get(key);
     if (existing) {
@@ -642,12 +674,18 @@ export async function getFrequency(): Promise<ActionResult<FrequencyItem[]>> {
       });
     }
   }
+  return Array.from(freqMap.values()).sort((a, b) => b.frequency - a.frequency);
+}
 
-  const result = Array.from(freqMap.values()).sort(
-    (a, b) => b.frequency - a.frequency
-  );
+// ============================================================
+// 빈도 분석
+// ============================================================
 
-  return { data: result };
+export async function getFrequency(): Promise<ActionResult<FrequencyItem[]>> {
+  const supabase = await createServerSupabaseClient();
+  const { combos, surveyTypeMap, error } = await fetchCombosAndSurveyTypes(supabase);
+  if (error) return { error: "빈도 분석에 실패했습니다" };
+  return { data: buildFrequencyList(combos, surveyTypeMap) };
 }
 
 // ============================================================
@@ -741,60 +779,21 @@ export async function getStatsAndFrequency(): Promise<{
 }> {
   const supabase = await createServerSupabaseClient();
 
-  // 4개 쿼리 병렬 실행
-  const [reviewsResult, combosResult, participantsResult, surveyTypeResult] = await Promise.all([
-    // 총 후기 수 (head: true → 행 0개 전송)
+  // 3개 병렬: 후기 수 + (콤보+survey_type) + 참여자 user_id 목록
+  const [reviewsResult, { combos, surveyTypeMap }, participantsResult] = await Promise.all([
     supabase
       .from("submissions")
       .select("id", { count: "exact", head: true })
       .eq("status", "complete"),
-    // 콤보 데이터 — stats(주제 수) + frequency(빈도) 공용
-    supabase.from("submission_combos").select("topic, combo_type"),
-    // 참여자 수
+    fetchCombosAndSurveyTypes(supabase),
     supabase
       .from("submissions")
       .select("user_id")
       .eq("status", "complete"),
-    // 주제 → survey_type 매핑
-    supabase.from("master_questions").select("topic, survey_type"),
   ]);
 
-  // 주제 → survey_type 매핑
-  const surveyTypeMap = new Map<string, string>();
-  for (const row of surveyTypeResult.data || []) {
-    if (!surveyTypeMap.has(row.topic)) {
-      surveyTypeMap.set(row.topic, row.survey_type);
-    }
-  }
-
-  // stats 계산
-  const combos = combosResult.data || [];
-  const uniqueTopics = new Set(
-    combos.flatMap((t) => t.topic.split(","))
-  ).size;
-  const totalParticipants = new Set(
-    (participantsResult.data || []).map((p) => p.user_id)
-  ).size;
-
-  // frequency 계산 (submission_combos 이중 조회 제거)
-  const freqMap = new Map<string, FrequencyItem>();
-  for (const row of combos) {
-    const key = `${row.combo_type}:${row.topic}`;
-    const existing = freqMap.get(key);
-    if (existing) {
-      existing.frequency += 1;
-    } else {
-      freqMap.set(key, {
-        topic: row.topic,
-        combo_type: row.combo_type as ComboType,
-        frequency: 1,
-        survey_type: (surveyTypeMap.get(row.topic) as FrequencyItem["survey_type"]) || undefined,
-      });
-    }
-  }
-  const frequency = Array.from(freqMap.values()).sort(
-    (a, b) => b.frequency - a.frequency
-  );
+  const uniqueTopics = new Set(combos.flatMap((t) => t.topic.split(","))).size;
+  const totalParticipants = new Set((participantsResult.data || []).map((r) => r.user_id)).size;
 
   return {
     stats: {
@@ -802,6 +801,6 @@ export async function getStatsAndFrequency(): Promise<{
       uniqueTopics,
       totalParticipants,
     },
-    frequency,
+    frequency: buildFrequencyList(combos, surveyTypeMap),
   };
 }

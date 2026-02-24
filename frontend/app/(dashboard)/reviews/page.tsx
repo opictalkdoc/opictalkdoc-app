@@ -1,7 +1,6 @@
 import { Suspense } from "react";
 import { ReviewsContent } from "@/components/reviews/reviews-content";
-import { getStatsAndFrequency, getMySubmissions, getPublicReviews, getSubmissionWithQuestions } from "@/lib/actions/reviews";
-import type { SubmissionWithQuestions } from "@/lib/types/reviews";
+import { getStatsAndFrequency, getMySubmissions, getPublicReviews, getSubmissionsWithQuestionsBatch } from "@/lib/actions/reviews";
 
 export const metadata = {
   title: "시험후기 | 오픽톡닥",
@@ -18,18 +17,9 @@ async function ReviewsDataLoader() {
 
   const submissions = submissionsResult.data || [];
 
-  // 2단계: 완료된 후기 상세를 서버에서 직접 병렬 조회 (클라이언트 RTT 제거)
+  // 2단계: 완료된 후기 상세를 단일 쿼리로 일괄 조회 (N+1 → 1 쿼리)
   const completeIds = submissions.filter(s => s.status === "complete").map(s => s.id);
-  const detailResults = completeIds.length > 0
-    ? await Promise.all(completeIds.map(id => getSubmissionWithQuestions(id)))
-    : [];
-
-  const submissionDetails: Record<number, SubmissionWithQuestions> = {};
-  completeIds.forEach((id, i) => {
-    if (detailResults[i].data) {
-      submissionDetails[id] = detailResults[i].data!;
-    }
-  });
+  const submissionDetails = await getSubmissionsWithQuestionsBatch(completeIds);
 
   return (
     <ReviewsContent
