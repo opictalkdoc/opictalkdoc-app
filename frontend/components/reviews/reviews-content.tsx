@@ -5,7 +5,7 @@ import { BarChart3, Send, MessageSquare } from "lucide-react";
 import { FrequencyTab } from "./frequency/frequency-tab";
 import { SubmitTab } from "./submit/submit-tab";
 import { ListTab } from "./list/list-tab";
-import type { ReviewStats, FrequencyItem } from "@/lib/types/reviews";
+import type { ReviewStats, FrequencyItem, Submission } from "@/lib/types/reviews";
 
 /* ── 상수 ── */
 
@@ -22,9 +22,10 @@ type TabId = (typeof tabs)[number]["id"];
 interface ReviewsContentProps {
   initialStats: ReviewStats;
   initialFrequency: FrequencyItem[];
+  initialSubmissions: Submission[];
 }
 
-export function ReviewsContent({ initialStats, initialFrequency }: ReviewsContentProps) {
+export function ReviewsContent({ initialStats, initialFrequency, initialSubmissions }: ReviewsContentProps) {
   const [activeTab, setActiveTab] = useState<TabId>("frequency");
 
   return (
@@ -56,7 +57,7 @@ export function ReviewsContent({ initialStats, initialFrequency }: ReviewsConten
       {activeTab === "frequency" && (
         <FrequencyTab initialStats={initialStats} initialFrequency={initialFrequency} />
       )}
-      {activeTab === "submit" && <SubmitTab />}
+      {activeTab === "submit" && <SubmitTab initialSubmissions={initialSubmissions} />}
       {activeTab === "list" && <ListTab />}
     </div>
   );

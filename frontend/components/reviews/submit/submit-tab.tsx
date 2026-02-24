@@ -16,7 +16,11 @@ import {
   type PreExamLevel,
 } from "@/lib/types/reviews";
 
-export function SubmitTab() {
+interface SubmitTabProps {
+  initialSubmissions?: Submission[];
+}
+
+export function SubmitTab({ initialSubmissions }: SubmitTabProps) {
   const queryClient = useQueryClient();
   const [wizardOpen, setWizardOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
@@ -32,6 +36,7 @@ export function SubmitTab() {
       const result = await getMySubmissions();
       return result.data || [];
     },
+    initialData: initialSubmissions,
     staleTime: 5 * 60 * 1000, // 5분
   });
 
