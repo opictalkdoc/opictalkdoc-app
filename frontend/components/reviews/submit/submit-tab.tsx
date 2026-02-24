@@ -1,13 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Send, FileText, Trash2, ChevronRight, ChevronDown, CheckCircle2 } from "lucide-react";
 import { SubmissionDetail } from "./submission-detail";
 import { WizardStep1 } from "./wizard-step1";
 import { WizardStep2, type ComboResult } from "./wizard-step2";
 import { WizardStep3, type CreditResult } from "./wizard-step3";
-import { getMySubmissions, deleteSubmission, getDraftQuestions } from "@/lib/actions/reviews";
+import { getMySubmissions, deleteSubmission, getDraftQuestions, getSubmissionWithQuestions } from "@/lib/actions/reviews";
 import type { Submission } from "@/lib/types/reviews";
 import {
   ACHIEVED_LEVEL_OPTION_LABELS,
@@ -34,6 +34,21 @@ export function SubmitTab() {
     },
     staleTime: 5 * 60 * 1000, // 5분
   });
+
+  // 완료된 후기 상세 데이터 Prefetch — 클릭 시 0ms 즉시 표시
+  useEffect(() => {
+    const completeSubmissions = submissions.filter((s) => s.status === "complete");
+    for (const sub of completeSubmissions) {
+      queryClient.prefetchQuery({
+        queryKey: ["submission-detail", sub.id],
+        queryFn: async () => {
+          const result = await getSubmissionWithQuestions(sub.id);
+          return result.data || null;
+        },
+        staleTime: Infinity,
+      });
+    }
+  }, [submissions, queryClient]);
 
   const handleDelete = async (id: number) => {
     if (!confirm("정말 삭제하시겠습니까?")) return;
@@ -188,7 +203,7 @@ export function SubmitTab() {
             </p>
             {creditResult?.creditGranted ? (
               <p className="mt-0.5 text-xs text-green-600">
-                스크립트 크레딧 2개가 지급되었습니다. 감사합니다.
+                스크립트 패키지 생성권 2개가 지급되었습니다. 감사합니다.
               </p>
             ) : (
               <p className="mt-0.5 text-xs text-foreground-secondary">
@@ -204,7 +219,7 @@ export function SubmitTab() {
       <div className="rounded-[var(--radius-xl)] border border-border bg-surface p-6">
         <h3 className="font-semibold text-foreground">시험 후기 제출하기</h3>
         <p className="mt-1 text-sm text-foreground-secondary">
-          시험 후기를 제출하면 스크립트 크레딧 2개가 지급됩니다.
+          시험 후기를 제출하면 스크립트 패키지 생성권 2개가 지급됩니다.
           여러분의 데이터가 더 정확한 빈도 분석을 만듭니다.
         </p>
 

@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useState, useEffect, useRef } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { BarChart3, TrendingUp, FileText, Users, Info, ChevronDown } from "lucide-react";
 import { getFrequency, getQuestionFrequency } from "@/lib/actions/reviews";
 import type {
@@ -23,8 +23,10 @@ interface FrequencyTabProps {
 }
 
 export function FrequencyTab({ initialStats, initialFrequency }: FrequencyTabProps) {
+  const queryClient = useQueryClient();
   const [subTab, setSubTab] = useState<FrequencyCategory>("일반");
   const [expandedTopic, setExpandedTopic] = useState<string | null>(null);
+  const prefetchedRef = useRef(false);
 
   const { data: frequencyData = [], isLoading: loading } = useQuery({
     queryKey: ["review-frequency"],
@@ -35,6 +37,24 @@ export function FrequencyTab({ initialStats, initialFrequency }: FrequencyTabPro
     initialData: initialFrequency,
     staleTime: 5 * 60 * 1000, // 5분
   });
+
+  // 주제별 질문 빈도 Prefetch — 빈도 데이터 로드 후 1회만 실행
+  useEffect(() => {
+    if (prefetchedRef.current || frequencyData.length === 0) return;
+    prefetchedRef.current = true;
+
+    const uniqueTopics = [...new Set(frequencyData.map((item) => item.topic))];
+    for (const topic of uniqueTopics) {
+      queryClient.prefetchQuery({
+        queryKey: ["question-frequency", topic],
+        queryFn: async () => {
+          const result = await getQuestionFrequency(topic);
+          return result.data || [];
+        },
+        staleTime: 5 * 60 * 1000,
+      });
+    }
+  }, [frequencyData, queryClient]);
 
   // 클릭한 주제의 질문 빈도 조회
   const { data: questionData = [], isLoading: questionLoading } = useQuery({
