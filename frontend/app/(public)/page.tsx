@@ -155,24 +155,39 @@ export default function HomePage() {
             가장 완벽한 대본입니다.
           </motion.h1>
 
+          {/* 일상 포토카드 갤러리 */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.3, ease: "easeOut" }}
-            className="mt-8 w-[310px] rounded-2xl border border-[#EAE0D5] bg-white/50 px-6 py-7 backdrop-blur-sm sm:w-[530px] sm:px-10 sm:py-9"
+            className="relative mx-auto mt-8 w-full max-w-[1100px]"
           >
-            <div className="text-[0.8rem] leading-[1.9] text-[#8B7E72] sm:text-[1.05rem]">
-              <p>
-                퇴근길에 듣는 플레이리스트,
-                <br />
-                주말마다 찾는 단골 카페의 아메리카노,
-                <br />
-                친구와 나누는 쓸데없이 긴 수다.
-                <br />
-                그 익숙한 일상이 OPIc에서 가장 빛나는 대본입니다.
-              </p>
+            <p className="mb-6 text-center text-[0.85rem] text-[#B5A99D]">
+              이 모든 순간이, 당신만의 대본입니다
+            </p>
+            <div className="flex gap-3 overflow-x-auto px-4 pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:gap-4 md:grid md:grid-cols-5 md:overflow-visible md:px-6">
+              {illustrations.map((ill) => (
+                <div
+                  key={ill.caption}
+                  className="w-[36vw] flex-shrink-0 sm:w-[28vw] md:w-auto"
+                >
+                  <div className="overflow-hidden rounded-2xl">
+                    <Image
+                      src={ill.src}
+                      alt={ill.caption}
+                      width={900}
+                      height={1200}
+                      className="h-full w-full object-cover transition-transform duration-300 hover:scale-105"
+                    />
+                  </div>
+                  <p className="mt-2.5 text-center text-[0.8rem] font-medium text-[#8B7E72]">
+                    {ill.caption}
+                  </p>
+                </div>
+              ))}
             </div>
           </motion.div>
+
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -205,38 +220,6 @@ export default function HomePage() {
           </motion.div>
         </div>
 
-        {/* 일상 일러스트 갤러리 — Staggered Slide-in */}
-        <div className="relative mx-auto mt-16 max-w-[1100px] sm:mt-20">
-          <ScrollReveal preset="fade-up" duration={0.5}>
-            <p className="mb-6 text-center text-[0.85rem] text-[#B5A99D]">
-              이 모든 순간이, 당신만의 대본입니다
-            </p>
-          </ScrollReveal>
-          <div className="flex gap-3 overflow-x-auto px-4 pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:gap-4 md:grid md:grid-cols-5 md:overflow-visible md:px-6">
-            {illustrations.map((ill, i) => (
-              <ScrollReveal
-                key={ill.caption}
-                preset="fade-left"
-                delay={i * 0.12}
-                duration={0.6}
-                className="w-[36vw] flex-shrink-0 sm:w-[28vw] md:w-auto"
-              >
-                <div className="overflow-hidden rounded-2xl">
-                  <Image
-                    src={ill.src}
-                    alt={ill.caption}
-                    width={900}
-                    height={1200}
-                    className="h-full w-full object-cover transition-transform duration-300 hover:scale-105"
-                  />
-                </div>
-                <p className="mt-2.5 text-center text-[0.8rem] font-medium text-[#8B7E72]">
-                  {ill.caption}
-                </p>
-              </ScrollReveal>
-            ))}
-          </div>
-        </div>
       </section>
 
       {/* ━━━ 2. Stats (전략 넛지) — 2단 레이아웃 ━━━ */}
