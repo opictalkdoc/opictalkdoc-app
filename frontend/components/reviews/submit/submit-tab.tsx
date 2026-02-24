@@ -190,13 +190,10 @@ export function SubmitTab() {
               <p className="mt-0.5 text-xs text-green-600">
                 스크립트 크레딧 2개가 지급되었습니다. 감사합니다.
               </p>
-            ) : creditResult?.nextCreditDate ? (
-              <p className="mt-0.5 text-xs text-foreground-secondary">
-                크레딧은 {creditResult.nextCreditDate} 이후 제출 시 지급됩니다. (OPIc 응시 주기 25일 기준)
-              </p>
             ) : (
-              <p className="mt-0.5 text-xs text-green-600">
-                소중한 후기 감사합니다.
+              <p className="mt-0.5 text-xs text-foreground-secondary">
+                소중한 후기 감사합니다! 스크립트 무료 생성권은 OPIc 응시 규정에 따라
+                마지막 지급일로부터 25일 이후 후기 제출 시 지급됩니다. (최초 2회는 즉시 지급)
               </p>
             )}
           </div>

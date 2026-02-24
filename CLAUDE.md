@@ -295,12 +295,14 @@ PORTONE_API_SECRET=XFGThRDJX2...
   - 데이터 변경 후 갱신 → `queryClient.invalidateQueries()` (관련 캐시 자동 갱신)
 - **서버 쿼리 최적화**: 여러 독립 쿼리는 `Promise.all`로 병렬 실행, 공통 데이터는 1회 조회 후 공유
 - **현재 사용 중인 queryKey 목록**:
-  - `["user-credits", userId]` — 대시보드 + 스토어 공유
+  - `["user-credits", userId]` — 대시보드 + 스토어 공유 (후기 완료 시 invalidate)
   - `["review-frequency"]` — 빈도 분석 데이터
   - `["my-submissions"]` — 내 후기 이력
   - `["public-reviews", levelFilter]` — 공개 후기 (필터별)
   - `["topics", category]` — 주제 목록 (고정)
   - `["questions", topic, category]` — 질문 목록 (고정)
+  - `["submission-detail", submissionId]` — 완료 후기 상세 (Infinity)
+  - `["submission-questions", submissionId]` — 완료 후기 질문 목록 (Infinity)
 
 1. **코드 수정** - 필요한 변경사항 구현
 2. **사용자가 요청한 경우에만**:
@@ -481,9 +483,25 @@ origin: https://opictalkdoc@github.com/opictalkdoc/opictalkdoc-app.git
   - **효과**: 탭 전환 시 캐시 히트 0ms, 위저드 주제/질문 재선택 시 로딩 없음
   - CLAUDE.md에 "TanStack Query 필수 원칙" + queryKey 목록 추가 (향후 모듈 구현 시 필수 적용)
 
+### 2026-02-24 - 시험후기 위저드 고도화 + 크레딧 25일 룰
+- **크레딧 보상 규칙 변경**: 월 2건 제한 → **25일 룰**
+  - 최초 2회: 무조건 스크립트 크레딧 2개 지급
+  - 3회차부터: 마지막 지급일로부터 25일 경과 시에만 지급 (OPIc 응시 주기 반영)
+  - `submissions` 테이블에 `credit_granted` boolean 컬럼 추가
+  - `completeSubmission` 반환값에 `creditGranted`/`nextCreditDate` 포함
+  - 완료 메시지 3분기: 지급됨 / 미지급+다음 날짜 안내 / 폴백
+- **완료된 후기 삭제 불가**: 크레딧 악용 방지 + 빈도 분석 데이터 보존
+  - `deleteSubmission` 서버 측 `status === "complete"` 차단 + `.eq("status", "draft")` 이중 방어
+  - UI에서 완료 카드 삭제 버튼 제거, draft만 삭제 가능
+- **Draft 이어쓰기**: `step_completed` 기반 진입 Step 결정 + `getDraftQuestions`로 comboResults 복원
+- **완료 후기 상세 보기**: `SubmissionDetail` 아코디언 컴포넌트 (시험 정보 + 콤보별 질문 + 후기)
+- **콤보 간 주제 중복 제거**: 같은 카테고리 이전 콤보에서 선택한 주제를 `excludedTopics`로 필터링
+- **위저드 버그 수정**: 콤보 전환 시 페이지네이션 리셋, 중복 제출 방지 강화
+- **기억안남/직접입력 UX**: 마지막 페이지로 이동, 주제 카드와 동일 스타일 적용, `itemsPerPage` 9개
+
 ## 🔮 현재 상태 & 다음 단계
 
-**현재**: Phase 3 (핵심 모듈 이관) — Step 1 시험후기 완료 + /reviews TanStack Query 전면 적용 완료
+**현재**: Phase 3 (핵심 모듈 이관) — Step 1 시험후기 완료 + 위저드 고도화 + 크레딧 25일 룰 적용
 **다음 작업**: Step 2 — 스크립트+쉐도잉 모듈 이관 (Server Actions + Edge Functions 하이브리드)
 
 ### 네비게이션 구조 (확정)
@@ -505,7 +523,7 @@ origin: https://opictalkdoc@github.com/opictalkdoc/opictalkdoc-app.git
 - **master_questions**: 510행 (시드 로드 완료)
 - **orders**: 결제 기록 테이블 (RLS: 본인 조회만)
 - **user_credits**: 사용자 이용권 테이블 (회원가입 트리거로 자동 생성)
-- **submissions**: 후기 마스터 (16컬럼, RLS: 본인 CRUD + complete 전체 SELECT)
+- **submissions**: 후기 마스터 (17컬럼 + credit_granted, RLS: 본인 CRUD + complete 전체 SELECT, 완료 후기 삭제 불가)
 - **submission_questions**: 14개 질문 기록 (FK → submissions, master_questions)
 - **submission_combos**: 통합 콤보 (인증: 전체 SELECT, 비인증: advance만)
 - **Storage**: audio-recordings 버킷 (공개, RLS 설정 완료)
@@ -531,6 +549,12 @@ origin: https://opictalkdoc@github.com/opictalkdoc/opictalkdoc-app.git
 **크레딧 소진 순서 (TODO — 모의고사/스크립트 모듈에서 구현):**
 1. **플랜 크레딧 먼저 차감** (`plan_mock_exam_credits`, `plan_script_credits`) — 만료되는 것부터
 2. **횟수권 크레딧 차감** (`mock_exam_credits`, `script_credits`) — 영구 크레딧은 나중에
+
+**후기 제출 크레딧 보상 (25일 룰, 구현 완료):**
+- 최초 2회: 무조건 스크립트 크레딧 2개 지급
+- 3회차부터: 마지막 지급일로부터 25일 경과 시에만 지급 (OPIc 응시 주기 반영)
+- `submissions.credit_granted` boolean으로 지급 이력 추적
+- 완료된 후기는 삭제 불가 (크레딧 악용 방지 + 빈도 분석 데이터 보존)
 
 **플랜 만료 처리 (TODO):**
 - `plan_expires_at < NOW()` 시 → `plan_mock_exam_credits = 0`, `plan_script_credits = 0`, `current_plan = 'free'`
@@ -560,5 +584,5 @@ PGPASSWORD='opictalk2026' PGCLIENTENCODING='UTF8' "/c/Program Files/PostgreSQL/1
 > 의사결정 기록은 `docs/의사결정.md` 참조
 
 ---
-*최종 업데이트: 2026-02-23*
-*상태: Phase 3 Step 1 시험후기 완료 + /reviews TanStack Query 전면 적용 — Step 2 스크립트 이관 대기*
+*최종 업데이트: 2026-02-24*
+*상태: Phase 3 Step 1 시험후기 완료 + 위저드 고도화 + 크레딧 25일 룰 — Step 2 스크립트 이관 대기*

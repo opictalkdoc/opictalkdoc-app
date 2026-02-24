@@ -319,6 +319,7 @@ export interface SubmissionWithQuestions extends Submission {
   submission_questions: (SubmissionQuestion & {
     master_questions?: {
       question_id: string;
+      question_title: string | null;
       question_english: string;
       question_korean: string;
       answer_type: string | null;

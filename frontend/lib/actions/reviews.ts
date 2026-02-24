@@ -84,8 +84,11 @@ export async function createDraft(
 
     if (error) return { error: "후기 생성에 실패했습니다" };
     return { data: { id: data.id } };
-  } catch {
-    return { error: "로그인이 필요합니다" };
+  } catch (e) {
+    if (e instanceof Error && e.message === "로그인이 필요합니다") {
+      return { error: e.message };
+    }
+    return { error: "서버 오류가 발생했습니다" };
   }
 }
 
@@ -108,8 +111,11 @@ export async function getDraft(
 
     if (error || !data) return { error: "후기를 찾을 수 없습니다" };
     return { data: data as Submission };
-  } catch {
-    return { error: "로그인이 필요합니다" };
+  } catch (e) {
+    if (e instanceof Error && e.message === "로그인이 필요합니다") {
+      return { error: e.message };
+    }
+    return { error: "서버 오류가 발생했습니다" };
   }
 }
 
@@ -157,13 +163,16 @@ export async function updateDraft(
 
     if (error) return { error: "수정에 실패했습니다" };
     return { data: { id: submissionId } };
-  } catch {
-    return { error: "로그인이 필요합니다" };
+  } catch (e) {
+    if (e instanceof Error && e.message === "로그인이 필요합니다") {
+      return { error: e.message };
+    }
+    return { error: "서버 오류가 발생했습니다" };
   }
 }
 
 // ============================================================
-// Step 2: 14개 질문 저장
+// Step 2: 질문 저장 (14개 + 자기소개 Q1 자동 추가 = 15개)
 // ============================================================
 
 export async function saveQuestions(
@@ -179,15 +188,23 @@ export async function saveQuestions(
 
     const { submission_id, questions } = parsed.data;
 
-    // 소유권 확인
-    const { data: submission } = await supabase
-      .from("submissions")
-      .select("id")
-      .eq("id", submission_id)
-      .eq("user_id", userId)
-      .single();
+    // 소유권 확인 + 자기소개 master_question_id 병렬 조회
+    const [ownerResult, selfIntroResult] = await Promise.all([
+      supabase
+        .from("submissions")
+        .select("id")
+        .eq("id", submission_id)
+        .eq("user_id", userId)
+        .single(),
+      supabase
+        .from("master_questions")
+        .select("question_id")
+        .eq("topic", "자기소개")
+        .limit(1)
+        .maybeSingle(),
+    ]);
 
-    if (!submission) return { error: "후기를 찾을 수 없습니다" };
+    if (!ownerResult.data) return { error: "후기를 찾을 수 없습니다" };
 
     // 기존 질문 삭제
     await supabase
@@ -195,20 +212,31 @@ export async function saveQuestions(
       .delete()
       .eq("submission_id", submission_id);
 
-    // 14개 INSERT
+    // Q1 자기소개 자동 추가 + 14개 사용자 질문 = 15개 INSERT
+    const allQuestions = [
+      {
+        submission_id,
+        question_number: 1,
+        combo_type: "self_intro",
+        topic: "자기소개",
+        master_question_id: selfIntroResult.data?.question_id || null,
+        custom_question_text: null,
+        is_not_remembered: false,
+      },
+      ...questions.map((q) => ({
+        submission_id,
+        question_number: q.question_number,
+        combo_type: q.combo_type,
+        topic: q.topic,
+        master_question_id: q.master_question_id,
+        custom_question_text: q.custom_question_text,
+        is_not_remembered: q.is_not_remembered,
+      })),
+    ];
+
     const { error: insertError } = await supabase
       .from("submission_questions")
-      .insert(
-        questions.map((q) => ({
-          submission_id,
-          question_number: q.question_number,
-          combo_type: q.combo_type,
-          topic: q.topic,
-          master_question_id: q.master_question_id,
-          custom_question_text: q.custom_question_text,
-          is_not_remembered: q.is_not_remembered,
-        }))
-      );
+      .insert(allQuestions);
 
     if (insertError) return { error: "질문 저장에 실패했습니다" };
 
@@ -219,8 +247,11 @@ export async function saveQuestions(
       .eq("id", submission_id);
 
     return {};
-  } catch {
-    return { error: "로그인이 필요합니다" };
+  } catch (e) {
+    if (e instanceof Error && e.message === "로그인이 필요합니다") {
+      return { error: e.message };
+    }
+    return { error: "서버 오류가 발생했습니다" };
   }
 }
 
@@ -252,8 +283,8 @@ export async function completeSubmission(
     if (!submission) return { error: "후기를 찾을 수 없습니다" };
     if (submission.status === "complete") return { error: "이미 완료된 후기입니다" };
 
-    // submissions 업데이트 (status='draft'인 경우에만)
-    const { error: updateError } = await supabase
+    // submissions 업데이트 (원자적: status='draft'인 경우에만 + 결과 확인)
+    const { data: updated, error: updateError } = await supabase
       .from("submissions")
       .update({
         one_line_review,
@@ -263,9 +294,11 @@ export async function completeSubmission(
         submitted_at: new Date().toISOString(),
       })
       .eq("id", submission_id)
-      .eq("status", "draft");
+      .eq("status", "draft")
+      .select("id")
+      .single();
 
-    if (updateError) return { error: "후기 완료에 실패했습니다" };
+    if (updateError || !updated) return { error: "후기 완료에 실패했습니다" };
 
     // 콤보 추출 (try-catch: 실패해도 후기는 저장됨)
     try {
@@ -352,8 +385,39 @@ export async function completeSubmission(
 
     revalidatePath("/reviews");
     return { data: { creditGranted, nextCreditDate } };
-  } catch {
-    return { error: "로그인이 필요합니다" };
+  } catch (e) {
+    if (e instanceof Error && e.message === "로그인이 필요합니다") {
+      return { error: e.message };
+    }
+    return { error: "서버 오류가 발생했습니다" };
+  }
+}
+
+// ============================================================
+// 제출 상세 조회 (submission + questions 한 번에)
+// ============================================================
+
+export async function getSubmissionWithQuestions(
+  submissionId: number
+): Promise<ActionResult<SubmissionWithQuestions>> {
+  try {
+    const { supabase, userId } = await requireUser();
+
+    const { data, error } = await supabase
+      .from("submissions")
+      .select("*, submission_questions(*, master_questions(question_id, question_title, question_english, question_korean, answer_type, topic))")
+      .eq("id", submissionId)
+      .eq("user_id", userId)
+      .order("question_number", { referencedTable: "submission_questions" })
+      .single();
+
+    if (error || !data) return { error: "후기를 찾을 수 없습니다" };
+    return { data: data as SubmissionWithQuestions };
+  } catch (e) {
+    if (e instanceof Error && e.message === "로그인이 필요합니다") {
+      return { error: e.message };
+    }
+    return { error: "서버 오류가 발생했습니다" };
   }
 }
 
@@ -408,8 +472,11 @@ export async function getDraftQuestions(
     });
 
     return { data: flat };
-  } catch {
-    return { error: "로그인이 필요합니다" };
+  } catch (e) {
+    if (e instanceof Error && e.message === "로그인이 필요합니다") {
+      return { error: e.message };
+    }
+    return { error: "서버 오류가 발생했습니다" };
   }
 }
 
@@ -445,8 +512,11 @@ export async function deleteSubmission(
 
     revalidatePath("/reviews");
     return {};
-  } catch {
-    return { error: "로그인이 필요합니다" };
+  } catch (e) {
+    if (e instanceof Error && e.message === "로그인이 필요합니다") {
+      return { error: e.message };
+    }
+    return { error: "서버 오류가 발생했습니다" };
   }
 }
 
@@ -471,8 +541,11 @@ export async function updateGrade(
 
     revalidatePath("/reviews");
     return {};
-  } catch {
-    return { error: "로그인이 필요합니다" };
+  } catch (e) {
+    if (e instanceof Error && e.message === "로그인이 필요합니다") {
+      return { error: e.message };
+    }
+    return { error: "서버 오류가 발생했습니다" };
   }
 }
 
@@ -492,8 +565,11 @@ export async function getMySubmissions(): Promise<ActionResult<Submission[]>> {
 
     if (error) return { error: "조회에 실패했습니다" };
     return { data: data as Submission[] };
-  } catch {
-    return { error: "로그인이 필요합니다" };
+  } catch (e) {
+    if (e instanceof Error && e.message === "로그인이 필요합니다") {
+      return { error: e.message };
+    }
+    return { error: "서버 오류가 발생했습니다" };
   }
 }
 

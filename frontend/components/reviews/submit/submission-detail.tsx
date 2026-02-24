@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
-import { getDraft, getDraftQuestions } from "@/lib/actions/reviews";
+import { getSubmissionWithQuestions } from "@/lib/actions/reviews";
 import {
   COMBO_STEPS,
   EXAM_PURPOSE_LABELS,
@@ -28,25 +28,17 @@ interface SubmissionDetailProps {
 }
 
 export function SubmissionDetail({ submissionId }: SubmissionDetailProps) {
-  const { data: submission, isLoading: loadingSub } = useQuery({
+  // 1 RTT: submission + questions 한 번에 조회
+  const { data: submission, isLoading } = useQuery({
     queryKey: ["submission-detail", submissionId],
     queryFn: async () => {
-      const result = await getDraft(submissionId);
+      const result = await getSubmissionWithQuestions(submissionId);
       return result.data || null;
     },
     staleTime: Infinity,
   });
 
-  const { data: questions = [], isLoading: loadingQ } = useQuery({
-    queryKey: ["submission-questions", submissionId],
-    queryFn: async () => {
-      const result = await getDraftQuestions(submissionId);
-      return result.data || [];
-    },
-    staleTime: Infinity,
-  });
-
-  if (loadingSub || loadingQ) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center py-6">
         <Loader2 size={16} className="animate-spin text-foreground-muted" />
@@ -55,6 +47,8 @@ export function SubmissionDetail({ submissionId }: SubmissionDetailProps) {
   }
 
   if (!submission) return null;
+
+  const questions = submission.submission_questions || [];
 
   // 콤보별 질문 그룹핑
   const questionsByCombo = new Map<string, typeof questions>();
@@ -112,10 +106,24 @@ export function SubmissionDetail({ submissionId }: SubmissionDetailProps) {
         </div>
       </div>
 
-      {/* 콤보별 출제 질문 */}
+      {/* 출제 질문 */}
       <div className="space-y-2">
         <p className="text-xs font-semibold text-foreground">출제 질문</p>
         <div className="space-y-2">
+          {/* Q1 자기소개 (항상 첫 번째) */}
+          {questionsByCombo.has("self_intro") && (
+            <div className="rounded-[var(--radius-md)] bg-surface-secondary p-2.5">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-semibold text-foreground-muted">
+                  1번 문항
+                </span>
+                <span className="rounded-full bg-primary-50 px-1.5 py-0.5 text-[10px] font-medium text-primary-700">
+                  자기소개
+                </span>
+              </div>
+            </div>
+          )}
+          {/* 콤보별 질문 (2~15번) */}
           {COMBO_STEPS.map((step) => {
             const comboQuestions = questionsByCombo.get(step.comboType);
             if (!comboQuestions || comboQuestions.length === 0) return null;
@@ -142,7 +150,7 @@ export function SubmissionDetail({ submissionId }: SubmissionDetailProps) {
                           ? "기억 안남"
                           : q.custom_question_text
                             ? `[직접 입력] ${q.custom_question_text}`
-                            : q.question_title || q.question_korean || "—"}
+                            : q.master_questions?.question_title || q.master_questions?.question_korean || "—"}
                       </span>
                     </div>
                   ))}

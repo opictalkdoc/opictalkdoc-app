@@ -161,6 +161,7 @@ export function WizardStep2({ submissionId, comboResults, setComboResults, onCom
 
   // 전체 제출
   const handleSubmit = async () => {
+    if (submitting) return;
     setSubmitting(true);
     setError(null);
 
