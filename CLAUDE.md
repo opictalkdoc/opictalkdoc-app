@@ -220,7 +220,9 @@ opictalkdoc/
     │   │   └── list/list-tab.tsx
     │   └── scripts/       # 스크립트 모듈 UI
     │       ├── scripts-content.tsx
-    │       └── create/script-wizard.tsx
+    │       └── create/
+    │           ├── script-wizard.tsx      # 5단계 생성 위저드
+    │           └── script-renderer.tsx    # 4모드 뷰어 + 인터랙티브 핵심정리
     ├── lib/
     │   ├── actions/reviews.ts     # Server Actions (12개)
     │   ├── actions/scripts.ts     # Server Actions (11개)
@@ -509,23 +511,46 @@ origin: https://opictalkdoc@github.com/opictalkdoc/opictalkdoc-app.git
   - **효과**: 탭 전환 시 캐시 히트 0ms, 위저드 주제/질문 재선택 시 로딩 없음
   - CLAUDE.md에 "TanStack Query 필수 원칙" + queryKey 목록 추가 (향후 모듈 구현 시 필수 적용)
 
-### 2026-02-25 - 리브랜딩 결정 + Phase 3 Step 2 스크립트+쉐도잉 모듈 구현 완료
+### 2026-02-25 - 리브랜딩 결정 + Phase 3 Step 2 스크립트+쉐도잉 모듈 구현
 - **리브랜딩 결정 (P-5)**: 오픽톡닥 → **하루오픽 (HaruOPIc)** — haruopic.com
   - "하루"가 앞 → 일상/따뜻함, "오픽" → 서비스 성격, 랜딩 카피와 직결
   - 유지: 디자인 시스템, 슬로건 "말하다, 나답게", 무대 메타포
-- **Step 2 스크립트+쉐도잉 모듈 구현 완료**:
+- **Step 2 스크립트+쉐도잉 모듈 구현**:
   - **DB 마이그레이션** (`004_scripts.sql`): 6테이블 + RLS + 인덱스 8개 + RPC 2개 + Storage 버킷 + 프롬프트 시드
-  - **script_specs 60행 시드 마이그레이션**: 소리담 content 컬럼 → 4컬럼 분할 (level_constraints, slot_structure, example_output JSONB, eval_criteria)
+  - **script_specs 60행 시드 마이그레이션**: 소리담 content 컬럼 → 4컬럼 분할
   - **ai_prompt_templates 2행 시드**: script_system (RCTF System Prompt) + script_user (User Prompt 템플릿)
-  - **TypeScript 타입** (`types/scripts.ts`): 4계층 JSON (paragraphs>slots>sentences>parts), T/E/F 분류, DB 매핑 15개 인터페이스
+  - **TypeScript 타입** (`types/scripts.ts`): 4계층 JSON (paragraphs>slots>sentences), DB 매핑 15개 인터페이스
   - **Zod 스키마** (`validations/scripts.ts`): generate/correct/refine/confirm/createPackage/startShadowing/submitShadowing 7개
-  - **Server Actions** (`actions/scripts.ts`): 11개 (checkScriptCredit, createScript, createCorrectScript, refineScript, confirmScript, deleteScript, getMyScripts, getScriptDetail, getScriptSpec, getShadowingHistory, getScriptStats)
-  - **Edge Function** (`functions/scripts/index.ts`): generate/correct/refine 3라우트, RCTF 프롬프트 조립 (System+User 분리), GPT-4.1 json_schema response_format
-  - **UI**: scripts-content.tsx (3탭 TanStack Query), script-wizard.tsx (3단계 위저드), 서버 병렬 조회
-  - **위저드 Step 1 컴포넌트 재활용**: 시험후기의 `TopicPagination` + `QuestionSelector`를 스크립트 생성 Step 1에서 공유 (기억안남/직접입력 옵셔널 처리)
-  - **목표 등급 게이트**: 미설정 시 `GradeSettingModal` 인라인 표시 — 설정 완료 후 reload, 취소 시 /scripts로 이동
+  - **Server Actions** (`actions/scripts.ts`): 11개
+  - **Edge Function** (`functions/scripts/index.ts`): generate/correct/refine 3라우트, RCTF 프롬프트 조립, GPT-4.1 json_schema
+  - **UI**: scripts-content.tsx (3탭 TanStack Query), script-wizard.tsx (5단계 위저드), 서버 병렬 조회
+  - **위저드 Step 1 컴포넌트 재활용**: 시험후기의 `TopicPagination` + `QuestionSelector` 공유
+  - **목표 등급 게이트**: 미설정 시 `GradeSettingModal` 인라인 표시
   - **API 키 설정**: OpenAI + ElevenLabs API 키 `.env.local` 저장 완료
-  - **빌드 테스트 통과** (tsc + next build)
+
+### 2026-02-26 - Step 2 UX 고도화: Two-Pass 간소화 + 인터랙티브 핵심 정리 + 뷰어 개선
+- **Two-Pass EF 아키텍처 간소화**: per-sentence parts 분류 → 단순 리스트 추출
+  - Pass 2를 복잡한 문장별 6분류(T/E/F) → 4개 플랫 리스트(핵심 표현, 만능 패턴, 연결어, 필러)로 변경
+  - EF 코드 808줄 → 380줄 축소, 생성 시간 65초 → 31초 (절반)
+  - DB `script_analysis` 프롬프트 업데이트 (등급별 추출 밀도 가이드라인)
+  - 타입에서 `ScriptPartType`, `ScriptPart` 제거, `ScriptOutput`에 리스트 필드 추가
+- **핵심 정리 탭 인터랙티브 하이라이트**:
+  - 카테고리별 클릭 가능한 뱃지 필 (핵심 표현 / 연결어 / 필러)
+  - 개별 아이템 클릭 → 스크립트 본문에서 해당 위치만 `<mark>` 하이라이트
+  - 카테고리 헤더 클릭 → 전체 선택/해제 토글
+  - 텍스트 세그먼트 알고리즘: 대소문자 무시, 긴 것 우선 매칭, 겹침 방지
+  - Lucide 아이콘 적용: Bookmark(핵심 표현), ArrowRightLeft(연결어), MessageCircle(필러), Repeat2(만능 패턴)
+  - 사용 가이드 박스 상시 표시 (MousePointerClick 아이콘)
+- **스크립트 뷰어 2탭 + 4모드 구조**:
+  - 기존 3탭(전체보기/스크립트/핵심정리) → 2탭(스크립트/핵심정리)으로 정리
+  - 스크립트 탭 서브 토글 4모드: 영/한 같이(기본), 영어만, 한글만, 영/한 구분
+  - 세그먼트 컨트롤 UI + Lucide 아이콘 (Languages, CaseSensitive, Type, Columns2)
+  - 모바일: 아이콘만 표시, 데스크톱: 아이콘+레이블
+- **가독성 개선**:
+  - 단락 기반 렌더링: Introduction/Body/Conclusion 헤더 + 슬롯별 정렬
+  - 영/한 같이 모드에서 한글에 `border-l-2 border-primary-200` 왼쪽 포인트 바
+  - `ScriptFullTextView` 제거 (미사용 컴포넌트 정리)
+- **Git 커밋 + 프로덕션 배포** (c5f9b07)
 
 ### 2026-02-24 - 시험후기 위저드 고도화 + 크레딧 25일 룰 + 성능 최적화 12단계 + 가이드 문서
 - **크레딧 보상 규칙 변경**: 월 2건 제한 → **25일 룰**
@@ -556,16 +581,14 @@ origin: https://opictalkdoc@github.com/opictalkdoc/opictalkdoc-app.git
 
 ## 🔮 현재 상태 & 다음 단계
 
-**현재**: Phase 3 (핵심 모듈 이관) — Step 2 스크립트+쉐도잉 UX 고도화 진행 중
-**다음 작업**: Step 2 UX 고도화 (opic_tips→4계층 렌더링→패키지 EF→재생성→허브UI) → 리브랜딩(P-5) → Step 3 모의고사
+**현재**: Phase 3 (핵심 모듈 이관) — Step 2 스크립트+쉐도잉 UX 고도화 완료, 패키지 EF + 쉐도잉 UI 남음
+**다음 작업**: Step 2 나머지 (패키지 생성 EF + 쉐도잉 훈련 UI) → 리브랜딩(P-5) → Step 3 모의고사
 
-### ⚠️ Step 2 미완료 항목 (EF 배포 + 클라이언트 연결)
+### ⚠️ Step 2 미완료 항목
 | # | 작업 | 상세 |
 |---|------|------|
-| 1 | Edge Function Supabase 배포 | `supabase functions deploy scripts` + OPENAI_API_KEY Secrets 설정 |
-| 2 | 클라이언트 → EF 호출 연결 | script-wizard.tsx에서 생성 버튼 클릭 시 EF 호출 + 결과 표시 |
-| 3 | 패키지 생성 EF | ElevenLabs TTS + Whisper 타임스탬프 → Storage 업로드 |
-| 4 | 쉐도잉 훈련 상세 UI | /scripts/shadowing 5단계 UI + 평가 EF |
+| 1 | 패키지 생성 EF | ElevenLabs TTS + Whisper 타임스탬프 → Storage 업로드 |
+| 2 | 쉐도잉 훈련 상세 UI | /scripts/shadowing 5단계 UI + 평가 EF |
 
 ### ⏳ 리브랜딩 작업 (P-5: 오픽톡닥 → 하루오픽)
 > 스크립트 이관 전에 진행. 상세는 `docs/의사결정.md` P-5, `docs/실행계획.md` 참조.
@@ -669,5 +692,5 @@ PGPASSWORD='opictalk2026' PGCLIENTENCODING='UTF8' "/c/Program Files/PostgreSQL/1
 > 의사결정 기록은 `docs/의사결정.md` 참조
 
 ---
-*최종 업데이트: 2026-02-25*
-*상태: Phase 3 Step 2 스크립트+쉐도잉 UX 고도화 중 (5-Step 위저드, opic_tips, 4계층 렌더링, 패키지 EF)*
+*최종 업데이트: 2026-02-26*
+*상태: Phase 3 Step 2 UX 고도화 완료 — 패키지 생성 EF + 쉐도잉 UI 남음*
