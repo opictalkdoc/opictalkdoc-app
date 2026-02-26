@@ -8,6 +8,7 @@ import {
   refineScriptSchema,
   confirmScriptSchema,
   createPackageSchema,
+  startShadowingSchema,
 } from "@/lib/validations/scripts";
 import type {
   Script,
@@ -15,9 +16,11 @@ import type {
   ScriptDetail,
   ScriptPackage,
   ShadowingHistoryItem,
+  ShadowingEvaluation,
   CreditCheckResult,
   ScriptSpec,
   OpicTip,
+  TimestampItem,
 } from "@/lib/types/scripts";
 
 type ActionResult<T = null> = {
@@ -549,6 +552,295 @@ export async function getOpicTips(
 
     if (error) return { error: "학습 콘텐츠를 불러올 수 없습니다" };
     return { data: (data ?? []) as OpicTip[] };
+  } catch (err) {
+    return { error: (err as Error).message };
+  }
+}
+
+// ============================================================
+// 패키지 생성 요청
+// ============================================================
+
+export async function createPackage(
+  formData: Record<string, unknown>
+): Promise<ActionResult<{ packageId: string }>> {
+  const parsed = createPackageSchema.safeParse(formData);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0].message };
+  }
+
+  try {
+    const { supabase, userId } = await requireUser();
+
+    // 스크립트 확인 (confirmed + 본인 소유)
+    const { data: script, error: fetchError } = await supabase
+      .from("scripts")
+      .select("id, status")
+      .eq("id", parsed.data.script_id)
+      .eq("user_id", userId)
+      .single();
+
+    if (fetchError || !script) {
+      return { error: "스크립트를 찾을 수 없습니다" };
+    }
+
+    if (script.status !== "confirmed") {
+      return { error: "확정된 스크립트만 패키지를 생성할 수 있습니다" };
+    }
+
+    // EF Phase 1: TTS 음성 생성
+    const phase1Res = await fetch(
+      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/scripts-package/generate-package`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+        },
+        body: JSON.stringify({
+          script_id: parsed.data.script_id,
+          tts_voice: parsed.data.tts_voice,
+          user_id: userId,
+        }),
+      }
+    );
+
+    if (!phase1Res.ok) {
+      const err = await phase1Res.json().catch(() => ({ error: "음성 생성 실패" }));
+      return { error: err.error || "패키지 음성 생성에 실패했습니다" };
+    }
+
+    const phase1Data = await phase1Res.json();
+    const packageId = phase1Data.package_id;
+
+    // EF Phase 2: 타임스탬프 생성 (실패해도 partial로 유지)
+    try {
+      const phase2Res = await fetch(
+        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/scripts-package/generate-shadowing`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+          },
+          body: JSON.stringify({
+            package_id: packageId,
+            user_id: userId,
+          }),
+        }
+      );
+
+      if (!phase2Res.ok) {
+        console.error("Phase 2 실패 (partial 상태 유지)");
+      }
+    } catch {
+      console.error("Phase 2 예외 (partial 상태 유지)");
+    }
+
+    revalidatePath("/scripts");
+    return { data: { packageId } };
+  } catch (err) {
+    return { error: (err as Error).message };
+  }
+}
+
+// ============================================================
+// 쉐도잉 데이터 로드 (패키지 + 스크립트 통합)
+// ============================================================
+
+export interface ShadowingData {
+  packageId: string;
+  scriptId: string;
+  wavUrl: string;
+  jsonUrl: string | null;
+  sentences: TimestampItem[];
+  questionText: string | null;
+  questionKorean: string | null;
+  topic: string | null;
+  keyExpressions: string[];
+  targetLevel: string | null;
+  ttsVoice: string;
+  packageStatus: string;
+}
+
+export async function getShadowingData(
+  packageId: string
+): Promise<ActionResult<ShadowingData>> {
+  try {
+    const { supabase, userId } = await requireUser();
+
+    const { data: pkg, error: pkgError } = await supabase
+      .from("script_packages")
+      .select(`
+        id, script_id, status, wav_file_path, json_file_path,
+        timestamp_data, tts_voice
+      `)
+      .eq("id", packageId)
+      .eq("user_id", userId)
+      .single();
+
+    if (pkgError || !pkg) {
+      return { error: "패키지를 찾을 수 없습니다" };
+    }
+
+    if (!pkg.wav_file_path) {
+      return { error: "음성 파일이 준비되지 않았습니다" };
+    }
+
+    const { data: script, error: scriptError } = await supabase
+      .from("scripts")
+      .select("question_english, question_korean, topic, key_expressions, target_level")
+      .eq("id", pkg.script_id)
+      .single();
+
+    if (scriptError || !script) {
+      return { error: "스크립트를 찾을 수 없습니다" };
+    }
+
+    // Storage public URL 생성
+    const { data: wavUrlData } = supabase.storage
+      .from("script-packages")
+      .getPublicUrl(pkg.wav_file_path);
+
+    let jsonUrl: string | null = null;
+    if (pkg.json_file_path) {
+      const { data: jsonUrlData } = supabase.storage
+        .from("script-packages")
+        .getPublicUrl(pkg.json_file_path);
+      jsonUrl = jsonUrlData?.publicUrl || null;
+    }
+
+    return {
+      data: {
+        packageId: pkg.id,
+        scriptId: pkg.script_id,
+        wavUrl: wavUrlData?.publicUrl || "",
+        jsonUrl,
+        sentences: pkg.timestamp_data || [],
+        questionText: script.question_english,
+        questionKorean: script.question_korean,
+        topic: script.topic,
+        keyExpressions: script.key_expressions || [],
+        targetLevel: script.target_level,
+        ttsVoice: pkg.tts_voice,
+        packageStatus: pkg.status,
+      },
+    };
+  } catch (err) {
+    return { error: (err as Error).message };
+  }
+}
+
+// ============================================================
+// 쉐도잉 세션 시작 (Step 5)
+// ============================================================
+
+export async function startShadowingSession(
+  formData: Record<string, unknown>
+): Promise<ActionResult<{ sessionId: string }>> {
+  const parsed = startShadowingSchema.safeParse(formData);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0].message };
+  }
+
+  try {
+    const { supabase, userId } = await requireUser();
+
+    // 스크립트 정보 조회 (세션에 기록)
+    const { data: script } = await supabase
+      .from("scripts")
+      .select("question_english, question_korean, topic")
+      .eq("id", parsed.data.script_id)
+      .single();
+
+    const { data: session, error } = await supabase
+      .from("shadowing_sessions")
+      .insert({
+        user_id: userId,
+        package_id: parsed.data.package_id,
+        script_id: parsed.data.script_id,
+        question_text: script?.question_english || null,
+        question_korean: script?.question_korean || null,
+        topic: script?.topic || null,
+        status: "active",
+      })
+      .select("id")
+      .single();
+
+    if (error || !session) {
+      return { error: "세션 생성에 실패했습니다" };
+    }
+
+    return { data: { sessionId: session.id } };
+  } catch (err) {
+    return { error: (err as Error).message };
+  }
+}
+
+// ============================================================
+// 쉐도잉 평가 상세 조회
+// ============================================================
+
+export async function getShadowingEvaluation(
+  sessionId: string
+): Promise<ActionResult<ShadowingEvaluation>> {
+  try {
+    const { supabase, userId } = await requireUser();
+
+    const { data, error } = await supabase
+      .from("shadowing_evaluations")
+      .select("*")
+      .eq("session_id", sessionId)
+      .eq("user_id", userId)
+      .single();
+
+    if (error || !data) {
+      return { error: "평가 결과를 찾을 수 없습니다" };
+    }
+
+    return { data: data as ShadowingEvaluation };
+  } catch (err) {
+    return { error: (err as Error).message };
+  }
+}
+
+// ============================================================
+// 쉐도잉 훈련 가능 스크립트 목록 (패키지 완료된 것만)
+// ============================================================
+
+export async function getShadowableScripts(): Promise<
+  ActionResult<ScriptListItem[]>
+> {
+  try {
+    const { supabase, userId } = await requireUser();
+
+    const { data, error } = await supabase
+      .from("scripts")
+      .select(`
+        id, question_id, source, title, english_text,
+        topic, category, question_korean, target_level,
+        answer_type, word_count, status, refine_count,
+        created_at, updated_at,
+        script_packages!inner(id, status, progress)
+      `)
+      .eq("user_id", userId)
+      .eq("status", "confirmed")
+      .in("script_packages.status", ["completed", "partial"])
+      .order("updated_at", { ascending: false });
+
+    if (error) {
+      return { error: "스크립트 목록 조회에 실패했습니다" };
+    }
+
+    const items: ScriptListItem[] = (data ?? []).map((s: any) => ({
+      ...s,
+      package:
+        Array.isArray(s.script_packages) && s.script_packages.length > 0
+          ? s.script_packages[0]
+          : null,
+    }));
+
+    return { data: items };
   } catch (err) {
     return { error: (err as Error).message };
   }

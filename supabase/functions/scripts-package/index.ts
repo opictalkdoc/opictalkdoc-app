@@ -1,0 +1,597 @@
+// 스크립트 패키지 생성 Edge Function
+// Phase 1: ElevenLabs TTS → MP3 → Storage 업로드
+// Phase 2: Whisper STT word-level → 타임스탬프 매칭 → JSON → Storage
+
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY")!;
+const ELEVENLABS_API_KEY = Deno.env.get("ELEVENLABS_API_KEY")!;
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
+};
+
+// TTS 음성 ID 매핑
+const VOICE_IDS: Record<string, string> = {
+  Mark: "UgBBYS2sOqTuMpoF3BR0",
+  Alexandra: "kdmDKE6EkgrWrrykO9Qt",
+};
+
+// ── 라우터 ──
+
+Deno.serve(async (req: Request) => {
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
+  }
+
+  try {
+    const url = new URL(req.url);
+    const path = url.pathname.split("/").pop();
+    const body = await req.json();
+
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return jsonResponse({ error: "인증이 필요합니다" }, 401);
+    }
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+    switch (path) {
+      case "generate-package":
+        return await handleGeneratePackage(supabase, body);
+      case "generate-shadowing":
+        return await handleGenerateShadowing(supabase, body);
+      default:
+        return jsonResponse({ error: `알 수 없는 경로: ${path}` }, 404);
+    }
+  } catch (err) {
+    console.error("Edge Function 에러:", err);
+    return jsonResponse(
+      { error: err instanceof Error ? err.message : "서버 오류" },
+      500
+    );
+  }
+});
+
+// ── Phase 1: TTS 음성 생성 ──
+
+async function handleGeneratePackage(supabase: any, body: any) {
+  const { script_id, tts_voice = "Mark", user_id } = body;
+  if (!script_id) return jsonResponse({ error: "script_id 필수" }, 400);
+  if (!user_id) return jsonResponse({ error: "user_id 필수" }, 400);
+
+  // 스크립트 조회
+  const { data: script, error: scriptError } = await supabase
+    .from("scripts")
+    .select("id, english_text, status, user_id")
+    .eq("id", script_id)
+    .single();
+
+  if (scriptError || !script) {
+    return jsonResponse({ error: "스크립트를 찾을 수 없습니다" }, 404);
+  }
+
+  if (script.user_id !== user_id) {
+    return jsonResponse({ error: "권한이 없습니다" }, 403);
+  }
+
+  if (script.status !== "confirmed") {
+    return jsonResponse({ error: "확정된 스크립트만 패키지 생성 가능합니다" }, 400);
+  }
+
+  if (!script.english_text || script.english_text.length < 10) {
+    return jsonResponse({ error: "스크립트 텍스트가 너무 짧습니다" }, 400);
+  }
+
+  // 기존 패키지 삭제 (재생성 시)
+  const { data: existingPkgs } = await supabase
+    .from("script_packages")
+    .select("id, wav_file_path, json_file_path")
+    .eq("script_id", script_id);
+
+  if (existingPkgs?.length) {
+    const filePaths = existingPkgs
+      .flatMap((p: any) => [p.wav_file_path, p.json_file_path])
+      .filter(Boolean);
+    if (filePaths.length > 0) {
+      await supabase.storage.from("script-packages").remove(filePaths);
+    }
+    await supabase
+      .from("script_packages")
+      .delete()
+      .eq("script_id", script_id);
+  }
+
+  // 패키지 레코드 생성 (processing 상태)
+  const { data: pkg, error: pkgError } = await supabase
+    .from("script_packages")
+    .insert({
+      user_id,
+      script_id,
+      tts_voice: tts_voice,
+      status: "processing",
+      progress: 10,
+    })
+    .select("id")
+    .single();
+
+  if (pkgError || !pkg) {
+    console.error("패키지 레코드 생성 실패:", pkgError);
+    return jsonResponse({ error: "패키지 생성에 실패했습니다" }, 500);
+  }
+
+  const packageId = pkg.id;
+
+  try {
+    // ElevenLabs TTS API 호출
+    const voiceId = VOICE_IDS[tts_voice] || VOICE_IDS.Mark;
+
+    await updatePackageProgress(supabase, packageId, 20);
+
+    const ttsResponse = await fetch(
+      `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
+      {
+        method: "POST",
+        headers: {
+          "xi-api-key": ELEVENLABS_API_KEY,
+          "Content-Type": "application/json",
+          Accept: "audio/mpeg",
+        },
+        body: JSON.stringify({
+          text: script.english_text,
+          model_id: "eleven_multilingual_v2",
+          voice_settings: {
+            stability: 0.5,
+            similarity_boost: 0.75,
+            style: 0.0,
+            use_speaker_boost: true,
+          },
+        }),
+      }
+    );
+
+    if (!ttsResponse.ok) {
+      const errText = await ttsResponse.text();
+      console.error("ElevenLabs TTS 에러:", ttsResponse.status, errText);
+      await failPackage(supabase, packageId, "TTS 음성 생성 실패");
+      return jsonResponse({ error: "음성 생성에 실패했습니다" }, 500);
+    }
+
+    await updatePackageProgress(supabase, packageId, 40);
+
+    // MP3 바이너리 → Storage 업로드
+    const audioBuffer = await ttsResponse.arrayBuffer();
+    const audioPath = `audio/${packageId}.mp3`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("script-packages")
+      .upload(audioPath, audioBuffer, {
+        contentType: "audio/mpeg",
+        upsert: true,
+      });
+
+    if (uploadError) {
+      console.error("Storage 업로드 실패:", uploadError);
+      await failPackage(supabase, packageId, "음성 파일 업로드 실패");
+      return jsonResponse({ error: "음성 파일 저장에 실패했습니다" }, 500);
+    }
+
+    // 패키지 업데이트 (Phase 1 완료)
+    await supabase
+      .from("script_packages")
+      .update({
+        wav_file_path: audioPath,
+        wav_file_size: audioBuffer.byteLength,
+        progress: 60,
+      })
+      .eq("id", packageId);
+
+    return jsonResponse({
+      success: true,
+      package_id: packageId,
+      wav_file_path: audioPath,
+      file_size: audioBuffer.byteLength,
+    });
+  } catch (err) {
+    console.error("Phase 1 실패:", err);
+    await failPackage(
+      supabase,
+      packageId,
+      err instanceof Error ? err.message : "음성 생성 중 오류"
+    );
+    return jsonResponse({ error: "패키지 생성 중 오류가 발생했습니다" }, 500);
+  }
+}
+
+// ── Phase 2: 타임스탬프 생성 (Whisper STT → 문장 매칭) ──
+
+async function handleGenerateShadowing(supabase: any, body: any) {
+  const { package_id, user_id } = body;
+  if (!package_id) return jsonResponse({ error: "package_id 필수" }, 400);
+  if (!user_id) return jsonResponse({ error: "user_id 필수" }, 400);
+
+  // 패키지 + 스크립트 조회
+  const { data: pkg, error: pkgError } = await supabase
+    .from("script_packages")
+    .select("id, script_id, wav_file_path, user_id")
+    .eq("id", package_id)
+    .single();
+
+  if (pkgError || !pkg) {
+    return jsonResponse({ error: "패키지를 찾을 수 없습니다" }, 404);
+  }
+
+  if (pkg.user_id !== user_id) {
+    return jsonResponse({ error: "권한이 없습니다" }, 403);
+  }
+
+  if (!pkg.wav_file_path) {
+    return jsonResponse({ error: "음성 파일이 없습니다" }, 400);
+  }
+
+  const { data: script, error: scriptError } = await supabase
+    .from("scripts")
+    .select("paragraphs, english_text")
+    .eq("id", pkg.script_id)
+    .single();
+
+  if (scriptError || !script) {
+    return jsonResponse({ error: "스크립트를 찾을 수 없습니다" }, 404);
+  }
+
+  try {
+    await updatePackageProgress(supabase, package_id, 65);
+
+    // Storage에서 오디오 다운로드
+    const { data: audioData, error: downloadError } = await supabase.storage
+      .from("script-packages")
+      .download(pkg.wav_file_path);
+
+    if (downloadError || !audioData) {
+      console.error("오디오 다운로드 실패:", downloadError);
+      await partialPackage(supabase, package_id, "오디오 다운로드 실패");
+      return jsonResponse({ error: "오디오 파일을 읽을 수 없습니다" }, 500);
+    }
+
+    await updatePackageProgress(supabase, package_id, 70);
+
+    // Whisper STT (word-level timestamps)
+    const formData = new FormData();
+    formData.append("file", audioData, "audio.mp3");
+    formData.append("model", "whisper-1");
+    formData.append("response_format", "verbose_json");
+    formData.append("timestamp_granularities[]", "word");
+    formData.append("language", "en");
+
+    const whisperResponse = await fetch(
+      "https://api.openai.com/v1/audio/transcriptions",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${OPENAI_API_KEY}`,
+        },
+        body: formData,
+      }
+    );
+
+    if (!whisperResponse.ok) {
+      const errText = await whisperResponse.text();
+      console.error("Whisper 에러:", whisperResponse.status, errText);
+      await partialPackage(supabase, package_id, "음성 인식 실패");
+      return jsonResponse({ error: "음성 인식에 실패했습니다" }, 500);
+    }
+
+    const whisperResult = await whisperResponse.json();
+    const whisperWords: WhisperWord[] = whisperResult.words || [];
+
+    if (whisperWords.length === 0) {
+      await partialPackage(supabase, package_id, "음성 인식 결과 없음");
+      return jsonResponse({ error: "음성에서 단어를 인식하지 못했습니다" }, 500);
+    }
+
+    await updatePackageProgress(supabase, package_id, 80);
+
+    // 문장 추출 (paragraphs에서)
+    const sentences = extractSentences(script.paragraphs);
+
+    // 문장-단어 타임스탬프 매칭
+    const timestamps = matchSentencesToWords(sentences, whisperWords);
+
+    // 갭/오버랩 보정
+    fillTimestampGaps(timestamps);
+
+    await updatePackageProgress(supabase, package_id, 90);
+
+    // JSON Storage 업로드
+    const jsonPath = `json/${package_id}.json`;
+    const jsonContent = JSON.stringify(timestamps, null, 2);
+    const jsonBlob = new Blob([jsonContent], { type: "application/json" });
+
+    const { error: jsonUploadError } = await supabase.storage
+      .from("script-packages")
+      .upload(jsonPath, jsonBlob, {
+        contentType: "application/json",
+        upsert: true,
+      });
+
+    if (jsonUploadError) {
+      console.error("JSON 업로드 실패:", jsonUploadError);
+      await partialPackage(supabase, package_id, "타임스탬프 저장 실패");
+      return jsonResponse({ error: "타임스탬프 저장에 실패했습니다" }, 500);
+    }
+
+    // 패키지 완료 업데이트
+    await supabase
+      .from("script_packages")
+      .update({
+        json_file_path: jsonPath,
+        timestamp_data: timestamps,
+        status: "completed",
+        progress: 100,
+        completed_at: new Date().toISOString(),
+      })
+      .eq("id", package_id);
+
+    return jsonResponse({
+      success: true,
+      sentence_count: timestamps.length,
+    });
+  } catch (err) {
+    console.error("Phase 2 실패:", err);
+    await partialPackage(
+      supabase,
+      package_id,
+      err instanceof Error ? err.message : "타임스탬프 생성 중 오류"
+    );
+    return jsonResponse({ error: "쉐도잉 데이터 생성에 실패했습니다" }, 500);
+  }
+}
+
+// ── 문장 추출 (paragraphs → flat sentences) ──
+
+interface SentenceData {
+  index: number;
+  english: string;
+  korean: string;
+}
+
+function extractSentences(paragraphs: any): SentenceData[] {
+  if (!paragraphs?.paragraphs) return [];
+
+  const sentences: SentenceData[] = [];
+  for (const para of paragraphs.paragraphs) {
+    for (const slot of para.slots || []) {
+      for (const sent of slot.sentences || []) {
+        sentences.push({
+          index: sent.index,
+          english: sent.english,
+          korean: sent.korean,
+        });
+      }
+    }
+  }
+  return sentences;
+}
+
+// ── Whisper 타입 ──
+
+interface WhisperWord {
+  word: string;
+  start: number;
+  end: number;
+}
+
+// ── 타임스탬프 결과 타입 ──
+
+interface TimestampResult {
+  index: number;
+  english: string;
+  korean: string;
+  start: number;
+  end: number;
+  duration: number;
+}
+
+// ── 문장-단어 매칭 (Levenshtein Distance + 슬라이딩 윈도우) ──
+
+function matchSentencesToWords(
+  sentences: SentenceData[],
+  words: WhisperWord[]
+): TimestampResult[] {
+  const results: TimestampResult[] = [];
+  let searchStart = 0;
+
+  for (const sentence of sentences) {
+    const sentenceWords = normalizeText(sentence.english).split(/\s+/).filter(Boolean);
+    if (sentenceWords.length === 0) continue;
+
+    const windowSize = sentenceWords.length;
+    let bestScore = -1;
+    let bestStart = searchStart;
+    let bestEnd = searchStart + windowSize;
+
+    // 슬라이딩 윈도우로 최적 매칭 위치 탐색
+    const searchEnd = Math.min(words.length, searchStart + windowSize * 3);
+
+    for (let i = searchStart; i <= searchEnd - windowSize && i < words.length; i++) {
+      const windowWords = words
+        .slice(i, i + windowSize)
+        .map((w) => normalizeText(w.word));
+
+      const score = calculateSimilarity(sentenceWords, windowWords);
+
+      if (score > bestScore) {
+        bestScore = score;
+        bestStart = i;
+        bestEnd = Math.min(i + windowSize, words.length);
+      }
+    }
+
+    // 유사도 임계값 (0.3 이상이면 매칭으로 인정)
+    if (bestScore >= 0.3 && bestStart < words.length) {
+      const startTime = words[bestStart].start;
+      const endTime = words[Math.min(bestEnd - 1, words.length - 1)].end;
+
+      results.push({
+        index: sentence.index,
+        english: sentence.english,
+        korean: sentence.korean,
+        start: Math.round(startTime * 100) / 100,
+        end: Math.round(endTime * 100) / 100,
+        duration: Math.round((endTime - startTime) * 100) / 100,
+      });
+
+      // 다음 검색 시작점을 현재 매칭 끝으로 이동
+      searchStart = bestEnd;
+    } else {
+      // 매칭 실패 시 이전 결과 기반으로 추정
+      const prevEnd = results.length > 0 ? results[results.length - 1].end : 0;
+      const estimatedDuration = sentenceWords.length * 0.4; // 단어당 0.4초 추정
+      results.push({
+        index: sentence.index,
+        english: sentence.english,
+        korean: sentence.korean,
+        start: Math.round(prevEnd * 100) / 100,
+        end: Math.round((prevEnd + estimatedDuration) * 100) / 100,
+        duration: Math.round(estimatedDuration * 100) / 100,
+      });
+    }
+  }
+
+  return results;
+}
+
+// ── 텍스트 정규화 ──
+
+function normalizeText(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, "") // 구두점 제거
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+// ── 유사도 계산 (단어 시퀀스) ──
+
+function calculateSimilarity(a: string[], b: string[]): number {
+  if (a.length === 0 || b.length === 0) return 0;
+
+  let matches = 0;
+  const maxLen = Math.max(a.length, b.length);
+
+  for (let i = 0; i < Math.min(a.length, b.length); i++) {
+    if (a[i] === b[i]) {
+      matches++;
+    } else if (levenshteinDistance(a[i], b[i]) <= Math.max(1, Math.floor(a[i].length / 3))) {
+      matches += 0.7; // 부분 매칭
+    }
+  }
+
+  return matches / maxLen;
+}
+
+// ── Levenshtein Distance ──
+
+function levenshteinDistance(a: string, b: string): number {
+  const matrix: number[][] = [];
+
+  for (let i = 0; i <= a.length; i++) {
+    matrix[i] = [i];
+  }
+  for (let j = 0; j <= b.length; j++) {
+    matrix[0][j] = j;
+  }
+
+  for (let i = 1; i <= a.length; i++) {
+    for (let j = 1; j <= b.length; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      matrix[i][j] = Math.min(
+        matrix[i - 1][j] + 1,
+        matrix[i][j - 1] + 1,
+        matrix[i - 1][j - 1] + cost
+      );
+    }
+  }
+
+  return matrix[a.length][b.length];
+}
+
+// ── 갭/오버랩 보정 ──
+
+function fillTimestampGaps(timestamps: TimestampResult[]): void {
+  for (let i = 1; i < timestamps.length; i++) {
+    const prev = timestamps[i - 1];
+    const curr = timestamps[i];
+    const gap = curr.start - prev.end;
+
+    if (gap > 0.5) {
+      // 큰 갭 → 중간값으로 조정
+      const mid = (prev.end + curr.start) / 2;
+      prev.end = Math.round(mid * 100) / 100;
+      curr.start = Math.round(mid * 100) / 100;
+    } else if (gap < 0) {
+      // 오버랩 → 경계를 중간값으로 조정
+      const mid = (prev.end + curr.start) / 2;
+      prev.end = Math.round(mid * 100) / 100;
+      curr.start = Math.round(mid * 100) / 100;
+    }
+
+    // duration 재계산
+    prev.duration = Math.round((prev.end - prev.start) * 100) / 100;
+    curr.duration = Math.round((curr.end - curr.start) * 100) / 100;
+  }
+}
+
+// ── 헬퍼 함수 ──
+
+async function updatePackageProgress(
+  supabase: any,
+  packageId: string,
+  progress: number
+) {
+  await supabase
+    .from("script_packages")
+    .update({ progress })
+    .eq("id", packageId);
+}
+
+async function failPackage(
+  supabase: any,
+  packageId: string,
+  errorMessage: string
+) {
+  await supabase
+    .from("script_packages")
+    .update({
+      status: "failed",
+      error_message: errorMessage,
+    })
+    .eq("id", packageId);
+}
+
+async function partialPackage(
+  supabase: any,
+  packageId: string,
+  errorMessage: string
+) {
+  // Phase 2 실패 → partial (음성은 유효, 기본 재생 가능)
+  await supabase
+    .from("script_packages")
+    .update({
+      status: "partial",
+      progress: 60,
+      error_message: errorMessage,
+    })
+    .eq("id", packageId);
+}
+
+function jsonResponse(data: any, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}

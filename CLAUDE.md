@@ -206,7 +206,8 @@ opictalkdoc/
 │   │   ├── 002_payment_tables.sql
 │   │   ├── 003_submissions.sql
 │   │   └── 004_scripts.sql
-│   └── functions/scripts/index.ts  # Edge Function (generate/correct/refine)
+│   ├── functions/scripts/index.ts         # Edge Function (generate/correct/refine/evaluate)
+│   └── functions/scripts-package/index.ts # Edge Function (TTS 패키지 + 타임스탬프)
 └── frontend/              # Next.js 앱
     ├── app/               # App Router 페이지
     │   └── providers.tsx  # QueryClientProvider 래퍼
@@ -218,16 +219,29 @@ opictalkdoc/
     │   │   ├── frequency/frequency-tab.tsx
     │   │   ├── submit/{submit-tab,wizard-step1~3,topic-pagination,question-selector}.tsx
     │   │   └── list/list-tab.tsx
-    │   └── scripts/       # 스크립트 모듈 UI
-    │       ├── scripts-content.tsx
-    │       └── create/
-    │           ├── script-wizard.tsx      # 5단계 생성 위저드
-    │           └── script-renderer.tsx    # 4모드 뷰어 + 인터랙티브 핵심정리
+    │   ├── scripts/       # 스크립트 모듈 UI
+    │   │   ├── scripts-content.tsx
+    │   │   └── create/
+    │   │       ├── script-wizard.tsx      # 5단계 생성 위저드 + 패키지 생성
+    │   │       └── script-renderer.tsx    # 4모드 뷰어 + 인터랙티브 핵심정리
+    │   └── shadowing/    # 쉐도잉 훈련 모듈 UI (10개 컴포넌트)
+    │       ├── shadowing-content.tsx      # 메인 래퍼 + 키보드 단축키
+    │       ├── shadowing-player.tsx       # 오디오 플레이어 + 문장 하이라이트
+    │       ├── shadowing-recorder.tsx     # MediaRecorder 녹음
+    │       ├── shadowing-step-nav.tsx     # 5단계 네비게이션
+    │       ├── step-listen.tsx            # Step 1: 전체 듣기
+    │       ├── step-overlap.tsx           # Step 2: 오버래핑
+    │       ├── step-shadow.tsx            # Step 3: 점진 숨김
+    │       ├── step-recite.tsx            # Step 4: 낭독
+    │       ├── step-speak.tsx             # Step 5: 실전 녹음 + AI 평가
+    │       ├── evaluation-result.tsx      # 평가 결과 표시
+    │       └── evaluation-history.tsx     # 평가 이력
     ├── lib/
     │   ├── actions/reviews.ts     # Server Actions (12개)
-    │   ├── actions/scripts.ts     # Server Actions (11개)
+    │   ├── actions/scripts.ts     # Server Actions (16개)
     │   ├── queries/master-questions.ts
     │   ├── react-query.ts        # QueryClient 팩토리 (서버/브라우저 싱글턴)
+    │   ├── stores/shadowing.ts    # Zustand 쉐도잉 상태 (persist)
     │   ├── types/{reviews,scripts}.ts  # 타입 정의
     │   ├── validations/{reviews,scripts}.ts # Zod 스키마
     │   ├── utils/combo-extractor.ts
@@ -330,6 +344,7 @@ ELEVENLABS_API_KEY=sk_d67...
   - `["my-scripts"]` — 내 스크립트 목록 (5분, initialData)
   - `["script-detail", scriptId]` — 스크립트 상세 (30초, 폴링)
   - `["shadowing-history"]` — 쉐도잉 이력 (5분, initialData)
+  - `["shadowable-scripts"]` — 쉐도잉 가능 스크립트 목록 (5분)
   - `["opic-tips", targetLevel, answerType]` — 학습 팁 (Infinity, Step 3 대기 화면)
 
 1. **코드 수정** - 필요한 변경사항 구현
@@ -551,6 +566,34 @@ origin: https://opictalkdoc@github.com/opictalkdoc/opictalkdoc-app.git
   - 영/한 같이 모드에서 한글에 `border-l-2 border-primary-200` 왼쪽 포인트 바
   - `ScriptFullTextView` 제거 (미사용 컴포넌트 정리)
 - **Git 커밋 + 프로덕션 배포** (c5f9b07)
+- **Step 2 패키지 생성 EF + 쉐도잉 훈련 UI 전체 구현**:
+  - **패키지 생성 Edge Function** (`scripts-package/index.ts`):
+    - ElevenLabs TTS (Mark/Alexandra 음성) → MP3 → Storage 업로드
+    - OpenAI Whisper STT (word-level timestamps) → 문장-단어 Levenshtein 매칭
+    - 타임스탬프 JSON → Storage 업로드 (2단계: 60% → 100%)
+    - 부분 실패 시 `partial` 상태 (음성만 유효)
+  - **평가 Edge Function** (`scripts/index.ts` evaluate 라우트):
+    - Whisper STT → 5단어 미만 검증(환불) → GPT-4.1 5영역 평가
+    - 크레딧 차감/환불 + shadowing_evaluations 저장
+  - **Server Actions 5개 추가**: createPackage, getShadowingData, startShadowingSession, getShadowingEvaluation, getShadowableScripts
+  - **Zustand Store** (`stores/shadowing.ts`): 5단계 상태 관리 + localStorage persist
+  - **쉐도잉 UI 11개 컴포넌트**:
+    - shadowing-content (메인 래퍼 + 키보드 1~5)
+    - shadowing-player (오디오 + 문장 하이라이트 + 속도 조절)
+    - shadowing-recorder (MediaRecorder + 재생)
+    - shadowing-step-nav (5단계 탭)
+    - step-listen (전체 듣기 + 영/한/양쪽 모드)
+    - step-overlap (문장별 구간 재생 + 반복 추적)
+    - step-shadow (3라운드 점진 숨김: full→first-word→hidden)
+    - step-recite (질문 + 타이머 + peek 힌트)
+    - step-speak (실전 녹음 + 크레딧 체크 + AI 평가)
+    - evaluation-result (5영역 점수바 + OPIc 등급 + 피드백)
+    - evaluation-history (평가 이력 목록)
+  - **Step5Complete 패키지 생성 UI**: 음성 선택 + 프로그레스 + 쉐도잉 시작 링크
+  - **스크립트 탭 패키지 상태 표시**: 생성/처리중/완료/부분완료 뱃지
+  - **타이머 버그 수정**: stale closure → ref 기반 카운터, useState 오용 → useEffect
+  - **evaluate_shadowing 프롬프트 업데이트**: ACTFL 기준 5영역 평가 가이드라인
+  - **빌드 통과 확인**
 
 ### 2026-02-24 - 시험후기 위저드 고도화 + 크레딧 25일 룰 + 성능 최적화 12단계 + 가이드 문서
 - **크레딧 보상 규칙 변경**: 월 2건 제한 → **25일 룰**
@@ -581,14 +624,15 @@ origin: https://opictalkdoc@github.com/opictalkdoc/opictalkdoc-app.git
 
 ## 🔮 현재 상태 & 다음 단계
 
-**현재**: Phase 3 (핵심 모듈 이관) — Step 2 스크립트+쉐도잉 UX 고도화 완료, 패키지 EF + 쉐도잉 UI 남음
-**다음 작업**: Step 2 나머지 (패키지 생성 EF + 쉐도잉 훈련 UI) → 리브랜딩(P-5) → Step 3 모의고사
+**현재**: Phase 3 (핵심 모듈 이관) — Step 2 스크립트+쉐도잉 모듈 전체 완료 (패키지 EF + 쉐도잉 UI 포함)
+**다음 작업**: EF 배포 + 테스트 → 리브랜딩(P-5) → Step 3 모의고사
 
-### ⚠️ Step 2 미완료 항목
+### ⚠️ Step 2 배포 전 필요사항
 | # | 작업 | 상세 |
 |---|------|------|
-| 1 | 패키지 생성 EF | ElevenLabs TTS + Whisper 타임스탬프 → Storage 업로드 |
-| 2 | 쉐도잉 훈련 상세 UI | /scripts/shadowing 5단계 UI + 평가 EF |
+| 1 | Supabase Secrets 설정 | ELEVENLABS_API_KEY (scripts-package EF용) |
+| 2 | Edge Function 배포 | scripts (evaluate 추가) + scripts-package (신규) |
+| 3 | E2E 테스트 | 패키지 생성 → 쉐도잉 5단계 → 실전 평가 |
 
 ### ⏳ 리브랜딩 작업 (P-5: 오픽톡닥 → 하루오픽)
 > 스크립트 이관 전에 진행. 상세는 `docs/의사결정.md` P-5, `docs/실행계획.md` 참조.
@@ -693,4 +737,4 @@ PGPASSWORD='opictalk2026' PGCLIENTENCODING='UTF8' "/c/Program Files/PostgreSQL/1
 
 ---
 *최종 업데이트: 2026-02-26*
-*상태: Phase 3 Step 2 UX 고도화 완료 — 패키지 생성 EF + 쉐도잉 UI 남음*
+*상태: Phase 3 Step 2 스크립트+쉐도잉 모듈 전체 구현 완료 — EF 배포 대기*

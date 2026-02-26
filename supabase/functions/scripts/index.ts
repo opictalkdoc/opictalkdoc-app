@@ -157,6 +157,8 @@ Deno.serve(async (req: Request) => {
         return await handleCorrect(supabase, body);
       case "refine":
         return await handleRefine(supabase, body);
+      case "evaluate":
+        return await handleEvaluate(supabase, body, authHeader);
       default:
         return jsonResponse({ error: `알 수 없는 경로: ${path}` }, 404);
     }
@@ -619,6 +621,240 @@ async function callGPT(
   }
 
   return JSON.parse(content);
+}
+
+// ── 쉐도잉 평가 (evaluate) ──
+
+const evaluationSchema = {
+  name: "shadowing_evaluation",
+  strict: true,
+  schema: {
+    type: "object",
+    properties: {
+      pronunciation: { type: "integer" },
+      fluency: { type: "integer" },
+      grammar: { type: "integer" },
+      vocabulary: { type: "integer" },
+      content_score: { type: "integer" },
+      overall_score: { type: "integer" },
+      estimated_level: {
+        type: "string",
+        enum: ["IL", "IM1", "IM2", "IM3", "IH", "AL"],
+      },
+      script_utilization: { type: "integer" },
+      strengths: {
+        type: "array",
+        items: { type: "string" },
+      },
+      weaknesses: {
+        type: "array",
+        items: { type: "string" },
+      },
+      suggestions: {
+        type: "array",
+        items: { type: "string" },
+      },
+      key_sentences_used: {
+        type: "array",
+        items: { type: "string" },
+      },
+      key_vocabulary_used: {
+        type: "array",
+        items: { type: "string" },
+      },
+      missing_elements: {
+        type: "array",
+        items: { type: "string" },
+      },
+    },
+    required: [
+      "pronunciation",
+      "fluency",
+      "grammar",
+      "vocabulary",
+      "content_score",
+      "overall_score",
+      "estimated_level",
+      "script_utilization",
+      "strengths",
+      "weaknesses",
+      "suggestions",
+      "key_sentences_used",
+      "key_vocabulary_used",
+      "missing_elements",
+    ],
+    additionalProperties: false,
+  },
+};
+
+async function handleEvaluate(supabase: any, body: any, authHeader: string) {
+  const { session_id, audio_base64, audio_duration } = body;
+  if (!session_id) return jsonResponse({ error: "session_id 필수" }, 400);
+  if (!audio_base64) return jsonResponse({ error: "audio_base64 필수" }, 400);
+
+  // 세션 조회
+  const { data: session, error: sessionError } = await supabase
+    .from("shadowing_sessions")
+    .select("id, user_id, script_id, question_text, topic")
+    .eq("id", session_id)
+    .single();
+
+  if (sessionError || !session) {
+    return jsonResponse({ error: "세션을 찾을 수 없습니다" }, 404);
+  }
+
+  const userId = session.user_id;
+
+  // 크레딧 차감
+  const { data: creditOk, error: creditError } = await supabase.rpc(
+    "consume_script_credit",
+    { p_user_id: userId }
+  );
+
+  if (creditError || !creditOk) {
+    return jsonResponse({ error: "스크립트 생성권이 부족합니다" }, 402);
+  }
+
+  try {
+    // Whisper STT
+    const audioBuffer = Uint8Array.from(atob(audio_base64), (c) =>
+      c.charCodeAt(0)
+    );
+    const audioBlob = new Blob([audioBuffer], { type: "audio/webm" });
+
+    const formData = new FormData();
+    formData.append("file", audioBlob, "recording.webm");
+    formData.append("model", "whisper-1");
+    formData.append("language", "en");
+
+    const whisperRes = await fetch(
+      "https://api.openai.com/v1/audio/transcriptions",
+      {
+        method: "POST",
+        headers: { Authorization: `Bearer ${OPENAI_API_KEY}` },
+        body: formData,
+      }
+    );
+
+    if (!whisperRes.ok) {
+      // 환불
+      await supabase.rpc("refund_script_credit", { p_user_id: userId });
+      return jsonResponse({ error: "음성 인식에 실패했습니다" }, 500);
+    }
+
+    const whisperResult = await whisperRes.json();
+    const transcript = whisperResult.text || "";
+
+    // 발화 길이 검증 (5단어 미만 → 환불)
+    const wordCount = transcript.split(/\s+/).filter(Boolean).length;
+    if (wordCount < 5) {
+      await supabase.rpc("refund_script_credit", { p_user_id: userId });
+      return jsonResponse(
+        { error: "발화가 너무 짧습니다 (5단어 이상 필요). 크레딧이 환불되었습니다." },
+        400
+      );
+    }
+
+    // 스크립트 정보 조회
+    const { data: script } = await supabase
+      .from("scripts")
+      .select("english_text, key_expressions, question_english, target_level")
+      .eq("id", session.script_id)
+      .single();
+
+    // 평가 프롬프트 로드
+    const { data: template } = await supabase
+      .from("ai_prompt_templates")
+      .select("system_prompt")
+      .eq("template_id", "evaluate_shadowing")
+      .eq("is_active", true)
+      .single();
+
+    const systemPrompt =
+      template?.system_prompt ||
+      `You are an OPIc speaking evaluation expert. Evaluate the student's spoken English based on the training script and question. Score each area 0-100 and estimate OPIc level. Respond in Korean for strengths/weaknesses/suggestions.`;
+
+    const userPrompt = `## 질문
+${script?.question_english || session.question_text || "(질문 없음)"}
+
+## 학습 스크립트 (정답 기준)
+${script?.english_text || "(스크립트 없음)"}
+
+## 핵심 표현
+${(script?.key_expressions || []).join(", ") || "(없음)"}
+
+## 목표 등급
+${script?.target_level || "IM2"}
+
+## 학생 발화 (STT 결과)
+${transcript}
+
+## 발화 길이
+${wordCount}단어, ${audio_duration || 0}초
+
+위 정보를 기반으로 OPIc 말하기를 평가하세요.`;
+
+    // GPT-4.1 평가
+    const evalResult = await callGPT(
+      systemPrompt,
+      userPrompt,
+      evaluationSchema,
+      0.3,
+      2000
+    );
+
+    // 세션 완료 업데이트
+    await supabase
+      .from("shadowing_sessions")
+      .update({
+        status: "completed",
+        audio_duration: audio_duration || null,
+        completed_at: new Date().toISOString(),
+      })
+      .eq("id", session_id);
+
+    // 평가 결과 저장
+    const { data: evalData, error: evalError } = await supabase
+      .from("shadowing_evaluations")
+      .insert({
+        session_id,
+        user_id: userId,
+        transcript,
+        word_count: wordCount,
+        pronunciation: evalResult.pronunciation,
+        fluency: evalResult.fluency,
+        grammar: evalResult.grammar,
+        vocabulary: evalResult.vocabulary,
+        content_score: evalResult.content_score,
+        overall_score: evalResult.overall_score,
+        estimated_level: evalResult.estimated_level,
+        script_utilization: evalResult.script_utilization,
+        strengths: evalResult.strengths,
+        weaknesses: evalResult.weaknesses,
+        suggestions: evalResult.suggestions,
+        script_analysis: {
+          key_sentences_used: evalResult.key_sentences_used,
+          key_vocabulary_used: evalResult.key_vocabulary_used,
+          missing_elements: evalResult.missing_elements,
+        },
+      })
+      .select("*")
+      .single();
+
+    if (evalError) {
+      console.error("평가 결과 저장 실패:", evalError);
+    }
+
+    return jsonResponse(evalData || evalResult);
+  } catch (err) {
+    // API 오류 → 환불
+    await supabase.rpc("refund_script_credit", { p_user_id: userId });
+    console.error("평가 처리 실패:", err);
+    return jsonResponse(
+      { error: "평가 처리 중 오류가 발생했습니다. 크레딧이 환불되었습니다." },
+      500
+    );
+  }
 }
 
 // ── 유틸리티 함수 ──

@@ -15,8 +15,18 @@ import {
   CheckCircle2,
   Clock,
   ChevronRight,
+  Package,
+  Loader2,
+  AlertCircle,
+  Play,
 } from "lucide-react";
-import { getMyScripts, getShadowingHistory, deleteScript } from "@/lib/actions/scripts";
+import {
+  getMyScripts,
+  getShadowingHistory,
+  getShadowableScripts,
+  deleteScript,
+  createPackage,
+} from "@/lib/actions/scripts";
 import type { ScriptListItem, ShadowingHistoryItem } from "@/lib/types/scripts";
 import {
   SCRIPT_SOURCE_LABELS,
@@ -348,13 +358,40 @@ function ScriptCard({
             <span>수정 {script.refine_count}/3</span>
           )}
           {script.package && (
-            <span className="text-primary-500">
-              패키지 {script.package.status === "completed" ? "완료" : `${script.package.progress}%`}
+            <span
+              className={
+                script.package.status === "completed"
+                  ? "text-green-500"
+                  : script.package.status === "partial"
+                    ? "text-amber-500"
+                    : script.package.status === "failed"
+                      ? "text-red-400"
+                      : "text-primary-500"
+              }
+            >
+              {script.package.status === "completed"
+                ? "패키지 완료"
+                : script.package.status === "partial"
+                  ? "듣기만 가능"
+                  : script.package.status === "failed"
+                    ? "패키지 실패"
+                    : `패키지 ${script.package.progress}%`}
             </span>
           )}
         </div>
 
         <div className="flex items-center gap-1">
+          {/* 패키지 완료 → 쉐도잉 시작 */}
+          {script.status === "confirmed" &&
+            script.package?.status === "completed" && (
+              <Link
+                href={`/scripts/shadowing?packageId=${script.package.id}&scriptId=${script.id}`}
+                className="inline-flex h-7 items-center gap-1 rounded-md bg-primary-50 px-2 text-xs font-medium text-primary-600 transition-colors hover:bg-primary-100"
+              >
+                <Headphones size={12} />
+                쉐도잉
+              </Link>
+            )}
           <Link
             href={`/scripts/create?view=${script.id}`}
             className="inline-flex h-7 items-center gap-1 rounded-md px-2 text-xs font-medium text-foreground-secondary transition-colors hover:bg-surface-secondary hover:text-foreground"
@@ -383,7 +420,7 @@ function ShadowingTab({
 }: {
   initialData?: ShadowingHistoryItem[];
 }) {
-  const { data: history, isLoading } = useQuery({
+  const { data: history, isLoading: historyLoading } = useQuery({
     queryKey: ["shadowing-history"],
     queryFn: async () => {
       const result = await getShadowingHistory();
@@ -394,32 +431,88 @@ function ShadowingTab({
     staleTime: 5 * 60 * 1000,
   });
 
+  // 훈련 가능한 스크립트 목록 (패키지 완료된 것)
+  const { data: shadowableScripts, isLoading: scriptsLoading } = useQuery({
+    queryKey: ["shadowable-scripts"],
+    queryFn: async () => {
+      const result = await getShadowableScripts();
+      if (result.error) throw new Error(result.error);
+      return result.data ?? [];
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const isLoading = historyLoading || scriptsLoading;
+
   return (
     <div className="space-y-6">
-      {/* 안내 */}
+      {/* 훈련 가능 스크립트 */}
       <div className="rounded-[var(--radius-xl)] border border-border bg-surface p-6">
         <h3 className="font-semibold text-foreground">쉐도잉 훈련</h3>
         <p className="mt-1 text-sm text-foreground-secondary">
-          생성한 스크립트를 원어민 음성으로 듣고, 따라 읽으며 입에 붙입니다.
+          패키지가 완료된 스크립트를 선택하여 5단계 점진 훈련을 시작합니다.
         </p>
 
         {isLoading ? (
           <div className="mt-6 flex items-center justify-center py-8">
             <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary-500 border-t-transparent" />
           </div>
-        ) : !history?.length ? (
+        ) : !shadowableScripts?.length ? (
           <div className="mt-6 flex flex-col items-center py-8 text-center">
             <div className="flex h-14 w-14 items-center justify-center rounded-full bg-surface-secondary">
               <Headphones size={24} className="text-foreground-muted" />
             </div>
             <p className="mt-3 text-sm font-medium text-foreground-secondary">
-              쉐도잉 훈련 이력이 없습니다
+              훈련 가능한 스크립트가 없습니다
             </p>
             <p className="mt-1 text-xs text-foreground-muted">
-              스크립트의 패키지를 생성한 후 쉐도잉 훈련을 시작할 수 있습니다
+              스크립트를 확정한 후 패키지를 생성하면 쉐도잉 훈련을 시작할 수 있습니다
             </p>
           </div>
         ) : (
+          <div className="mt-4 space-y-3">
+            {shadowableScripts.map((script) => (
+              <div
+                key={script.id}
+                className="flex items-center justify-between rounded-lg border border-border bg-surface-secondary/50 p-3"
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-foreground">
+                    {script.topic || "주제 없음"}
+                  </p>
+                  {script.question_korean && (
+                    <p className="mt-0.5 text-xs text-foreground-secondary line-clamp-1">
+                      {script.question_korean}
+                    </p>
+                  )}
+                  <div className="mt-1 flex items-center gap-2 text-xs text-foreground-muted">
+                    {script.target_level && (
+                      <span className="rounded bg-primary-50 px-1.5 py-0.5 font-semibold text-primary-600">
+                        {script.target_level}
+                      </span>
+                    )}
+                    {script.word_count && <span>{script.word_count}단어</span>}
+                  </div>
+                </div>
+                {script.package && (
+                  <Link
+                    href={`/scripts/shadowing?packageId=${script.package.id}&scriptId=${script.id}`}
+                    className="ml-3 inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg bg-primary-500 px-3 text-xs font-medium text-white transition-colors hover:bg-primary-600"
+                  >
+                    <Play size={12} />
+                    훈련 시작
+                  </Link>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* 훈련 이력 */}
+      {history && history.length > 0 && (
+        <div className="rounded-[var(--radius-xl)] border border-border bg-surface p-6">
+          <h3 className="font-semibold text-foreground">훈련 이력</h3>
           <div className="mt-4 space-y-3">
             {history.map((session) => (
               <div
@@ -461,8 +554,8 @@ function ShadowingTab({
               </div>
             ))}
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

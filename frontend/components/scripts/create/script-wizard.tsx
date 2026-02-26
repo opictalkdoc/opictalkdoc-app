@@ -23,6 +23,9 @@ import {
   CaseSensitive,
   Type,
   Columns2,
+  Headphones,
+  Volume2,
+  Package,
 } from "lucide-react";
 import { TopicPagination } from "@/components/reviews/submit/topic-pagination";
 import {
@@ -36,6 +39,7 @@ import {
   checkScriptCredit,
   getScriptDetail,
   getOpicTips,
+  createPackage,
 } from "@/lib/actions/scripts";
 import { GradeSettingModal } from "@/components/ui/grade-setting-modal";
 import {
@@ -47,9 +51,14 @@ import { ANSWER_TYPE_LABELS } from "@/lib/types/reviews";
 import { TARGET_LEVELS } from "@/lib/types/scripts";
 import type {
   TargetLevel,
+  TtsVoice,
   ScriptDetail,
   OpicTip,
   OpicTipCategory,
+} from "@/lib/types/scripts";
+import {
+  TTS_VOICES,
+  TTS_VOICE_LABELS,
 } from "@/lib/types/scripts";
 
 /* ── Edge Function 호출 헬퍼 ── */
@@ -566,6 +575,7 @@ export function ScriptWizard({
           <Step5Complete
             onGoToScripts={() => router.push("/scripts")}
             onCreateNew={resetWizard}
+            scriptId={generatedScriptId ?? undefined}
           />
         )}
       </div>
@@ -1232,25 +1242,209 @@ function Step4Result({
 function Step5Complete({
   onGoToScripts,
   onCreateNew,
+  scriptId,
 }: {
   onGoToScripts: () => void;
   onCreateNew: () => void;
+  scriptId?: string;
 }) {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const [selectedVoice, setSelectedVoice] = useState<TtsVoice>("Mark");
+  const [packageState, setPackageState] = useState<
+    "idle" | "phase1" | "phase2" | "completed" | "partial" | "error"
+  >("idle");
+  const [progress, setProgress] = useState(0);
+  const [errorMsg, setErrorMsg] = useState("");
+  const [packageId, setPackageId] = useState<string | null>(null);
+
+  async function handleCreatePackage() {
+    if (!scriptId) return;
+    setPackageState("phase1");
+    setProgress(20);
+    setErrorMsg("");
+
+    try {
+      const result = await createPackage({
+        script_id: scriptId,
+        tts_voice: selectedVoice,
+      });
+
+      if (result.error) {
+        setPackageState("error");
+        setErrorMsg(result.error);
+        return;
+      }
+
+      setPackageId(result.data!.packageId);
+      setProgress(100);
+      setPackageState("completed");
+      queryClient.invalidateQueries({ queryKey: ["my-scripts"] });
+      queryClient.invalidateQueries({ queryKey: ["script-detail", scriptId] });
+    } catch {
+      setPackageState("error");
+      setErrorMsg("패키지 생성 중 오류가 발생했습니다");
+    }
+  }
+
+  // 패키지 생성 전 (idle)
+  if (packageState === "idle") {
+    return (
+      <div className="flex flex-col items-center justify-center py-12">
+        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
+          <CheckCircle2 size={32} className="text-green-600" />
+        </div>
+        <h2 className="mt-4 text-lg font-semibold text-foreground">
+          스크립트가 확정되었습니다!
+        </h2>
+        <p className="mt-2 text-center text-sm text-foreground-secondary">
+          원어민 음성 패키지를 생성하면 쉐도잉 훈련을 시작할 수 있습니다.
+        </p>
+
+        {/* 음성 선택 */}
+        <div className="mt-6 w-full max-w-xs">
+          <p className="mb-2 text-center text-xs font-medium text-foreground-secondary">
+            원어민 음성 선택
+          </p>
+          <div className="flex gap-2">
+            {TTS_VOICES.map((voice) => (
+              <button
+                key={voice}
+                onClick={() => setSelectedVoice(voice)}
+                className={`flex flex-1 items-center justify-center gap-1.5 rounded-[var(--radius-lg)] border px-3 py-2.5 text-sm font-medium transition-colors ${
+                  selectedVoice === voice
+                    ? "border-primary-400 bg-primary-50 text-primary-600"
+                    : "border-border bg-surface text-foreground-secondary hover:border-primary-200"
+                }`}
+              >
+                <Volume2 size={14} />
+                {TTS_VOICE_LABELS[voice]}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* 패키지 생성 버튼 */}
+        <button
+          onClick={handleCreatePackage}
+          disabled={!scriptId}
+          className="mt-5 inline-flex h-10 items-center gap-2 rounded-[var(--radius-lg)] bg-primary-500 px-6 text-sm font-medium text-white transition-colors hover:bg-primary-600 disabled:opacity-50"
+        >
+          <Package size={16} />
+          패키지 생성 (음성 + 쉐도잉)
+        </button>
+
+        <div className="mt-6 flex gap-3">
+          <button
+            onClick={onGoToScripts}
+            className="inline-flex h-9 items-center gap-1.5 rounded-[var(--radius-lg)] border border-border bg-surface px-4 text-xs font-medium text-foreground-secondary transition-colors hover:bg-surface-secondary"
+          >
+            <FileText size={14} />
+            내 스크립트
+          </button>
+          <button
+            onClick={onCreateNew}
+            className="inline-flex h-9 items-center gap-1.5 rounded-[var(--radius-lg)] border border-border bg-surface px-4 text-xs font-medium text-foreground-secondary transition-colors hover:bg-surface-secondary"
+          >
+            <Sparkles size={14} />
+            새 스크립트
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // 패키지 생성 중 (phase1/phase2)
+  if (packageState === "phase1" || packageState === "phase2") {
+    const phaseLabel =
+      packageState === "phase1"
+        ? "원어민 음성 생성 중..."
+        : "쉐도잉 데이터 생성 중...";
+
+    return (
+      <div className="flex flex-col items-center justify-center py-12">
+        <Loader2 size={40} className="animate-spin text-primary-500" />
+        <h2 className="mt-4 text-lg font-semibold text-foreground">
+          {phaseLabel}
+        </h2>
+        <p className="mt-2 text-center text-sm text-foreground-secondary">
+          약 30~60초 소요됩니다. 잠시만 기다려주세요.
+        </p>
+
+        {/* 프로그레스 바 */}
+        <div className="mt-6 w-full max-w-xs">
+          <div className="h-2 overflow-hidden rounded-full bg-surface-secondary">
+            <div
+              className="h-2 rounded-full bg-primary-500 transition-all duration-1000"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+          <p className="mt-1 text-center text-xs text-foreground-muted">
+            {progress}%
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // 에러
+  if (packageState === "error") {
+    return (
+      <div className="flex flex-col items-center justify-center py-12">
+        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-red-100">
+          <AlertTriangle size={32} className="text-red-500" />
+        </div>
+        <h2 className="mt-4 text-lg font-semibold text-foreground">
+          패키지 생성 실패
+        </h2>
+        <p className="mt-2 text-center text-sm text-red-500">{errorMsg}</p>
+
+        <div className="mt-6 flex gap-3">
+          <button
+            onClick={() => setPackageState("idle")}
+            className="inline-flex h-10 items-center gap-2 rounded-[var(--radius-lg)] border border-border bg-surface px-5 text-sm font-medium text-foreground transition-colors hover:bg-surface-secondary"
+          >
+            <RotateCcw size={16} />
+            다시 시도
+          </button>
+          <button
+            onClick={onGoToScripts}
+            className="inline-flex h-10 items-center gap-2 rounded-[var(--radius-lg)] border border-border bg-surface px-5 text-sm font-medium text-foreground-secondary transition-colors hover:bg-surface-secondary"
+          >
+            내 스크립트
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // 완료 (completed / partial)
   return (
     <div className="flex flex-col items-center justify-center py-12">
       <div className="flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
         <CheckCircle2 size={32} className="text-green-600" />
       </div>
       <h2 className="mt-4 text-lg font-semibold text-foreground">
-        스크립트가 확정되었습니다!
+        패키지가 생성되었습니다!
       </h2>
       <p className="mt-2 text-center text-sm text-foreground-secondary">
-        내 스크립트에서 언제든 확인할 수 있습니다.
-        <br />
-        패키지 생성(음성+쉐도잉)은 곧 지원됩니다.
+        이제 쉐도잉 훈련을 시작할 수 있습니다.
       </p>
 
-      <div className="mt-8 flex gap-3">
+      <div className="mt-8 flex flex-wrap justify-center gap-3">
+        {packageId && (
+          <button
+            onClick={() =>
+              router.push(
+                `/scripts/shadowing?packageId=${packageId}&scriptId=${scriptId}`
+              )
+            }
+            className="inline-flex h-10 items-center gap-2 rounded-[var(--radius-lg)] bg-primary-500 px-5 text-sm font-medium text-white transition-colors hover:bg-primary-600"
+          >
+            <Headphones size={16} />
+            쉐도잉 훈련 시작
+          </button>
+        )}
         <button
           onClick={onGoToScripts}
           className="inline-flex h-10 items-center gap-2 rounded-[var(--radius-lg)] border border-border bg-surface px-5 text-sm font-medium text-foreground transition-colors hover:bg-surface-secondary"
@@ -1260,10 +1454,10 @@ function Step5Complete({
         </button>
         <button
           onClick={onCreateNew}
-          className="inline-flex h-10 items-center gap-2 rounded-[var(--radius-lg)] bg-primary-500 px-5 text-sm font-medium text-white transition-colors hover:bg-primary-600"
+          className="inline-flex h-10 items-center gap-2 rounded-[var(--radius-lg)] border border-border bg-surface px-5 text-sm font-medium text-foreground-secondary transition-colors hover:bg-surface-secondary"
         >
-          <Sparkles size={16} />
-          새 스크립트 만들기
+          <Sparkles size={14} />
+          새 스크립트
         </button>
       </div>
     </div>
