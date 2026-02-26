@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useCallback } from "react";
+import { useEffect } from "react";
 import { useShadowingStore } from "@/lib/stores/shadowing";
 import { ShadowingStepNav } from "./shadowing-step-nav";
 import { StepListen } from "./step-listen";
-import { StepOverlap } from "./step-overlap";
 import { StepShadow } from "./step-shadow";
 import { StepRecite } from "./step-recite";
 import { StepSpeak } from "./step-speak";
@@ -18,13 +17,12 @@ interface ShadowingContentProps {
 
 const STEP_COMPONENTS: Record<ShadowingStep, React.ComponentType> = {
   listen: StepListen,
-  overlap: StepOverlap,
   shadow: StepShadow,
   recite: StepRecite,
   speak: StepSpeak,
 };
 
-const STEPS: ShadowingStep[] = ["listen", "overlap", "shadow", "recite", "speak"];
+const STEPS: ShadowingStep[] = ["listen", "shadow", "recite", "speak"];
 
 export function ShadowingContent({ data }: ShadowingContentProps) {
   const { currentStep, setStep, init, packageId } = useShadowingStore();
@@ -55,9 +53,9 @@ export function ShadowingContent({ data }: ShadowingContentProps) {
         return;
       }
 
-      // 1~5: Step 전환
+      // 1~4: Step 전환
       const num = parseInt(e.key);
-      if (num >= 1 && num <= 5) {
+      if (num >= 1 && num <= 4) {
         e.preventDefault();
         setStep(STEPS[num - 1]);
         return;
@@ -88,7 +86,7 @@ export function ShadowingContent({ data }: ShadowingContentProps) {
       {/* 키보드 단축키 힌트 */}
       <div className="mt-6 flex justify-center">
         <p className="text-xs text-foreground-muted/60">
-          키보드 1~5로 단계 전환 가능
+          키보드 1~4로 단계 전환 가능
         </p>
       </div>
     </div>

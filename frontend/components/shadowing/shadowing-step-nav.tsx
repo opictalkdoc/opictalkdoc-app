@@ -2,7 +2,6 @@
 
 import {
   Headphones,
-  Mic2,
   MessageSquare,
   BookOpen,
   Radio,
@@ -12,13 +11,12 @@ import { SHADOWING_STEP_LABELS } from "@/lib/types/scripts";
 
 const STEP_ICONS: Record<ShadowingStep, React.ElementType> = {
   listen: Headphones,
-  overlap: Mic2,
   shadow: MessageSquare,
   recite: BookOpen,
   speak: Radio,
 };
 
-const STEPS: ShadowingStep[] = ["listen", "overlap", "shadow", "recite", "speak"];
+const STEPS: ShadowingStep[] = ["listen", "shadow", "recite", "speak"];
 
 interface ShadowingStepNavProps {
   currentStep: ShadowingStep;

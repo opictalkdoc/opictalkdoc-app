@@ -5,15 +5,23 @@ import {
   ChevronLeft,
   ChevronRight,
   CheckCircle2,
-  ArrowUpCircle,
+  Eye,
+  EyeOff,
+  EyeClosed,
 } from "lucide-react";
 import { ShadowingPlayer } from "./shadowing-player";
 import { useShadowingStore, type TextHintLevel } from "@/lib/stores/shadowing";
 
-const ROUND_LABELS: Record<number, string> = {
-  1: "라운드 1: 전체 텍스트 보며 따라 읽기",
-  2: "라운드 2: 첫 단어만 보고 따라 읽기",
-  3: "라운드 3: 텍스트 없이 따라 읽기",
+const HINT_OPTIONS: { level: TextHintLevel; label: string; icon: React.ElementType }[] = [
+  { level: "full", label: "전체 보기", icon: Eye },
+  { level: "first-word", label: "첫단어만", icon: EyeOff },
+  { level: "hidden", label: "숨김", icon: EyeClosed },
+];
+
+const HINT_GUIDES: Record<TextHintLevel, string> = {
+  full: "텍스트를 보며 음성과 함께 읽어보세요",
+  "first-word": "첫 단어만 보고 나머지를 떠올려 보세요",
+  hidden: "음성만 듣고 따라 읽어보세요",
 };
 
 // 텍스트 힌트 레벨에 따라 문장 표시
@@ -35,17 +43,15 @@ export function StepShadow() {
   const {
     sentences,
     shadowIndex,
-    shadowRound,
     shadowHintLevel,
     shadowCompleted,
     setShadowIndex,
+    setShadowHintLevel,
     markShadowCompleted,
-    nextShadowRound,
   } = useShadowingStore();
 
   const currentSentence = sentences[shadowIndex];
   const isCompleted = shadowCompleted.includes(shadowIndex);
-  const allCompleted = sentences.length > 0 && shadowCompleted.length >= sentences.length;
   const progress =
     sentences.length > 0
       ? Math.round((shadowCompleted.length / sentences.length) * 100)
@@ -67,13 +73,27 @@ export function StepShadow() {
 
   return (
     <div className="space-y-4">
-      {/* 라운드 정보 + 진행도 */}
-      <div className="text-center">
-        <p className="text-sm font-medium text-primary-600">
-          {ROUND_LABELS[shadowRound] || `라운드 ${shadowRound}`}
-        </p>
+      {/* 텍스트 힌트 토글 */}
+      <div className="flex items-center justify-center">
+        <div className="inline-flex items-center rounded-full bg-surface-secondary p-0.5">
+          {HINT_OPTIONS.map(({ level, label, icon: Icon }) => (
+            <button
+              key={level}
+              onClick={() => setShadowHintLevel(level)}
+              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
+                shadowHintLevel === level
+                  ? "bg-primary-500 text-white shadow-sm"
+                  : "text-foreground-muted hover:text-foreground-secondary"
+              }`}
+            >
+              <Icon size={13} />
+              <span className="hidden sm:inline">{label}</span>
+            </button>
+          ))}
+        </div>
       </div>
 
+      {/* 진행도 */}
       <div className="flex items-center justify-between text-xs text-foreground-muted">
         <span>
           문장 {shadowIndex + 1} / {sentences.length}
@@ -89,7 +109,7 @@ export function StepShadow() {
 
       {/* 안내 */}
       <p className="text-center text-sm text-foreground-secondary">
-        음성을 듣고 <span className="font-medium text-primary-600">바로 따라</span> 읽어보세요
+        {HINT_GUIDES[shadowHintLevel]}
       </p>
 
       {/* 현재 문장 (힌트 레벨 적용) */}
@@ -103,7 +123,7 @@ export function StepShadow() {
         <p className="text-lg font-medium leading-relaxed text-foreground">
           {renderHintedText(currentSentence.english, shadowHintLevel)}
         </p>
-        {shadowHintLevel !== "hidden" && (
+        {shadowHintLevel === "full" && (
           <p className="mt-2 text-sm text-foreground-muted">
             {currentSentence.korean}
           </p>
@@ -118,7 +138,7 @@ export function StepShadow() {
       </div>
 
       {/* 문장 탐색 */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-center gap-4">
         <button
           onClick={goPrev}
           disabled={shadowIndex === 0}
@@ -127,23 +147,6 @@ export function StepShadow() {
           <ChevronLeft size={16} />
           이전
         </button>
-
-        {/* 전체 완료 → 다음 라운드 */}
-        {allCompleted && shadowRound < 3 && (
-          <button
-            onClick={nextShadowRound}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-primary-600"
-          >
-            <ArrowUpCircle size={14} />
-            라운드 {shadowRound + 1}로
-          </button>
-        )}
-
-        {allCompleted && shadowRound >= 3 && (
-          <p className="text-sm font-medium text-green-600">
-            모든 라운드 완료!
-          </p>
-        )}
 
         <button
           onClick={goNext}

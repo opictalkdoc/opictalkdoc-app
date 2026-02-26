@@ -224,16 +224,15 @@ opictalkdoc/
     │   │   └── create/
     │   │       ├── script-wizard.tsx      # 5단계 생성 위저드 + 패키지 생성
     │   │       └── script-renderer.tsx    # 4모드 뷰어 + 인터랙티브 핵심정리
-    │   └── shadowing/    # 쉐도잉 훈련 모듈 UI (10개 컴포넌트)
+    │   └── shadowing/    # 쉐도잉 훈련 모듈 UI (9개 컴포넌트)
     │       ├── shadowing-content.tsx      # 메인 래퍼 + 키보드 단축키
     │       ├── shadowing-player.tsx       # 오디오 플레이어 + 문장 하이라이트
     │       ├── shadowing-recorder.tsx     # MediaRecorder 녹음
-    │       ├── shadowing-step-nav.tsx     # 5단계 네비게이션
+    │       ├── shadowing-step-nav.tsx     # 4단계 네비게이션
     │       ├── step-listen.tsx            # Step 1: 전체 듣기
-    │       ├── step-overlap.tsx           # Step 2: 오버래핑
-    │       ├── step-shadow.tsx            # Step 3: 점진 숨김
-    │       ├── step-recite.tsx            # Step 4: 낭독
-    │       ├── step-speak.tsx             # Step 5: 실전 녹음 + AI 평가
+    │       ├── step-shadow.tsx            # Step 2: 따라읽기 (텍스트 힌트 토글)
+    │       ├── step-recite.tsx            # Step 3: 혼자 말하기
+    │       ├── step-speak.tsx             # Step 4: 실전 녹음 + AI 평가
     │       ├── evaluation-result.tsx      # 평가 결과 표시
     │       └── evaluation-history.tsx     # 평가 이력
     ├── lib/
@@ -579,16 +578,15 @@ origin: https://opictalkdoc@github.com/opictalkdoc/opictalkdoc-app.git
     - Whisper STT → 5단어 미만 검증(환불) → GPT-4.1 5영역 평가
     - 크레딧 차감/환불 + shadowing_evaluations 저장
   - **Server Actions 5개 추가**: createPackage, getShadowingData, startShadowingSession, getShadowingEvaluation, getShadowableScripts
-  - **Zustand Store** (`stores/shadowing.ts`): 5단계 상태 관리 + localStorage persist
-  - **쉐도잉 UI 11개 컴포넌트**:
-    - shadowing-content (메인 래퍼 + 키보드 1~5)
+  - **Zustand Store** (`stores/shadowing.ts`): 4단계 상태 관리 + localStorage persist
+  - **쉐도잉 UI 10개 컴포넌트**:
+    - shadowing-content (메인 래퍼 + 키보드 1~4)
     - shadowing-player (오디오 + 문장 하이라이트 + 속도 조절)
     - shadowing-recorder (MediaRecorder + 재생)
-    - shadowing-step-nav (5단계 탭)
+    - shadowing-step-nav (4단계 탭)
     - step-listen (전체 듣기 + 영/한/양쪽 모드)
-    - step-overlap (문장별 구간 재생 + 반복 추적)
-    - step-shadow (3라운드 점진 숨김: full→first-word→hidden)
-    - step-recite (질문 + 타이머 + peek 힌트)
+    - step-shadow (따라읽기 + 텍스트 힌트 토글: 전체/첫단어/숨김)
+    - step-recite (혼자 말하기 + 타이머 + peek 힌트)
     - step-speak (실전 녹음 + 크레딧 체크 + AI 평가)
     - evaluation-result (5영역 점수바 + OPIc 등급 + 피드백)
     - evaluation-history (평가 이력 목록)
@@ -638,6 +636,15 @@ origin: https://opictalkdoc@github.com/opictalkdoc/opictalkdoc-app.git
   - 12차 최적화에서 검증된 패턴을 종합 가이드로 정리 (10개 섹션)
   - 인증 3계층, Suspense 경계, 서버 병렬 조회, TanStack Query, Prefetch, Supabase 쿼리, 서버 액션 설계
   - 새 모듈 구현 체크리스트 포함 — 스크립트/모의고사/튜터링 이관 시 적용
+
+### 2026-02-26 - 쉐도잉 5단계 → 4단계 재구성
+- **쉐도잉 4단계 축소**: 듣기 → 따라읽기 → 혼자 말하기 → 실전
+  - Step 2(겹쳐읽기)와 Step 3(따라읽기)의 실제 동작이 동일한 문제 해결
+  - 업계 쉐도잉 앱 리서치 결과 3~4단계가 표준
+  - `step-overlap.tsx` 삭제, overlap 관련 타입/상태 전면 제거
+  - `step-shadow.tsx` 재작성: 라운드 시스템 제거 → 텍스트 힌트 토글 (전체/첫단어/숨김)
+  - Zustand store: `shadowRound`, `nextShadowRound`, overlap 상태 3개 제거 + `setShadowHintLevel` 추가
+  - 키보드 단축키 1~5 → 1~4, 네비게이션 4단계, 레이블 변경 (recite: "혼자 말하기")
 
 ## 🔮 현재 상태 & 다음 단계
 

@@ -26,8 +26,8 @@ export type TtsVoice = (typeof TTS_VOICES)[number];
 export const SESSION_STATUSES = ['active', 'completed'] as const;
 export type SessionStatus = (typeof SESSION_STATUSES)[number];
 
-// 쉐도잉 5단계 훈련 스텝
-export const SHADOWING_STEPS = ['listen', 'overlap', 'shadow', 'recite', 'speak'] as const;
+// 쉐도잉 4단계 훈련 스텝
+export const SHADOWING_STEPS = ['listen', 'shadow', 'recite', 'speak'] as const;
 export type ShadowingStep = (typeof SHADOWING_STEPS)[number];
 
 // ── 한글 레이블 매핑 ──
@@ -74,17 +74,15 @@ export const TTS_VOICE_LABELS: Record<TtsVoice, string> = {
 
 export const SHADOWING_STEP_LABELS: Record<ShadowingStep, string> = {
   listen: '듣기',
-  overlap: '겹쳐 읽기',
   shadow: '따라 읽기',
-  recite: '보고 읽기',
+  recite: '혼자 말하기',
   speak: '실전 말하기',
 };
 
 export const SHADOWING_STEP_DESCRIPTIONS: Record<ShadowingStep, string> = {
   listen: '원어민 음성을 듣고 전체 흐름을 파악합니다',
-  overlap: '음성과 텍스트를 동시에 보며 함께 읽습니다',
-  shadow: '텍스트 없이 음성만 듣고 바로 따라 읽습니다',
-  recite: '음성 없이 텍스트만 보고 읽습니다',
+  shadow: '음성을 듣고 따라 읽으며 텍스트 힌트를 조절합니다',
+  recite: '음성 없이 혼자 말해봅니다',
   speak: '텍스트와 음성 없이 스스로 말합니다 (AI 평가)',
 };
 
