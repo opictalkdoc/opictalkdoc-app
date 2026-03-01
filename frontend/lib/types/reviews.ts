@@ -317,12 +317,12 @@ export const COMBO_STEPS: ComboStep[] = [
 
 export interface SubmissionWithQuestions extends Submission {
   submission_questions: (SubmissionQuestion & {
-    master_questions?: {
-      question_id: string;
-      question_title: string | null;
+    questions?: {
+      id: string;
+      question_short: string | null;
       question_english: string;
       question_korean: string;
-      answer_type: string | null;
+      question_type_eng: string | null;
       topic: string;
     } | null;
   })[];
@@ -344,49 +344,49 @@ export interface QuestionFrequencyItem {
   frequency: number;
 }
 
-// answer_type 정렬 순서 (묘사 → 루틴 → 비교 → 경험(어린시절) → 경험(최근) → 경험(인상) ...)
+// question_type_eng 정렬 순서
+// 일반: 묘사 → 루틴 → 비교 → 경험(어린시절) → 경험(최근)
+// 롤플레이: rp_11 → rp_12 → 경험(특별)
+// 어드밴스: adv_14 → adv_15
 export const ANSWER_TYPE_ORDER: Record<string, number> = {
   description: 1,
   routine: 2,
   comparison: 3,
-  past_experience_childhood: 4,
-  past_experience_recent: 5,
-  past_experience_memorable: 6,
-  roleplay_11: 7,
-  roleplay_12: 8,
-  roleplay_13: 9,
-  advanced_14: 10,
-  advanced_15: 11,
+  past_childhood: 4,
+  past_recent: 5,
+  rp_11: 6,
+  rp_12: 7,
+  past_special: 8,
+  adv_14: 9,
+  adv_15: 10,
 };
 
-// answer_type 한글 레이블
+// question_type_eng 한글 레이블 (questions.question_type_kor 기준, 짧은 뱃지 문구)
 export const ANSWER_TYPE_LABELS: Record<string, string> = {
   description: "묘사",
   routine: "루틴",
   comparison: "비교",
-  past_experience_memorable: "경험(인상)",
-  past_experience_recent: "경험(최근)",
-  past_experience_childhood: "경험(어린시절)",
-  roleplay_11: "상황설명",
-  roleplay_12: "문제해결",
-  roleplay_13: "대안제시",
-  advanced_14: "비교/의견",
-  advanced_15: "경험/변화",
+  past_special: "경험·특별",
+  past_recent: "경험·최근",
+  past_childhood: "경험·처음",
+  rp_11: "질문하기",
+  rp_12: "대안제시",
+  adv_14: "비교·변화",
+  adv_15: "사회이슈",
 };
 
-// answer_type 뱃지 색상
+// question_type_eng 뱃지 색상 (테라코타/웜톤 디자인 시스템 기준)
 export const ANSWER_TYPE_COLORS: Record<string, string> = {
-  description: "bg-blue-100 text-blue-700",
-  routine: "bg-green-100 text-green-700",
-  comparison: "bg-purple-100 text-purple-700",
-  past_experience_memorable: "bg-amber-100 text-amber-700",
-  past_experience_recent: "bg-orange-100 text-orange-700",
-  past_experience_childhood: "bg-rose-100 text-rose-700",
-  roleplay_11: "bg-teal-100 text-teal-700",
-  roleplay_12: "bg-cyan-100 text-cyan-700",
-  roleplay_13: "bg-indigo-100 text-indigo-700",
-  advanced_14: "bg-red-100 text-red-700",
-  advanced_15: "bg-pink-100 text-pink-700",
+  description: "bg-blue-50 text-blue-700",
+  routine: "bg-green-50 text-green-700",
+  comparison: "bg-purple-50 text-purple-700",
+  past_special: "bg-amber-50 text-amber-700",
+  past_recent: "bg-orange-50 text-orange-700",
+  past_childhood: "bg-rose-50 text-rose-700",
+  rp_11: "bg-teal-50 text-teal-700",
+  rp_12: "bg-indigo-50 text-indigo-700",
+  adv_14: "bg-red-50 text-red-700",
+  adv_15: "bg-pink-50 text-pink-700",
 };
 
 export interface ReviewStats {

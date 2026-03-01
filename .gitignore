@@ -140,5 +140,6 @@ vite.config.ts.timestamp-*
 
 # Project specific
 temp/
+/scripts/
 designs/images/
 .claude/

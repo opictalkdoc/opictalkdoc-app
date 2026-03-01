@@ -6,12 +6,12 @@ import { Check, X, HelpCircle } from "lucide-react";
 import { getQuestionsByTopic } from "@/lib/queries/master-questions";
 import { ANSWER_TYPE_LABELS, ANSWER_TYPE_COLORS } from "@/lib/types/reviews";
 
-interface MasterQuestion {
-  question_id: string;
-  question_title: string;
+interface Question {
+  id: string;
+  question_short: string;
   question_english: string;
   question_korean: string;
-  answer_type: string | null;
+  question_type_eng: string | null;
   topic: string;
 }
 
@@ -189,19 +189,19 @@ export function QuestionSelector({
                 질문을 선택해주세요 (남은 {remainingCount}개)
               </p>
               {questions.map((q) => {
-                const isSelected = selectedIds.has(q.question_id);
+                const isSelected = selectedIds.has(q.id);
                 return (
                   <button
-                    key={q.question_id}
+                    key={q.id}
                     onClick={() => {
                       if (isSelected || isComplete) return;
                       onSelect({
-                        master_question_id: q.question_id,
+                        master_question_id: q.id,
                         custom_question_text: null,
                         is_not_remembered: false,
                         topic,
                         question_text: q.question_korean,
-                        question_title: q.question_title,
+                        question_title: q.question_short,
                       });
                     }}
                     disabled={isSelected || isComplete}
@@ -212,13 +212,13 @@ export function QuestionSelector({
                     }`}
                   >
                     <div className="flex items-start gap-2">
-                      {q.answer_type && (
+                      {q.question_type_eng && (
                         <span
                           className={`shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
-                            ANSWER_TYPE_COLORS[q.answer_type] || "bg-gray-100 text-gray-700"
+                            ANSWER_TYPE_COLORS[q.question_type_eng] || "bg-gray-100 text-gray-700"
                           }`}
                         >
-                          {ANSWER_TYPE_LABELS[q.answer_type] || q.answer_type}
+                          {ANSWER_TYPE_LABELS[q.question_type_eng] || q.question_type_eng}
                         </span>
                       )}
                       {isSelected && (

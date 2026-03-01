@@ -123,10 +123,10 @@ export function SubmissionDetail({ submissionId }: SubmissionDetailProps) {
                 </div>
                 <div className="mt-1.5 space-y-0.5 pl-0.5 text-xs">
                   <p className="text-foreground-secondary">
-                    {selfIntroQ?.master_questions?.question_english || "Let's start the interview now. Tell me something about yourself."}
+                    {selfIntroQ?.questions?.question_english || "Let's start the interview now. Tell me something about yourself."}
                   </p>
                   <p className="text-foreground-muted">
-                    {selfIntroQ?.master_questions?.question_korean || "그럼 인터뷰를 시작하겠습니다. 본인에 대해 간단히 소개해 주세요."}
+                    {selfIntroQ?.questions?.question_korean || "그럼 인터뷰를 시작하겠습니다. 본인에 대해 간단히 소개해 주세요."}
                   </p>
                 </div>
               </div>
@@ -161,10 +161,10 @@ export function SubmissionDetail({ submissionId }: SubmissionDetailProps) {
                       ) : (
                         <div className="space-y-0.5">
                           <p className="text-foreground-secondary">
-                            {q.master_questions?.question_english || "—"}
+                            {q.questions?.question_english || "—"}
                           </p>
                           <p className="text-foreground-muted">
-                            {q.master_questions?.question_korean || "—"}
+                            {q.questions?.question_korean || "—"}
                           </p>
                         </div>
                       )}

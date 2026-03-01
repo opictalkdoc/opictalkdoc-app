@@ -441,11 +441,11 @@ export async function getScriptDetail(
       return { error: "스크립트를 찾을 수 없습니다" };
     }
 
-    // master_questions 조회 (별도 쿼리)
+    // questions 조회 (별도 쿼리)
     const { data: question } = await supabase
-      .from("master_questions")
-      .select("question_id, question_english, question_korean, topic, topic_category, answer_type")
-      .eq("question_id", data.question_id)
+      .from("questions")
+      .select("id, question_english, question_korean, topic, category, question_type_eng")
+      .eq("id", data.question_id)
       .single();
 
     const detail: ScriptDetail = {

@@ -317,12 +317,12 @@ export interface ScriptListItem {
 export interface ScriptDetail extends Script {
   package: ScriptPackage | null;
   master_question?: {
-    question_id: string;
+    id: string;
     question_english: string;
     question_korean: string;
     topic: string;
-    topic_category: string;
-    answer_type: string;
+    category: string;
+    question_type_eng: string;
   };
 }
 

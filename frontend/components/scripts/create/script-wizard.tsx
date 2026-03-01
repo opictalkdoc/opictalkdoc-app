@@ -97,12 +97,12 @@ async function callEdgeFunction(
 /* ── 타입 ── */
 
 interface QuestionOption {
-  question_id: string;
+  question_id: string;         // questions.id
   question_english: string;
   question_korean: string;
   topic: string;
-  topic_category: string;
-  answer_type: string;
+  topic_category: string;      // questions.category
+  answer_type: string;         // questions.question_type_eng
 }
 
 /* ── 위저드 5단계 정의 ── */
@@ -203,24 +203,24 @@ export function ScriptWizard({
 
       const cached = queryClient.getQueryData<
         Array<{
-          question_id: string;
+          id: string;
           question_english: string;
           question_korean: string;
-          answer_type: string | null;
+          question_type_eng: string | null;
           topic: string;
         }>
       >(["questions", selectedTopic, selectedCategory]);
 
-      const full = cached?.find((q) => q.question_id === sq.master_question_id);
+      const full = cached?.find((q) => q.id === sq.master_question_id);
       if (!full) return;
 
       setSelectedQuestion({
-        question_id: full.question_id,
+        question_id: full.id,
         question_english: full.question_english,
         question_korean: full.question_korean,
         topic: full.topic,
         topic_category: selectedCategory,
-        answer_type: full.answer_type || "",
+        answer_type: full.question_type_eng || "",
       });
       setStep(2);
     },
@@ -338,12 +338,12 @@ export function ScriptWizard({
     // 재생성에 필요한 질문 정보 (selectedQuestion 또는 scriptDetail에서)
     const question = selectedQuestion || (scriptDetail?.master_question
       ? {
-          question_id: scriptDetail.master_question.question_id,
+          question_id: scriptDetail.master_question.id,
           question_english: scriptDetail.master_question.question_english,
           question_korean: scriptDetail.master_question.question_korean,
           topic: scriptDetail.master_question.topic,
-          topic_category: scriptDetail.master_question.topic_category,
-          answer_type: scriptDetail.master_question.answer_type,
+          topic_category: scriptDetail.master_question.category,
+          answer_type: scriptDetail.master_question.question_type_eng,
         }
       : null);
 

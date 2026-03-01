@@ -188,7 +188,7 @@ export async function saveQuestions(
 
     const { submission_id, questions } = parsed.data;
 
-    // 소유권 확인 + 자기소개 master_question_id 병렬 조회
+    // 소유권 확인 + 자기소개 question id 병렬 조회
     const [ownerResult, selfIntroResult] = await Promise.all([
       supabase
         .from("submissions")
@@ -197,8 +197,8 @@ export async function saveQuestions(
         .eq("user_id", userId)
         .single(),
       supabase
-        .from("master_questions")
-        .select("question_id")
+        .from("questions")
+        .select("id")
         .eq("topic", "자기소개")
         .limit(1)
         .maybeSingle(),
@@ -219,7 +219,7 @@ export async function saveQuestions(
         question_number: 1,
         combo_type: "self_intro",
         topic: "자기소개",
-        master_question_id: selfIntroResult.data?.question_id || null,
+        master_question_id: selfIntroResult.data?.id || null,
         custom_question_text: null,
         is_not_remembered: false,
       },
@@ -405,7 +405,7 @@ export async function getSubmissionWithQuestions(
 
     const { data, error } = await supabase
       .from("submissions")
-      .select("*, submission_questions(*, master_questions(question_id, question_title, question_english, question_korean, answer_type, topic))")
+      .select("*, submission_questions(*, questions(id, question_short, question_english, question_korean, question_type_eng, topic))")
       .eq("id", submissionId)
       .eq("user_id", userId)
       .order("question_number", { referencedTable: "submission_questions" })
@@ -435,7 +435,7 @@ export async function getSubmissionsWithQuestionsBatch(
 
     const { data, error } = await supabase
       .from("submissions")
-      .select("*, submission_questions(*, master_questions(question_id, question_title, question_english, question_korean, answer_type, topic))")
+      .select("*, submission_questions(*, questions(id, question_short, question_english, question_korean, question_type_eng, topic))")
       .in("id", submissionIds)
       .eq("user_id", userId)
       .order("question_number", { referencedTable: "submission_questions" });
@@ -482,22 +482,22 @@ export async function getDraftQuestions(
 
     const { data, error } = await supabase
       .from("submission_questions")
-      .select("combo_type, topic, master_question_id, custom_question_text, is_not_remembered, master_questions(question_title, question_korean)")
+      .select("combo_type, topic, master_question_id, custom_question_text, is_not_remembered, questions(question_short, question_korean)")
       .eq("submission_id", submissionId)
       .order("question_number");
 
     if (error) return { error: "질문 로드에 실패했습니다" };
 
-    // master_questions 조인 결과를 플랫하게 변환
+    // questions 조인 결과를 플랫하게 변환
     const flat = (data || []).map((q: Record<string, unknown>) => {
-      const mq = q.master_questions as { question_title: string; question_korean: string } | null;
+      const mq = q.questions as { question_short: string; question_korean: string } | null;
       return {
         combo_type: q.combo_type as string,
         topic: q.topic as string,
         master_question_id: q.master_question_id as string | null,
         custom_question_text: q.custom_question_text as string | null,
         is_not_remembered: q.is_not_remembered as boolean,
-        question_title: mq?.question_title || null,
+        question_title: mq?.question_short || null,
         question_korean: mq?.question_korean || null,
       };
     });
@@ -605,7 +605,7 @@ export async function getMySubmissions(): Promise<ActionResult<Submission[]>> {
 }
 
 // ============================================================
-// 후기 상세 (questions JOIN master_questions)
+// 후기 상세 (submission_questions JOIN questions)
 // ============================================================
 
 export async function getSubmissionDetail(
@@ -619,11 +619,12 @@ export async function getSubmissionDetail(
       `*,
       submission_questions (
         *,
-        master_questions (
-          question_id,
+        questions (
+          id,
+          question_short,
           question_english,
           question_korean,
-          answer_type,
+          question_type_eng,
           topic
         )
       )`
@@ -642,7 +643,7 @@ async function fetchCombosAndSurveyTypes(
 ) {
   const [combosResult, surveyTypeResult] = await Promise.all([
     supabase.from("submission_combos").select("topic, combo_type"),
-    supabase.from("master_questions").select("topic, survey_type"),
+    supabase.from("questions").select("topic, survey_type"),
   ]);
 
   const surveyTypeMap = new Map<string, string>();
@@ -697,7 +698,7 @@ export async function getQuestionFrequency(topic: string): Promise<ActionResult<
 
   const { data, error } = await supabase
     .from("submission_questions")
-    .select("master_question_id, master_questions!inner(question_english, question_korean, answer_type)")
+    .select("master_question_id, questions!inner(question_english, question_korean, question_type_eng)")
     .eq("topic", topic)
     .not("master_question_id", "is", null)
     .not("is_not_remembered", "eq", true);
@@ -707,7 +708,7 @@ export async function getQuestionFrequency(topic: string): Promise<ActionResult<
   // 질문별 빈도 집계
   const freqMap = new Map<string, QuestionFrequencyItem>();
   for (const row of data || []) {
-    const mq = row.master_questions as unknown as { question_english: string; question_korean: string; answer_type: string | null };
+    const mq = row.questions as unknown as { question_english: string; question_korean: string; question_type_eng: string | null };
     const key = row.master_question_id!;
     const existing = freqMap.get(key);
     if (existing) {
@@ -716,7 +717,7 @@ export async function getQuestionFrequency(topic: string): Promise<ActionResult<
       freqMap.set(key, {
         question_english: mq.question_english,
         question_korean: mq.question_korean,
-        answer_type: mq.answer_type,
+        answer_type: mq.question_type_eng,
         frequency: 1,
       });
     }
