@@ -6,12 +6,14 @@ import { step1Schema, step2Schema, step3Schema } from "@/lib/validations/reviews
 import { extractCombos } from "@/lib/utils/combo-extractor";
 import {
   ANSWER_TYPE_ORDER,
+  FREQUENCY_COMBO_MAP,
   type Submission,
   type SubmissionWithQuestions,
   type FrequencyItem,
   type QuestionFrequencyItem,
   type ReviewStats,
   type ComboType,
+  type FrequencyCategory,
 } from "@/lib/types/reviews";
 
 type ActionResult<T = null> = {
@@ -693,15 +695,23 @@ export async function getFrequency(): Promise<ActionResult<FrequencyItem[]>> {
 // 주제별 질문 빈도
 // ============================================================
 
-export async function getQuestionFrequency(topic: string): Promise<ActionResult<QuestionFrequencyItem[]>> {
+export async function getQuestionFrequency(topic: string, category?: FrequencyCategory): Promise<ActionResult<QuestionFrequencyItem[]>> {
   const supabase = await createServerSupabaseClient();
 
-  const { data, error } = await supabase
+  let query = supabase
     .from("submission_questions")
-    .select("master_question_id, questions!inner(question_english, question_korean, question_type_eng)")
+    .select("master_question_id, combo_type, questions!inner(question_english, question_korean, question_type_eng)")
     .eq("topic", topic)
     .not("master_question_id", "is", null)
     .not("is_not_remembered", "eq", true);
+
+  // 카테고리별 combo_type 필터
+  if (category) {
+    const comboTypes = FREQUENCY_COMBO_MAP[category];
+    query = query.in("combo_type", comboTypes);
+  }
+
+  const { data, error } = await query;
 
   if (error) return { error: "질문 빈도 조회에 실패했습니다" };
 
@@ -752,6 +762,7 @@ export async function getPublicReviews(params: {
     .from("submissions")
     .select("*", { count: "exact" })
     .eq("status", "complete")
+    .neq("source", "admin")
     .order("submitted_at", { ascending: false })
     .range(offset, offset + limit - 1);
 
@@ -780,7 +791,7 @@ export async function getStatsAndFrequency(): Promise<{
 }> {
   const supabase = await createServerSupabaseClient();
 
-  // 3개 병렬: 후기 수 + (콤보+survey_type) + 참여자 user_id 목록
+  // 3개 병렬: 후기 수(admin 포함) + (콤보+survey_type) + 참여자 user_id(사용자만)
   const [reviewsResult, { combos, surveyTypeMap }, participantsResult] = await Promise.all([
     supabase
       .from("submissions")
@@ -790,7 +801,8 @@ export async function getStatsAndFrequency(): Promise<{
     supabase
       .from("submissions")
       .select("user_id")
-      .eq("status", "complete"),
+      .eq("status", "complete")
+      .neq("source", "admin"),
   ]);
 
   const uniqueTopics = new Set(combos.flatMap((t) => t.topic.split(","))).size;

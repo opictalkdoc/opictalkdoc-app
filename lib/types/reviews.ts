@@ -205,6 +205,8 @@ export const RECOMMENDED_SURVEY = {
 
 // ── DB 매핑 타입 ──
 
+export type SubmissionSource = 'user' | 'admin';
+
 export interface Submission {
   id: number;
   user_id: string;
@@ -234,6 +236,7 @@ export interface Submission {
   submitted_at: string | null;
   created_at: string;
   updated_at: string;
+  source: SubmissionSource;
 }
 
 export interface SubmissionQuestion {

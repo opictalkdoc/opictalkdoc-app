@@ -26,6 +26,7 @@ export function FrequencyTab({ initialStats, initialFrequency }: FrequencyTabPro
   const queryClient = useQueryClient();
   const [subTab, setSubTab] = useState<FrequencyCategory>("일반");
   const [expandedTopic, setExpandedTopic] = useState<string | null>(null);
+  const [displayCount, setDisplayCount] = useState<number>(10);
   const prefetchedRef = useRef(false);
 
   const { data: frequencyData = [], isLoading: loading } = useQuery({
@@ -39,30 +40,32 @@ export function FrequencyTab({ initialStats, initialFrequency }: FrequencyTabPro
     staleTime: 5 * 60 * 1000, // 5분
   });
 
-  // 주제별 질문 빈도 Prefetch — 빈도 데이터 로드 후 1회만 실행
+  // 주제별 질문 빈도 Prefetch — 카테고리별로 사전 로드
   useEffect(() => {
     if (prefetchedRef.current || frequencyData.length === 0) return;
     prefetchedRef.current = true;
 
     const uniqueTopics = [...new Set(frequencyData.map((item) => item.topic))];
-    for (const topic of uniqueTopics) {
-      queryClient.prefetchQuery({
-        queryKey: ["question-frequency", topic],
-        queryFn: async () => {
-          const result = await getQuestionFrequency(topic);
-          return result.data || [];
-        },
-        staleTime: 5 * 60 * 1000,
-      });
+    for (const cat of FREQUENCY_CATEGORIES) {
+      for (const topic of uniqueTopics) {
+        queryClient.prefetchQuery({
+          queryKey: ["question-frequency", topic, cat],
+          queryFn: async () => {
+            const result = await getQuestionFrequency(topic, cat);
+            return result.data || [];
+          },
+          staleTime: 5 * 60 * 1000,
+        });
+      }
     }
   }, [frequencyData, queryClient]);
 
-  // 클릭한 주제의 질문 빈도 조회
+  // 클릭한 주제의 질문 빈도 조회 (현재 서브탭 카테고리 포함)
   const { data: questionData = [], isLoading: questionLoading } = useQuery({
-    queryKey: ["question-frequency", expandedTopic],
+    queryKey: ["question-frequency", expandedTopic, subTab],
     queryFn: async () => {
       if (!expandedTopic) return [];
-      const result = await getQuestionFrequency(expandedTopic);
+      const result = await getQuestionFrequency(expandedTopic, subTab);
       return result.data || [];
     },
     enabled: !!expandedTopic,
@@ -136,7 +139,28 @@ export function FrequencyTab({ initialStats, initialFrequency }: FrequencyTabPro
 
       {/* 카테고리별 서브탭 */}
       <div className="rounded-[var(--radius-xl)] border border-border bg-surface p-6">
-        <h3 className="font-semibold text-foreground">카테고리별 출제 빈도</h3>
+        <div className="flex items-center justify-between gap-4">
+          <h3 className="font-semibold text-foreground">카테고리별 출제 빈도</h3>
+          <div className="flex items-center gap-1">
+            {([10, 15, 20, 0] as const).map((count) => {
+              const label = count === 0 ? "모두" : `${count}`;
+              const isActive = displayCount === count;
+              return (
+                <button
+                  key={count}
+                  onClick={() => setDisplayCount(count)}
+                  className={`rounded-[var(--radius-md)] px-2 py-1 text-xs font-medium transition-colors ${
+                    isActive
+                      ? "bg-primary-500 text-white"
+                      : "text-foreground-muted hover:text-foreground-secondary hover:bg-surface-secondary"
+                  }`}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
         <p className="mt-1 text-sm text-foreground-secondary">
           일반 질문 / 롤플레이 / 어드밴스 카테고리별 출제 빈도를 분석합니다
         </p>
@@ -183,7 +207,7 @@ export function FrequencyTab({ initialStats, initialFrequency }: FrequencyTabPro
             </div>
           ) : (
             <div className="space-y-1">
-              {aggregatedData.map((item, idx) => {
+              {(displayCount > 0 ? aggregatedData.slice(0, displayCount) : aggregatedData).map((item, idx) => {
                 const pct = totalReviews > 0
                   ? Math.round((item.frequency / totalReviews) * 100)
                   : 0;
