@@ -106,7 +106,7 @@ docs/
 
 ## 🎨 디자인 시스템 (현재 적용 중)
 
-> 정의 파일: `frontend/app/globals.css` (@theme 블록)
+> 정의 파일: `app/globals.css` (@theme 블록)
 
 ### 컬러 팔레트
 
@@ -203,71 +203,74 @@ docs/
 ## 📁 프로젝트 구조
 
 ```
-opictalkdoc/
-├── CLAUDE.md              # 프로젝트 가이드 (이 파일)
+opictalkdoc/                 # Git 루트 = Next.js 루트 (표준 구조)
+├── CLAUDE.md                # 프로젝트 가이드 (이 파일)
 ├── .gitignore
 ├── README.md
+├── package.json             # Next.js 앱 패키지
+├── tsconfig.json
+├── next.config.ts
+├── middleware.ts             # 인증 세션 관리
+├── postcss.config.mjs
+├── eslint.config.mjs
+├── .env.local               # 환경변수 (git 제외)
 ├── supabase/
-│   ├── migrations/        # DB 마이그레이션
+│   ├── migrations/          # DB 마이그레이션
 │   │   ├── 001_master_questions.sql
 │   │   ├── 002_payment_tables.sql
 │   │   ├── 003_submissions.sql
 │   │   └── 004_scripts.sql
 │   ├── functions/scripts/index.ts         # Edge Function (generate/correct/refine/evaluate)
 │   └── functions/scripts-package/index.ts # Edge Function (TTS 패키지 + 타임스탬프)
-└── frontend/              # Next.js 앱
-    ├── app/               # App Router 페이지
-    │   └── providers.tsx  # QueryClientProvider 래퍼
-    ├── components/
-    │   ├── dashboard/
-    │   │   └── dashboard-stats.tsx  # useQuery 클라이언트 컴포넌트
-    │   ├── reviews/       # 시험후기 모듈 UI
-    │   │   ├── reviews-content.tsx
-    │   │   ├── frequency/frequency-tab.tsx
-    │   │   ├── submit/{submit-tab,wizard-step1~3,topic-pagination,question-selector}.tsx
-    │   │   └── list/list-tab.tsx
-    │   ├── scripts/       # 스크립트 모듈 UI
-    │   │   ├── scripts-content.tsx
-    │   │   └── create/
-    │   │       ├── script-wizard.tsx      # 5단계 생성 위저드 + 패키지 생성
-    │   │       └── script-renderer.tsx    # 4모드 뷰어 + 인터랙티브 핵심정리
-    │   └── shadowing/    # 쉐도잉 훈련 모듈 UI (9개 컴포넌트)
-    │       ├── shadowing-content.tsx      # 메인 래퍼 + 키보드 단축키
-    │       ├── shadowing-player.tsx       # 오디오 플레이어 + 문장 하이라이트
-    │       ├── shadowing-recorder.tsx     # MediaRecorder 녹음
-    │       ├── shadowing-step-nav.tsx     # 4단계 네비게이션
-    │       ├── step-listen.tsx            # Step 1: 전체 듣기
-    │       ├── step-shadow.tsx            # Step 2: 따라읽기 (텍스트 힌트 토글)
-    │       ├── step-recite.tsx            # Step 3: 혼자 말하기
-    │       ├── step-speak.tsx             # Step 4: 실전 녹음 + AI 평가
-    │       ├── evaluation-result.tsx      # 평가 결과 표시
-    │       └── evaluation-history.tsx     # 평가 이력
-    ├── lib/
-    │   ├── actions/reviews.ts     # Server Actions (12개)
-    │   ├── actions/scripts.ts     # Server Actions (16개)
-    │   ├── queries/master-questions.ts
-    │   ├── react-query.ts        # QueryClient 팩토리 (서버/브라우저 싱글턴)
-    │   ├── stores/shadowing.ts    # Zustand 쉐도잉 상태 (persist)
-    │   ├── types/{reviews,scripts}.ts  # 타입 정의
-    │   ├── validations/{reviews,scripts}.ts # Zod 스키마
-    │   ├── utils/combo-extractor.ts
-    │   ├── auth.ts               # getUser() + getAuthClaims()
-    │   ├── supabase.ts
-    │   └── supabase-server.ts
-    ├── middleware.ts       # 인증 세션 관리
-    ├── .env.local         # 환경변수 (git 제외)
-    ├── package.json
-    └── tsconfig.json
+├── app/                     # App Router 페이지
+│   └── providers.tsx        # QueryClientProvider 래퍼
+├── components/
+│   ├── dashboard/
+│   │   └── dashboard-stats.tsx  # useQuery 클라이언트 컴포넌트
+│   ├── reviews/             # 시험후기 모듈 UI
+│   │   ├── reviews-content.tsx
+│   │   ├── frequency/frequency-tab.tsx
+│   │   ├── submit/{submit-tab,wizard-step1~3,topic-pagination,question-selector}.tsx
+│   │   └── list/list-tab.tsx
+│   ├── scripts/             # 스크립트 모듈 UI
+│   │   ├── scripts-content.tsx
+│   │   └── create/
+│   │       ├── script-wizard.tsx      # 5단계 생성 위저드 + 패키지 생성
+│   │       └── script-renderer.tsx    # 4모드 뷰어 + 인터랙티브 핵심정리
+│   └── shadowing/           # 쉐도잉 훈련 모듈 UI (9개 컴포넌트)
+│       ├── shadowing-content.tsx      # 메인 래퍼 + 키보드 단축키
+│       ├── shadowing-player.tsx       # 오디오 플레이어 + 문장 하이라이트
+│       ├── shadowing-recorder.tsx     # MediaRecorder 녹음
+│       ├── shadowing-step-nav.tsx     # 4단계 네비게이션
+│       ├── step-listen.tsx            # Step 1: 전체 듣기
+│       ├── step-shadow.tsx            # Step 2: 따라읽기 (텍스트 힌트 토글)
+│       ├── step-recite.tsx            # Step 3: 혼자 말하기
+│       ├── step-speak.tsx             # Step 4: 실전 녹음 + AI 평가
+│       ├── evaluation-result.tsx      # 평가 결과 표시
+│       └── evaluation-history.tsx     # 평가 이력
+├── lib/
+│   ├── actions/reviews.ts     # Server Actions (12개)
+│   ├── actions/scripts.ts     # Server Actions (16개)
+│   ├── queries/master-questions.ts
+│   ├── react-query.ts        # QueryClient 팩토리 (서버/브라우저 싱글턴)
+│   ├── stores/shadowing.ts    # Zustand 쉐도잉 상태 (persist)
+│   ├── types/{reviews,scripts}.ts  # 타입 정의
+│   ├── validations/{reviews,scripts}.ts # Zod 스키마
+│   ├── utils/combo-extractor.ts
+│   ├── auth.ts               # getUser() + getAuthClaims()
+│   ├── supabase.ts
+│   └── supabase-server.ts
+└── public/                  # 정적 파일 (로고, 폰트 등)
 ```
 
 ## 🚀 Essential Commands
 
 ```bash
 # 개발 서버
-cd frontend && npm run dev
+npm run dev
 
 # 빌드
-cd frontend && npm run build
+npm run build
 
 # Git 커밋 & 배포 (main 푸시 = 프로덕션 자동 배포)
 git add -A && git commit -m "feat: 기능 설명" && git push origin main
@@ -682,6 +685,17 @@ origin: https://opictalkdoc@github.com/opictalkdoc/opictalkdoc-app.git
   - 후기 제출 탭과 동일한 패턴: "스크립트 생성 시작하기" 테라코타 CTA 버튼
   - "AI 맞춤 스크립트" → "나만의 맞춤 스크립트" 문구 변경
 
+### 2026-03-02 - 프로젝트 구조 표준화: frontend/ → 루트
+- **프로젝트 구조 표준화**: `frontend/` 하위 디렉토리 → Git 루트 = Next.js 루트
+  - Next.js 단일 앱 프로젝트의 업계 표준 구조(`create-next-app` 기본값) 적용
+  - `git mv`로 126+ 파일 이동 (app/, components/, lib/, public/, config 파일들)
+  - `tsconfig.json` exclude에 `"supabase"` 추가 (Deno Edge Function 컴파일 방지)
+  - `.gitignore`에 `next-env.d.ts`, `.vercel` 추가
+  - `package.json` name: "frontend" → "opictalkdoc"
+  - `OPIc Talk-Doc_start_fast.bat` 경로 업데이트
+  - 빌드 테스트 통과
+  - **Vercel 설정 변경 필요**: Root Directory `frontend` → `.` (기본값)
+
 ### 2026-03-01 - D-1: master_questions 전면 교체 결정
 - **신규 DB(`docs/질문 DB/questions_db.xlsx`) 471행으로 전면 교체 결정**
   - 기존 510행(소리담 이관) → 471행(신규 구성)
@@ -695,7 +709,7 @@ origin: https://opictalkdoc@github.com/opictalkdoc/opictalkdoc-app.git
 
 ## 🔮 현재 상태 & 다음 단계
 
-**현재**: Phase 3 (핵심 모듈 이관) — Step 2 ✅ 완료 + D-1 DB 전면 교체 ✅ 완료 (마이그레이션 대기)
+**현재**: Phase 3 (핵심 모듈 이관) — Step 2 ✅ 완료 + D-1 DB 전면 교체 ✅ 완료 + 프로젝트 구조 표준화 ✅ 완료
 **다음 작업**: D-1 마이그레이션 실행 → Step 3 모의고사 → Step 4 튜터링 → 리브랜딩(P-5)
 
 ### ⏳ 리브랜딩 작업 (P-5: 오픽톡닥 → 하루오픽)
@@ -800,5 +814,5 @@ PGPASSWORD='opictalk2026' PGCLIENTENCODING='UTF8' "/c/Program Files/PostgreSQL/1
 > 의사결정 기록은 `docs/의사결정.md` 참조
 
 ---
-*최종 업데이트: 2026-03-01*
-*상태: Phase 3 Step 2 ✅ + D-1 DB 교체 ✅ → 마이그레이션 실행 → Step 3 모의고사*
+*최종 업데이트: 2026-03-02*
+*상태: Phase 3 Step 2 ✅ + D-1 DB 교체 ✅ + 구조 표준화 ✅ → 마이그레이션 실행 → Step 3 모의고사*

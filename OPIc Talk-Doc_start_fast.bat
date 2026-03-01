@@ -8,7 +8,7 @@ echo    Port: 3001
 echo ========================================
 echo.
 
-cd /d "%~dp0frontend"
+cd /d "%~dp0"
 
 echo [1/3] Stopping port 3001...
 for /f "tokens=5" %%a in ('netstat -ano ^| findstr :3001 ^| findstr LISTENING') do (
