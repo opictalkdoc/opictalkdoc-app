@@ -45,31 +45,52 @@ export function MockExamSessionWrapper({
 
     if (sessionResult?.data) {
       const session = sessionResult.data.session;
+      const answers = sessionResult.data.answers;
+      const setupDone =
+        typeof window !== "undefined" &&
+        localStorage.getItem(`mock-setup-done-${sessionId}`);
+
+      // 만료/포기된 세션이면 에러 표시
+      if (session.status === "expired") {
+        setPhase("error");
+      }
       // 세션이 이미 완료 상태면 바로 세션 화면 (평가 대기로 전환됨)
-      if (session.status === "completed") {
+      else if (session.status === "completed") {
         setPhase("session");
       }
-      // 세션이 활성 상태이고 문항이 1 이상 진행되었으면 복원 후 세션 화면 (UX 6-2)
+      // 세션이 활성 상태이고 문항이 2 이상 진행되었으면 복원 후 세션 화면
       else if (session.current_question > 1) {
         setPhase("restoring");
-        // 복원 표시 후 1.5초 대기 → 세션 진입
         setTimeout(() => setPhase("session"), 1500);
-      } else {
-        // 아직 시작 전이면 서베이부터 시작
+      }
+      // Q1이지만 답변이 이미 있으면 (Q1 제출 후 새로고침) 복원
+      else if (answers.length > 0) {
+        setPhase("restoring");
+        setTimeout(() => setPhase("session"), 1500);
+      }
+      // 서베이+환경점검 완료 플래그가 있으면 바로 세션 진입
+      else if (setupDone) {
+        setPhase("session");
+      }
+      // 최초 진입이면 서베이부터 시작
+      else {
         setPhase("survey");
       }
     }
-  }, [isLoading, queryError, sessionResult]);
+  }, [isLoading, queryError, sessionResult, sessionId]);
 
   // 서베이 완료 → 디바이스 테스트
   const handleSurveyComplete = useCallback(() => {
     setPhase("device-test");
   }, []);
 
-  // 디바이스 테스트 완료 → 세션 시작
+  // 디바이스 테스트 완료 → 세션 시작 + setup 완료 플래그 저장
   const handleDeviceTestComplete = useCallback(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem(`mock-setup-done-${sessionId}`, "true");
+    }
     setPhase("session");
-  }, []);
+  }, [sessionId]);
 
   // 디바이스 테스트 뒤로가기 → 서베이로 복귀
   const handleDeviceTestBack = useCallback(() => {
@@ -92,11 +113,14 @@ export function MockExamSessionWrapper({
 
   // 에러
   if (phase === "error") {
+    const isExpired = sessionResult?.data?.session?.status === "expired";
     return (
       <div className="flex flex-1 items-center justify-center">
         <div className="text-center">
           <p className="text-foreground-secondary">
-            {sessionResult?.error || "세션을 불러올 수 없습니다"}
+            {isExpired
+              ? "이 세션은 만료되었거나 포기된 세션입니다."
+              : sessionResult?.error || "세션을 불러올 수 없습니다"}
           </p>
           <a
             href="/mock-exam"

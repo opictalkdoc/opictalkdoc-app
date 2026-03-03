@@ -456,13 +456,14 @@ origin: https://opictalkdoc@github.com/opictalkdoc/opictalkdoc-app.git
 | 03-01 | D-1 ✅ | questions 471행 전면 교체 결정 (새 ID 체계, 14컬럼, 10 question_types) |
 | 03-02 | 구조 표준화 | frontend/ → 루트 (126+ 파일 이동, Next.js 표준 구조) |
 | 03-02 | Step 3 ✅ | **모의고사** Phase A~D (5테이블 + SA 10개 + EF 4개 + V7 규칙엔진 + 결과 UI) |
+| 03-03 | Step 3 안정화 | 세션 플로우 버그 수정 (녹음 레이스컨디션, Q1 플로우, 자동재생 제거) + 문서 현행화 |
 
 <!-- 이후 새 이력은 이 테이블에 행 추가 + memory/개발이력.md에 상세 기록 -->
 
 ## 🔮 현재 상태 & 다음 단계
 
-**현재**: Phase 3 (핵심 모듈 이관) — Step 3 모의고사 Phase A~D ✅ 완료
-**다음 작업**: EF 배포 + 통합 테스트 → Step 4 튜터링 → 리브랜딩(P-5)
+**현재**: Phase 3 (핵심 모듈 이관) — Step 3 모의고사 ✅ 완료 + 안정화 완료
+**다음 작업**: EF 배포(mock-test-process/eval/report) + 통합 테스트 → Step 4 튜터링 → 리브랜딩(P-5)
 
 ### ⏳ 리브랜딩 작업 (P-5: 오픽톡닥 → 하루오픽)
 > Phase 3 전체 완료(Step 4 튜터링까지) 후 진행. 상세는 `docs/의사결정.md` P-5, `docs/실행계획.md` 참조.
@@ -571,5 +572,5 @@ PGPASSWORD='opictalk2026' PGCLIENTENCODING='UTF8' "/c/Program Files/PostgreSQL/1
 > 의사결정 기록은 `docs/의사결정.md` 참조
 
 ---
-*최종 업데이트: 2026-03-02*
-*상태: Phase 3 Step 3 모의고사 Phase A ✅ → Phase B (STT+발음 EF) → Phase C (규칙엔진) → Phase D (결과UI)*
+*최종 업데이트: 2026-03-03*
+*상태: Phase 3 Step 3 모의고사 ✅ 완료 + 안정화. 다음: EF 배포 → Step 4 튜터링*

@@ -5,20 +5,20 @@ import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   Mic,
-  Square,
   ChevronRight,
   Loader2,
   Volume2,
   RotateCcw,
   AlertTriangle,
   WifiOff,
-  Play,
   Headphones,
   RefreshCw,
   ArrowRight,
   Bot,
   Clock,
   CheckCircle2,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { createBrowserClient } from "@supabase/ssr";
 import { useRecorder } from "@/lib/hooks/use-recorder";
@@ -40,12 +40,6 @@ import type {
 
 // Q1 자기소개도 questions 테이블에서 조회 (SLF_SYS_SYS_UNK_01)
 
-// ── 카테고리별 가이드 (훈련 모드) ──
-const CATEGORY_GUIDES: Record<string, string> = {
-  일반: "주제에 대해 자유롭게 이야기하세요",
-  롤플레이: "상황극입니다. 역할에 맞게 대응하세요",
-  어드밴스: "심화 질문입니다. 구체적인 의견을 제시하세요",
-};
 
 // ── 세션 페이즈 ──
 type SessionPhase = "exam" | "completing" | "waiting";
@@ -102,6 +96,7 @@ export function MockExamSession({
       )
   );
   const [error, setError] = useState<string | null>(null);
+  const [showQuestion, setShowQuestion] = useState(false);
   const [showTimeWarning, setShowTimeWarning] = useState(false);
 
   // ── 오프라인 감지 ──
@@ -300,6 +295,7 @@ export function MockExamSession({
     questionPlayer.reset();
     setUploadState("idle");
     setError(null);
+    setShowQuestion(false);
   }, [currentQ, sessionId, queryClient, recorder, questionPlayer]);
 
   // ── "다음" 버튼 핸들러 (소리담 패턴: 1클릭으로 중지+업로드+이동) ──
@@ -422,7 +418,7 @@ export function MockExamSession({
 
   // ── 시험 진행 화면 ──
   return (
-    <div className="flex flex-1 flex-col">
+    <div className="flex flex-1 flex-col overflow-hidden">
       {/* 오프라인 배너 */}
       {!isOnline && (
         <div className="flex items-center gap-2 bg-accent-500 px-4 py-2 text-sm text-white">
@@ -432,7 +428,7 @@ export function MockExamSession({
       )}
 
       {/* ── 상단 바: 문항 + 타이머 + 프로그레스 + 질문 그리드 ── */}
-      <div className="border-b border-border bg-surface px-4 py-3 sm:px-6">
+      <div className="border-b border-border bg-surface px-3 py-2 sm:px-6 sm:py-3">
         <div className="mx-auto max-w-5xl">
           <div className="flex items-center justify-between">
             <span className="text-sm text-foreground-secondary">
@@ -465,9 +461,9 @@ export function MockExamSession({
       </div>
 
       {/* ── 메인 영역 ── */}
-      <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col px-4 py-4 sm:px-6">
+      <div className="mx-auto flex w-full max-w-5xl min-h-0 flex-1 flex-col overflow-hidden px-3 py-2 sm:px-6 sm:py-4">
         {/* 5단계 진행 가이드 */}
-        <div className="mb-4 rounded-xl border border-border bg-surface p-3">
+        <div className="mb-2 rounded-xl border border-border bg-surface p-2 md:mb-4 md:p-3">
           <div className="flex items-center justify-between gap-1 md:gap-3">
             {[
               {
@@ -512,7 +508,7 @@ export function MockExamSession({
               <div key={step.key} className="flex flex-1 items-center">
                 <div className="flex-1 text-center">
                   <div
-                    className={`mx-auto mb-1 flex h-8 w-8 items-center justify-center rounded-lg transition-all md:h-10 md:w-10 ${
+                    className={`mx-auto flex h-7 w-7 items-center justify-center rounded-full transition-all md:mb-1 md:h-10 md:w-10 md:rounded-lg ${
                       activeGuideStep === step.key
                         ? "bg-primary-500"
                         : "border border-border bg-surface-secondary"
@@ -520,39 +516,47 @@ export function MockExamSession({
                   >
                     {activeGuideStep === step.key ? step.activeIcon : step.icon}
                   </div>
-                  <div className="text-[9px] font-medium text-foreground-secondary md:text-xs">
+                  <div className="hidden font-medium text-foreground-secondary md:block md:text-xs">
                     {step.label}
                   </div>
                 </div>
                 {i < arr.length - 1 && (
-                  <div className="h-px w-3 flex-shrink-0 bg-border md:w-5" />
+                  <div className="h-px w-2 flex-shrink-0 bg-border md:w-5" />
                 )}
               </div>
             ))}
           </div>
         </div>
 
-        {/* 훈련 모드: 질문 텍스트 (학습 보조) */}
+        {/* 훈련 모드: 질문 텍스트 (기본 숨김, 토글 가능) */}
         {isTraining && currentQuestion && (
-          <div className="mb-4 rounded-xl border border-border bg-primary-50/30 p-4">
-            <div className="mb-1 flex items-center gap-2">
-              <span className="rounded-full bg-primary-100 px-2 py-0.5 text-[10px] font-medium text-primary-700">
-                Q{currentQ} · {currentQuestion.category}
-              </span>
-              <span className="text-xs text-foreground-muted">
-                {currentQuestion.topic}
-              </span>
+          <div className="mb-2 rounded-xl border border-border bg-primary-50/30 p-2 md:mb-4 md:p-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="rounded-full bg-primary-100 px-2 py-0.5 text-[10px] font-medium text-primary-700">
+                  Q{currentQ} · {currentQuestion.category}
+                </span>
+                <span className="text-xs text-foreground-muted">
+                  {currentQuestion.topic}
+                </span>
+              </div>
+              <button
+                onClick={() => setShowQuestion((prev) => !prev)}
+                className="flex items-center gap-1 rounded-md px-2 py-1 text-xs text-foreground-muted hover:bg-primary-100/50 hover:text-foreground-secondary"
+              >
+                {showQuestion ? <EyeOff size={14} /> : <Eye size={14} />}
+                {showQuestion ? "숨기기" : "질문 보기"}
+              </button>
             </div>
-            <p className="text-sm font-medium text-foreground">
-              {currentQuestion.question_english}
-            </p>
-            <p className="mt-0.5 text-xs text-foreground-secondary">
-              {currentQuestion.question_korean}
-            </p>
-            {CATEGORY_GUIDES[currentQuestion.category] && (
-              <p className="mt-2 text-[10px] text-primary-500">
-                {CATEGORY_GUIDES[currentQuestion.category]}
-              </p>
+            {showQuestion && (
+              <div className="mt-2 border-t border-border/50 pt-2">
+                <p className="text-sm font-medium text-foreground">
+                  {currentQuestion.question_english}
+                </p>
+                <p className="mt-0.5 text-xs text-foreground-secondary">
+                  {currentQuestion.question_korean}
+                </p>
+              </div>
             )}
           </div>
         )}
@@ -565,16 +569,16 @@ export function MockExamSession({
         )}
 
         {/* ════════════════════════════════════════════════════
-            메인 2-Column 프레임 (소리담 레이아웃)
-            좌측 5col: AVA 면접관 + 재생 컨트롤
-            우측 7col: 녹음 시간 + 볼륨 + 상태 + Next
+            메인 2-Column 프레임
+            좌측: AVA 면접관 + 재생 컨트롤
+            우측: 녹음 시간 + 볼륨 + 상태 + Next
            ════════════════════════════════════════════════════ */}
-        <div className="flex-1 rounded-2xl border border-border bg-surface p-3 md:p-6">
-          <div className="grid h-full grid-cols-1 gap-3 md:min-h-[420px] md:grid-cols-12 md:gap-6">
-            {/* === 좌측: AVA 면접관 (5col) === */}
-            <div className="flex flex-col md:col-span-5">
-              {/* 아바타 영역 */}
-              <div className="flex flex-1 items-center justify-center overflow-hidden rounded-xl border border-border bg-surface-secondary min-h-[180px] md:min-h-[280px]">
+        <div className="flex min-h-0 flex-1 flex-col md:rounded-2xl md:border md:border-border md:bg-surface md:p-5">
+          <div className="flex min-h-0 flex-1 flex-col gap-2 md:grid md:grid-cols-12 md:gap-5">
+            {/* === 좌측: AVA 면접관 === */}
+            <div className="flex min-h-0 flex-1 flex-col gap-2 md:flex-none md:col-span-5 md:gap-3">
+              {/* 아바타 — aspect-ratio로 이미지와 비율 일치 */}
+              <div className="relative w-full min-h-0 flex-1 overflow-hidden rounded-xl border border-border md:flex-none md:aspect-[4/3]" style={{ backgroundColor: "#F7F3EE" }}>
                 <AvaAvatar
                   isSpeaking={questionPlayer.isPlaying}
                   isListening={recorder.state === "recording"}
@@ -582,8 +586,8 @@ export function MockExamSession({
                 />
               </div>
 
-              {/* 재생 컨트롤 */}
-              <div className="mt-3 rounded-xl border border-border bg-surface-secondary p-3">
+              {/* 재생 컨트롤 (데스크탑만) */}
+              <div className="hidden rounded-xl border border-border bg-surface-secondary p-3 md:block">
                 {/* 재생 프로그레스 바 */}
                 <div className="mb-3 h-1.5 overflow-hidden rounded-full bg-border">
                   <div
@@ -594,38 +598,34 @@ export function MockExamSession({
 
                 {/* 재생 버튼 — 상태별 분기 */}
                 {!questionPlayer.hasPlayed && !questionPlayer.isPlaying ? (
-                  /* 초기: 질문 듣기 버튼 */
                   <button
                     onClick={handlePlayQuestion}
-                    disabled={!currentQuestion?.audio_url}
-                    className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-primary-600 disabled:opacity-50"
+                    disabled={!currentQuestion?.audio_url || questionPlayer.isPlaying}
+                    className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary-500 px-4 py-2.5 text-sm font-bold text-white shadow-lg transition-all hover:bg-primary-600 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 md:py-3 md:text-base"
                   >
-                    <Play size={16} />
+                    <Volume2 size={18} />
                     질문 듣기
                   </button>
                 ) : questionPlayer.isPlaying ? (
-                  /* 재생 중 */
-                  <div className="flex items-center justify-center gap-2 py-2.5 text-sm font-medium text-primary-500">
-                    <Volume2 size={16} className="animate-pulse" />
-                    재생 중...
-                  </div>
+                  <button
+                    disabled
+                    className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary-500 px-4 py-2.5 text-sm font-bold text-white shadow-lg disabled:cursor-not-allowed disabled:opacity-50 md:py-3 md:text-base"
+                  >
+                    <Loader2 size={18} className="animate-spin" />
+                    Playing...
+                  </button>
                 ) : questionPlayer.canReplay && !questionPlayer.hasReplayed ? (
-                  /* 리플레이 가능 (5초 윈도우) */
                   <button
                     onClick={handleReplay}
-                    className="flex w-full items-center justify-center gap-2 rounded-lg border border-primary-300 bg-primary-50 px-4 py-2.5 text-sm font-medium text-primary-600 hover:bg-primary-100"
+                    className="flex w-full animate-pulse items-center justify-center gap-2 rounded-lg bg-primary-500 px-4 py-2.5 text-sm font-bold text-white shadow-lg transition-all md:py-3 md:text-base"
                   >
-                    <RotateCcw size={16} />
+                    <RotateCcw size={18} />
                     다시 듣기 ({questionPlayer.replayCountdown}초)
                   </button>
                 ) : (
-                  /* 재생 완료 — 녹음 진행 안내 */
-                  <div className="py-2.5 text-center text-xs text-foreground-muted">
-                    {recorder.state === "recording"
-                      ? "녹음 진행 중"
-                      : uploadState === "submitted"
-                        ? "답변 제출 완료"
-                        : "녹음을 완료해 주세요"}
+                  <div className="flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-lg bg-surface-secondary px-4 py-2.5 text-sm font-bold text-foreground-muted md:py-3 md:text-base">
+                    <Volume2 size={18} />
+                    재생 완료
                   </div>
                 )}
 
@@ -633,19 +633,19 @@ export function MockExamSession({
                 {!currentQuestion?.audio_url && recorder.state === "idle" && uploadState === "idle" && (
                   <button
                     onClick={() => recorder.startRecording()}
-                    className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg bg-primary-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-primary-600"
+                    className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg bg-primary-500 px-4 py-2.5 text-sm font-bold text-white shadow-lg hover:bg-primary-600 md:py-3 md:text-base"
                   >
-                    <Mic size={16} />
+                    <Mic size={18} />
                     녹음 시작
                   </button>
                 )}
               </div>
             </div>
 
-            {/* === 우측: 수험자 녹음 (7col) === */}
-            <div className="flex flex-col md:col-span-7">
-              {/* 녹음 시간 표시 */}
-              <div className="flex items-center justify-between rounded-xl border border-border bg-surface-secondary p-3">
+            {/* === 우측: 수험자 녹음 === */}
+            <div className="flex flex-col gap-1 md:flex-1 md:col-span-7 md:gap-2">
+              {/* 녹음 시간 표시 (데스크탑만) */}
+              <div className="hidden items-center justify-between rounded-xl border border-border bg-surface-secondary p-3 md:flex">
                 <span className="text-sm font-medium text-foreground-secondary">
                   녹음 시간
                 </span>
@@ -660,39 +660,55 @@ export function MockExamSession({
                 </span>
               </div>
 
-              {/* 마이크 볼륨 바 */}
-              <div className="mt-2">
-                <div className="h-3 overflow-hidden rounded-full bg-surface-secondary">
-                  <div
-                    className={`h-full rounded-full transition-all ${
-                      recorder.state !== "recording"
-                        ? "bg-surface-secondary"
-                        : recorder.warning === "silent" ||
-                            recorder.warning === "too_quiet"
-                          ? "bg-red-400"
-                          : "bg-primary-500"
-                    }`}
-                    style={{
-                      width:
-                        recorder.state === "recording"
-                          ? `${Math.min(recorder.volume * 100, 100)}%`
-                          : "0%",
-                    }}
-                  />
+              {/* 마이크 볼륨 바 (데스크탑만) */}
+              <div className="hidden items-center gap-2 rounded-xl border border-border bg-surface-secondary px-4 py-2 md:flex">
+                <Mic
+                  size={16}
+                  className={`shrink-0 transition-colors ${
+                    recorder.state === "recording"
+                      ? "animate-pulse text-green-500"
+                      : "text-foreground-muted"
+                  }`}
+                />
+                <div className="flex flex-1 items-center gap-[2px]">
+                  {Array.from({ length: 24 }).map((_, i) => {
+                    const threshold = (i + 1) / 24;
+                    const vol =
+                      recorder.state === "recording" ? recorder.volume : 0;
+                    const lit = vol >= threshold * 0.6;
+                    const color =
+                      i < 16
+                        ? lit
+                          ? "bg-green-400"
+                          : "bg-border"
+                        : i < 21
+                          ? lit
+                            ? "bg-yellow-400"
+                            : "bg-border"
+                          : lit
+                            ? "bg-red-400"
+                            : "bg-border";
+                    return (
+                      <div
+                        key={i}
+                        className={`h-3 flex-1 rounded-sm transition-colors duration-75 ${color}`}
+                      />
+                    );
+                  })}
                 </div>
               </div>
 
-              {/* ── 상태 표시 영역 ── */}
-              <div className="mt-2 flex flex-1 flex-col items-center justify-center rounded-xl border border-border bg-surface-secondary p-4 min-h-[120px] md:min-h-[200px]">
-                {/* IDLE 초기 (아직 재생 안 함) */}
+              {/* ── 상태 표시 영역 (데스크탑만) ── */}
+              <div className="hidden flex-1 flex-col items-center justify-center rounded-xl border border-border bg-surface-secondary p-4 md:flex">
+                {/* IDLE 초기 */}
                 {recorder.state === "idle" &&
                   uploadState === "idle" &&
                   !questionPlayer.isPlaying &&
                   !questionPlayer.hasPlayed && (
                     <div className="text-center">
                       <Headphones
-                        size={32}
-                        className="mx-auto mb-2 text-foreground-muted"
+                        size={28}
+                        className="mx-auto mb-2 text-foreground-muted md:h-8 md:w-8"
                       />
                       <p className="text-sm font-medium text-foreground-secondary">
                         준비되셨나요?
@@ -707,8 +723,8 @@ export function MockExamSession({
                 {questionPlayer.isPlaying && (
                   <div className="text-center">
                     <Volume2
-                      size={32}
-                      className="mx-auto mb-2 animate-pulse text-primary-500"
+                      size={28}
+                      className="mx-auto mb-2 animate-pulse text-primary-500 md:h-8 md:w-8"
                     />
                     <p className="text-sm font-medium text-primary-600">
                       질문을 듣는 중...
@@ -719,33 +735,24 @@ export function MockExamSession({
                   </div>
                 )}
 
-                {/* 녹음 중 — 중지 버튼 + 경고 */}
+                {/* 녹음 중 */}
                 {recorder.state === "recording" && (
-                  <div className="text-center">
-                    <div className="relative mx-auto mb-3">
-                      <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary-50">
-                        <button
-                          onClick={handleNext}
-                          disabled={recorder.duration < 10}
-                          className="flex h-12 w-12 items-center justify-center rounded-full bg-accent-500 text-white shadow-lg transition-transform hover:scale-105 active:scale-95 disabled:opacity-40"
-                        >
-                          <Square size={20} />
-                        </button>
-                      </div>
-                      <div className="absolute -inset-1 animate-ping rounded-full bg-primary-200/40" />
+                  <div className="relative flex w-full flex-1 flex-col items-center justify-center overflow-hidden rounded-xl border-2 border-primary-200 bg-primary-50">
+                    <div className="absolute inset-0 animate-pulse bg-primary-100/50" />
+                    <div className="z-10 flex items-center gap-2">
+                      <div className="h-2 w-2 animate-pulse rounded-full bg-primary-500" />
+                      <span className="text-sm font-bold uppercase tracking-widest text-primary-600 md:text-base">
+                        Recording...
+                      </span>
                     </div>
-                    <p className="text-sm font-bold text-primary-600">
-                      Recording...
-                    </p>
                     {recorder.duration < 10 && (
-                      <p className="mt-1 text-xs text-foreground-muted">
-                        최소 10초 이상 녹음해야 합니다 (
-                        {10 - recorder.duration}초 남음)
+                      <p className="z-10 mt-2 text-[10px] text-primary-500/60 md:text-xs">
+                        최소 10초 이상 답변해야 합니다.
                       </p>
                     )}
                     {recorder.warningMessage && (
                       <p
-                        className={`mt-2 text-xs font-medium ${
+                        className={`z-10 mt-2 text-xs font-medium ${
                           recorder.warning === "silent"
                             ? "text-red-500"
                             : recorder.warning === "too_quiet"
@@ -761,16 +768,13 @@ export function MockExamSession({
 
                 {/* 업로드 중 */}
                 {(uploadState === "uploading" || uploadState === "retrying") && (
-                  <div className="text-center">
-                    <Loader2
-                      size={32}
-                      className="mx-auto mb-2 animate-spin text-primary-500"
-                    />
-                    <p className="text-sm font-medium text-foreground-secondary">
+                  <div className="flex w-full flex-col items-center justify-center gap-3 rounded-xl border-2 border-primary-200 bg-primary-50 py-6 md:py-8">
+                    <Loader2 className="h-6 w-6 animate-spin text-primary-500 md:h-8 md:w-8" />
+                    <span className="animate-pulse text-sm font-medium tracking-wide text-primary-600 md:text-base">
                       {uploadState === "retrying"
-                        ? `업로드 재시도 중... (${uploadRetryRef.current}/${MAX_UPLOAD_RETRIES})`
-                        : "답변 업로드 중..."}
-                    </p>
+                        ? `재시도 중... (${uploadRetryRef.current}/${MAX_UPLOAD_RETRIES})`
+                        : "Uploading your audio..."}
+                    </span>
                   </div>
                 )}
 
@@ -778,8 +782,8 @@ export function MockExamSession({
                 {uploadState === "submitted" && (
                   <div className="text-center">
                     <CheckCircle2
-                      size={32}
-                      className="mx-auto mb-2 text-green-500"
+                      size={28}
+                      className="mx-auto mb-2 text-green-500 md:h-8 md:w-8"
                     />
                     <p className="text-sm font-medium text-green-600">
                       제출 완료!
@@ -794,8 +798,8 @@ export function MockExamSession({
                 {uploadState === "failed" && (
                   <div className="text-center">
                     <AlertTriangle
-                      size={32}
-                      className="mx-auto mb-2 text-red-500"
+                      size={28}
+                      className="mx-auto mb-2 text-red-500 md:h-8 md:w-8"
                     />
                     <p className="text-sm font-medium text-red-600">
                       업로드 실패
@@ -816,15 +820,15 @@ export function MockExamSession({
                   </div>
                 )}
 
-                {/* 재생 완료 + 녹음 대기 (리플레이 윈도우 중이지만 autoStart 직전) */}
+                {/* 녹음 대기 */}
                 {questionPlayer.hasPlayed &&
                   !questionPlayer.isPlaying &&
                   recorder.state === "idle" &&
                   uploadState === "idle" && (
                     <div className="text-center">
                       <Mic
-                        size={32}
-                        className="mx-auto mb-2 text-primary-400"
+                        size={28}
+                        className="mx-auto mb-2 text-primary-400 md:h-8 md:w-8"
                       />
                       <p className="text-sm text-foreground-secondary">
                         녹음이 곧 시작됩니다...
@@ -833,44 +837,152 @@ export function MockExamSession({
                   )}
               </div>
 
-              {/* Next 버튼: 녹음 10초 이상 OR 업로드 중/완료 시 표시 (소리담 패턴) */}
-              {((recorder.state === "recording" && recorder.duration >= 10) ||
-                recorder.state === "stopped" ||
-                uploadState === "uploading" ||
-                uploadState === "retrying" ||
-                uploadState === "submitted") && (
-                <div className="mt-auto flex justify-end border-t border-border pt-3">
-                  <button
-                    onClick={handleNext}
-                    disabled={
-                      uploadState === "uploading" || uploadState === "retrying"
-                    }
-                    className={`inline-flex items-center gap-1.5 rounded-lg px-6 py-3 text-sm font-bold text-white shadow-lg transition-all active:scale-95 disabled:opacity-50 ${
-                      currentQ >= 15
-                        ? "bg-green-500 hover:bg-green-600"
-                        : "bg-primary-500 hover:bg-primary-600"
-                    }`}
-                  >
-                    {uploadState === "uploading" ||
-                    uploadState === "retrying" ? (
-                      <>
-                        <Loader2 size={16} className="animate-spin" />
-                        제출 중...
-                      </>
-                    ) : currentQ >= 15 ? (
-                      <>
-                        시험 완료
-                        <ChevronRight size={18} />
-                      </>
-                    ) : (
-                      <>
-                        다음
-                        <ChevronRight size={18} />
-                      </>
+              {/* 모바일 전용: 컴팩트 녹음 상태 */}
+              <div className="flex flex-col gap-1.5 md:hidden">
+                {/* 녹음 중 상태 */}
+                {recorder.state === "recording" && (
+                  <div className="rounded-lg border border-primary-100 bg-primary-50 px-3 py-2">
+                    <div className="flex items-center gap-2">
+                      <div className="h-2 w-2 animate-pulse rounded-full bg-red-500" />
+                      <span className="text-xs font-medium text-primary-600">Recording...</span>
+                      <span className="ml-auto font-mono text-xs font-semibold text-primary-500">
+                        {formatTime(recorder.duration)}
+                      </span>
+                    </div>
+                    <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-primary-100">
+                      <div
+                        className="h-full rounded-full bg-primary-500 transition-all"
+                        style={{ width: `${Math.min(recorder.volume * 150, 100)}%` }}
+                      />
+                    </div>
+                    {recorder.duration < 10 && (
+                      <p className="mt-1 text-[10px] text-primary-400">최소 10초 이상 답변해야 합니다</p>
                     )}
-                  </button>
-                </div>
-              )}
+                  </div>
+                )}
+
+                {/* 재생 중 */}
+                {questionPlayer.isPlaying && (
+                  <div className="flex items-center gap-2 rounded-lg border border-primary-100 bg-primary-50 px-3 py-2">
+                    <Volume2 size={14} className="animate-pulse text-primary-500" />
+                    <span className="text-xs font-medium text-primary-600">질문을 듣는 중...</span>
+                  </div>
+                )}
+
+                {/* 업로드 중 */}
+                {(uploadState === "uploading" || uploadState === "retrying") && (
+                  <div className="flex items-center gap-2 rounded-lg border border-primary-100 bg-primary-50 px-3 py-2">
+                    <Loader2 size={14} className="animate-spin text-primary-500" />
+                    <span className="text-xs font-medium text-primary-600">
+                      {uploadState === "retrying" ? `재시도 중... (${uploadRetryRef.current}/${MAX_UPLOAD_RETRIES})` : "업로드 중..."}
+                    </span>
+                  </div>
+                )}
+
+                {/* 제출 완료 */}
+                {uploadState === "submitted" && (
+                  <div className="flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-3 py-2">
+                    <CheckCircle2 size={14} className="text-green-500" />
+                    <span className="text-xs font-medium text-green-600">제출 완료! 다음 문제로 이동하세요</span>
+                  </div>
+                )}
+
+                {/* 업로드 실패 */}
+                {uploadState === "failed" && (
+                  <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2">
+                    <AlertTriangle size={14} className="text-red-500" />
+                    <span className="text-xs font-medium text-red-600">업로드 실패</span>
+                    <button
+                      onClick={() => { recorder.reset(); setUploadState("idle"); setError(null); }}
+                      className="ml-auto text-xs font-medium text-primary-500"
+                    >
+                      다시 녹음
+                    </button>
+                  </div>
+                )}
+
+                {/* 대기: 질문 듣기 버튼 / 녹음 시작 버튼 */}
+                {recorder.state === "idle" && uploadState === "idle" && !questionPlayer.isPlaying && (
+                  <div className="flex gap-2">
+                    {!questionPlayer.hasPlayed ? (
+                      <button
+                        onClick={handlePlayQuestion}
+                        disabled={!currentQuestion?.audio_url}
+                        className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-primary-500 px-3 py-2.5 text-sm font-bold text-white disabled:opacity-50"
+                      >
+                        <Volume2 size={16} />
+                        질문 듣기
+                      </button>
+                    ) : questionPlayer.canReplay && !questionPlayer.hasReplayed ? (
+                      <button
+                        onClick={handleReplay}
+                        className="flex flex-1 animate-pulse items-center justify-center gap-2 rounded-lg bg-primary-500 px-3 py-2.5 text-sm font-bold text-white"
+                      >
+                        <RotateCcw size={16} />
+                        다시 듣기 ({questionPlayer.replayCountdown}초)
+                      </button>
+                    ) : (
+                      <div className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-surface-secondary px-3 py-2 text-xs text-foreground-muted">
+                        <Volume2 size={14} />
+                        재생 완료
+                      </div>
+                    )}
+                    {/* 오디오 없는 질문: 수동 녹음 시작 */}
+                    {!currentQuestion?.audio_url && recorder.state === "idle" && uploadState === "idle" && (
+                      <button
+                        onClick={() => recorder.startRecording()}
+                        className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-primary-500 px-3 py-2.5 text-sm font-bold text-white"
+                      >
+                        <Mic size={16} />
+                        녹음 시작
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Next 버튼 */}
+              <div className="flex justify-end border-t border-border pt-1 md:pt-3">
+                <button
+                  onClick={handleNext}
+                  disabled={
+                    !(
+                      (recorder.state === "recording" && recorder.duration >= 10) ||
+                      recorder.state === "stopped" ||
+                      uploadState === "submitted"
+                    ) ||
+                    uploadState === "uploading" ||
+                    uploadState === "retrying"
+                  }
+                  className={`inline-flex items-center gap-2 rounded-lg px-6 py-3 text-sm font-bold shadow-lg transition-all md:px-10 md:py-4 md:text-lg ${
+                    ((recorder.state === "recording" && recorder.duration >= 10) ||
+                      recorder.state === "stopped" ||
+                      uploadState === "submitted") &&
+                    uploadState !== "uploading" &&
+                    uploadState !== "retrying"
+                      ? "bg-primary-500 text-white hover:bg-primary-600 active:scale-95"
+                      : "cursor-not-allowed bg-surface-secondary text-foreground-muted opacity-50"
+                  }`}
+                >
+                  {uploadState === "uploading" ||
+                  uploadState === "retrying" ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin" />
+                      제출 중...
+                    </>
+                  ) : currentQ >= 15 ? (
+                    <>
+                      Submit
+                      <ChevronRight size={20} />
+                    </>
+                  ) : (
+                    <>
+                      Next
+                      <ChevronRight size={20} />
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>

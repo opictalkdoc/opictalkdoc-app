@@ -5,6 +5,6 @@ export default function ImmersiveLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex min-h-screen flex-col bg-background">{children}</div>
+    <div className="flex h-dvh flex-col bg-background md:h-auto md:min-h-screen">{children}</div>
   );
 }

@@ -183,7 +183,7 @@ export function DeviceTest({ onComplete, onBack }: DeviceTestProps) {
             <div className="absolute inset-0 rounded-full bg-gradient-to-r from-primary-300/20 to-secondary-300/20 blur-xl" />
             <div className="relative h-full w-full overflow-hidden rounded-3xl shadow-2xl">
               <Image
-                src="/images/ava-avatar.PNG"
+                src="/images/ava-avatar-new.png"
                 alt="AVA - AI 시험관"
                 width={256}
                 height={256}

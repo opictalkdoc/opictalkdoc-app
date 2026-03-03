@@ -5,11 +5,11 @@ import type { EvalStatus, MockExamMode } from "@/lib/types/mock-exam";
 // ── 15개 질문 상태 그리드 ──
 
 const STATUS_STYLES: Record<string, string> = {
-  current: "bg-primary-500 text-white ring-2 ring-primary-200",
+  current: "bg-primary-500 text-white ring-2 ring-primary-300",
   pending_eval: "bg-secondary-100 text-secondary-700 animate-pulse",
-  completed: "bg-green-100 text-green-700",
+  completed: "bg-green-500 text-white",
   skipped: "bg-foreground-muted/20 text-foreground-muted",
-  default: "bg-surface-secondary text-foreground-muted",
+  default: "border border-border bg-surface text-foreground-muted",
 };
 
 interface QuestionGridProps {
@@ -44,7 +44,7 @@ export function QuestionGrid({
   };
 
   return (
-    <div className="flex flex-wrap justify-center gap-1.5">
+    <div className="grid grid-cols-8 justify-items-center gap-1 md:flex md:flex-wrap md:justify-center md:gap-1.5">
       {Array.from({ length: 15 }, (_, i) => i + 1).map((qNum) => {
         const status = getStatus(qNum);
         const canNavigate =
@@ -52,12 +52,17 @@ export function QuestionGrid({
           qNum !== currentQ &&
           (answeredQuestions.has(qNum) || skippedQuestions.has(qNum));
 
+        // 모바일 grid: 9→col2(2번 아래), 10→col3(3번 아래), ... 15→col8(8번 아래)
+        // Q1은 자기소개 → 2행은 col2부터 시작
+        const gridCol = qNum > 8 ? { gridColumnStart: qNum - 7 } : undefined;
+
         return (
           <button
             key={qNum}
             onClick={() => canNavigate && onNavigate?.(qNum)}
             disabled={!canNavigate}
-            className={`flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold transition-colors ${
+            style={gridCol}
+            className={`flex h-5 w-full items-center justify-center rounded text-[10px] font-bold transition-colors md:h-8 md:w-8 md:rounded-lg md:text-xs ${
               STATUS_STYLES[status] || STATUS_STYLES.default
             } ${canNavigate ? "cursor-pointer hover:opacity-80" : "cursor-default"}`}
             title={`Q${qNum}`}
