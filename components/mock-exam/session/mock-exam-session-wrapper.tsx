@@ -20,7 +20,7 @@ export function MockExamSessionWrapper({
 }: MockExamSessionWrapperProps) {
   const [phase, setPhase] = useState<Phase>("loading");
 
-  // 세션 데이터 조회
+  // 세션 데이터 조회 (세션 진행 중에는 refetch 비활성화)
   const {
     data: sessionResult,
     isLoading,
@@ -29,6 +29,8 @@ export function MockExamSessionWrapper({
     queryKey: ["mock-session", sessionId],
     queryFn: () => getSession({ session_id: sessionId }),
     staleTime: 10 * 1000, // 10초
+    refetchOnWindowFocus: phase !== "session",
+    refetchOnReconnect: phase !== "session",
   });
 
   // 로딩 완료 후 phase 결정

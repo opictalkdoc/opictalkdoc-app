@@ -36,6 +36,50 @@ interface UseRecorderReturn {
   error: string | null;
 }
 
+// WebM → WAV 변환 (Azure Pronunciation Assessment 호환)
+// Web Audio API decodeAudioData로 디코딩 → 16kHz mono PCM → WAV 헤더 래핑
+async function convertWebmToWav(webmBlob: Blob): Promise<Blob> {
+  const arrayBuffer = await webmBlob.arrayBuffer();
+  const audioCtx = new AudioContext({ sampleRate: 16000 });
+
+  try {
+    const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+
+    // mono 채널 추출 (첫 번째 채널)
+    const channelData = audioBuffer.getChannelData(0);
+
+    // 16kHz 리샘플링 (decodeAudioData가 AudioContext sampleRate로 자동 리샘플링)
+    const pcmData = new Int16Array(channelData.length);
+    for (let i = 0; i < channelData.length; i++) {
+      const sample = Math.max(-1, Math.min(1, channelData[i]));
+      pcmData[i] = sample < 0 ? sample * 0x8000 : sample * 0x7fff;
+    }
+
+    // WAV 헤더 생성
+    const wavHeader = new ArrayBuffer(44);
+    const view = new DataView(wavHeader);
+    const dataLength = pcmData.byteLength;
+
+    view.setUint32(0, 0x52494646, false);  // "RIFF"
+    view.setUint32(4, 36 + dataLength, true);
+    view.setUint32(8, 0x57415645, false);  // "WAVE"
+    view.setUint32(12, 0x666d7420, false); // "fmt "
+    view.setUint32(16, 16, true);          // PCM subchunk size
+    view.setUint16(20, 1, true);           // PCM format
+    view.setUint16(22, 1, true);           // mono
+    view.setUint32(24, 16000, true);       // 16kHz
+    view.setUint32(28, 32000, true);       // byteRate (16000 * 1 * 2)
+    view.setUint16(32, 2, true);           // blockAlign (1 * 2)
+    view.setUint16(34, 16, true);          // 16-bit
+    view.setUint32(36, 0x64617461, false); // "data"
+    view.setUint32(40, dataLength, true);
+
+    return new Blob([wavHeader, pcmData.buffer], { type: "audio/wav" });
+  } finally {
+    await audioCtx.close();
+  }
+}
+
 export function useRecorder(options: UseRecorderOptions = {}): UseRecorderReturn {
   const {
     maxDuration = 240,
@@ -148,11 +192,19 @@ export function useRecorder(options: UseRecorderOptions = {}): UseRecorderReturn
         if (e.data.size > 0) audioChunksRef.current.push(e.data);
       };
 
-      recorder.onstop = () => {
+      recorder.onstop = async () => {
         // reset()에서 stop한 경우 무시 (비동기 레이스 컨디션 방지)
         if (cancelledRef.current) return;
-        const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
-        setAudioBlob(blob);
+        const webmBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+
+        // WebM → WAV 변환 (Azure Pronunciation Assessment는 WAV/PCM만 지원)
+        try {
+          const wavBlob = await convertWebmToWav(webmBlob);
+          setAudioBlob(wavBlob);
+        } catch {
+          // 변환 실패 시 WebM 그대로 사용 (Whisper는 WebM 지원)
+          setAudioBlob(webmBlob);
+        }
         setState("stopped");
       };
 

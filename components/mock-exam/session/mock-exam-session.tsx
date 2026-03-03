@@ -214,11 +214,12 @@ export function MockExamSession({
             return null;
           }
 
-          const filePath = `${user.id}/${sessionId}/Q${currentQ}_${Date.now()}.webm`;
+          const ext = blob.type === "audio/wav" ? "wav" : "webm";
+          const filePath = `${user.id}/${sessionId}/Q${currentQ}_${Date.now()}.${ext}`;
           const { error: uploadErr } = await supabase.storage
             .from("mock-test-recordings")
             .upload(filePath, blob, {
-              contentType: "audio/webm",
+              contentType: blob.type,
               upsert: true,
             });
 

@@ -112,9 +112,9 @@ async function updateAnswerStatus(
 }
 
 // fire-and-forget → Stage B (mock-test-eval)
+// raw fetch 사용: supabase.functions.invoke()는 EF 내부 네트워크에서 JWT 검증 이슈 발생
 function fireAndForgetEval(payload: Record<string, unknown>) {
-  const efUrl = `${SUPABASE_URL}/functions/v1/mock-test-eval`;
-  fetch(efUrl, {
+  fetch(`${SUPABASE_URL}/functions/v1/mock-test-eval`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

@@ -144,6 +144,16 @@ Deno.serve(async (req) => {
     return new Response("ok", { headers: corsHeaders });
   }
 
+  // 내부 전용 함수: 수동 인증 검증 (--no-verify-jwt 배포)
+  // mock-test-process에서만 호출됨, service role key 필수
+  const authHeader = req.headers.get("authorization");
+  if (!authHeader || authHeader !== `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`) {
+    return new Response(
+      JSON.stringify({ error: "Unauthorized" }),
+      { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    );
+  }
+
   const startTime = Date.now();
 
   try {
@@ -356,8 +366,9 @@ Deno.serve(async (req) => {
     );
 
     // ── 결과 파싱 ──
-    // GPT 응답 구조: { checkboxes: { ID: { pass: bool, evidence: string } }, ... }
-    const checkboxes = gptResult.checkboxes || {};
+    // GPT 응답 구조: { evaluation: { checkboxes, sentences, corrections, deep_analysis }, ... }
+    const evaluation = (gptResult.evaluation || gptResult) as Record<string, unknown>;
+    const checkboxes = (evaluation.checkboxes || {}) as Record<string, unknown>;
     const checkboxEntries = Object.entries(checkboxes);
     const checkboxCount = checkboxEntries.length;
     const passCount = checkboxEntries.filter(
@@ -367,9 +378,9 @@ Deno.serve(async (req) => {
     const passRate = checkboxCount > 0 ? passCount / checkboxCount : 0;
 
     // 문장별 분석 (있으면)
-    const sentences = gptResult.sentences || null;
-    const corrections = gptResult.corrections || null;
-    const deepAnalysis = gptResult.deep_analysis || null;
+    const sentences = evaluation.sentences || null;
+    const corrections = evaluation.corrections || null;
+    const deepAnalysis = evaluation.deep_analysis || null;
 
     const processingTime = Date.now() - startTime;
 
@@ -420,8 +431,8 @@ Deno.serve(async (req) => {
 
     if (!pendingAnswers || pendingAnswers.length === 0) {
       // 전체 평가 완료 → Stage C (mock-test-report) fire-and-forget
-      const reportUrl = `${SUPABASE_URL}/functions/v1/mock-test-report`;
-      fetch(reportUrl, {
+      // raw fetch 사용: EF 내부 네트워크 JWT 검증 이슈 방지
+      fetch(`${SUPABASE_URL}/functions/v1/mock-test-report`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
