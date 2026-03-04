@@ -126,7 +126,7 @@ export default function HomePage() {
   return (
     <>
       {/* ━━━ 1. Hero — 뷰포트 비례 스케일링 ━━━ */}
-      <section className="relative flex h-[calc(100svh-64px)] flex-col items-center overflow-hidden bg-[#FAF6F1] px-5 pt-[clamp(24px,4vh,48px)]">
+      <section className="relative flex h-[calc(100svh-64px)] flex-col items-center overflow-hidden bg-[#FAF6F1] px-5 pt-[clamp(28px,6vh,64px)]">
         {/* 배경 — 따뜻한 조명 글로우 */}
         <div className="pointer-events-none absolute left-1/2 top-[-100px] h-[600px] w-[600px] -translate-x-1/2 bg-[radial-gradient(circle,rgba(212,131,94,0.08)_0%,transparent_70%)]" />
 
@@ -162,7 +162,7 @@ export default function HomePage() {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.3, ease: "easeOut" }}
-          className="relative mx-auto mt-[clamp(8px,1.5vh,24px)] flex h-0 w-full max-w-[1100px] flex-grow flex-col justify-center"
+          className="relative mx-auto mt-[clamp(12px,2.5vh,32px)] flex h-0 w-full max-w-[1100px] flex-grow flex-col justify-center"
         >
           <p className="mb-[clamp(6px,1vh,16px)] shrink-0 text-center text-[0.85rem] font-medium text-[#8B7E72] sm:text-[clamp(0.85rem,1vw,1rem)]">
             어떤 일상을 보내셨나요? 있는 그대로의 당신을 들려주세요.
@@ -205,12 +205,12 @@ export default function HomePage() {
         </motion.div>
 
         {/* 하단: CTA 버튼 — 고정 영역 */}
-        <div className="relative mx-auto flex shrink-0 max-w-4xl flex-col items-center pb-[clamp(16px,3vh,40px)] text-center">
+        <div className="relative mx-auto flex shrink-0 max-w-4xl flex-col items-center pb-[clamp(20px,4vh,52px)] text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.6, ease: "easeOut" }}
-            className="mt-[clamp(8px,1.5vh,24px)] flex flex-col items-center gap-3 sm:flex-row"
+            className="mt-[clamp(12px,2.5vh,28px)] flex flex-col items-center gap-3 sm:flex-row"
           >
             <Link
               href="/signup"
