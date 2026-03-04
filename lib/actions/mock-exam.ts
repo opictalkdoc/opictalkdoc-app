@@ -784,7 +784,6 @@ export async function getEvaluation(input: {
         .select("audio_url")
         .eq("session_id", input.session_id)
         .eq("question_number", input.question_number)
-        .eq("user_id", userId)
         .maybeSingle(),
     ]);
 

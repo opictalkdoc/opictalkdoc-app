@@ -112,7 +112,7 @@ export function QuestionGrid({
             style={gridCol}
             className={`flex h-5 w-full items-center justify-center rounded text-[10px] font-bold transition-colors md:h-8 md:flex-1 md:rounded-lg md:text-xs ${
               STATUS_STYLES[status]
-            } ${viewingEvalQNum === qNum ? "ring-2 ring-emerald-300 scale-110" : ""} ${canClick ? "cursor-pointer hover:opacity-80" : "cursor-default"}`}
+            } ${viewingEvalQNum === qNum ? "ring-2 ring-emerald-300" : ""} ${canClick ? "cursor-pointer hover:opacity-80" : "cursor-default"}`}
             title={
               status === "eval_done"
                 ? `Q${qNum} — 평가 완료 (클릭하여 확인)`

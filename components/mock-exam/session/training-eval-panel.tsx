@@ -14,6 +14,7 @@ import {
   BarChart3,
   Volume2,
   Pause,
+  Play,
 } from "lucide-react";
 import { getEvaluation } from "@/lib/actions/mock-exam";
 import type {
@@ -76,7 +77,7 @@ export function TrainingEvalPanel({
   }, [sessionId, questionNumber]);
 
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col overflow-hidden px-3 py-2 sm:px-6 sm:py-4 animate-fadeIn">
+    <div className="mx-auto flex h-0 w-full max-w-5xl flex-grow flex-col overflow-hidden px-3 py-2 sm:px-6 sm:py-4 animate-fadeIn">
       {/* 헤더 */}
       <div className="mb-3 flex items-center gap-3 md:mb-4">
         <button
@@ -104,7 +105,7 @@ export function TrainingEvalPanel({
       </div>
 
       {/* 콘텐츠 — 스크롤 영역 */}
-      <div className="flex-1 overflow-y-auto rounded-xl border border-border bg-surface p-4 md:p-6">
+      <div className="h-0 flex-grow overflow-y-auto rounded-xl border border-border bg-surface p-4 max-md:[scrollbar-width:none] max-md:[&::-webkit-scrollbar]:hidden md:p-6">
         {loading ? (
           <div className="flex flex-col items-center py-12">
             <Loader2 size={24} className="animate-spin text-primary-500" />
@@ -261,35 +262,54 @@ function TranscriptSection({
   longPauseCount: number | null;
 }) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const progressBarRef = useRef<HTMLDivElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [progress, setProgress] = useState(0);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
 
-  // 오디오 재생/정지 토글
+  // mm:ss 포맷
+  const formatTime = (sec: number) => {
+    const m = Math.floor(sec / 60);
+    const s = Math.floor(sec % 60);
+    return `${m}:${s.toString().padStart(2, "0")}`;
+  };
+
+  // 오디오 초기화
+  const ensureAudio = useCallback(() => {
+    if (audioRef.current || !audioUrl) return audioRef.current;
+    const audio = new Audio(audioUrl);
+    audio.addEventListener("loadedmetadata", () => setDuration(audio.duration));
+    audio.addEventListener("timeupdate", () => setCurrentTime(audio.currentTime));
+    audio.addEventListener("ended", () => {
+      setIsPlaying(false);
+      setCurrentTime(0);
+    });
+    audioRef.current = audio;
+    return audio;
+  }, [audioUrl]);
+
+  // 재생/정지 토글
   const togglePlay = useCallback(() => {
-    if (!audioUrl) return;
-
-    if (!audioRef.current) {
-      audioRef.current = new Audio(audioUrl);
-      audioRef.current.addEventListener("ended", () => {
-        setIsPlaying(false);
-        setProgress(0);
-      });
-      audioRef.current.addEventListener("timeupdate", () => {
-        const audio = audioRef.current;
-        if (audio && audio.duration > 0) {
-          setProgress((audio.currentTime / audio.duration) * 100);
-        }
-      });
-    }
-
+    const audio = ensureAudio();
+    if (!audio) return;
     if (isPlaying) {
-      audioRef.current.pause();
+      audio.pause();
       setIsPlaying(false);
     } else {
-      audioRef.current.play();
+      audio.play();
       setIsPlaying(true);
     }
-  }, [audioUrl, isPlaying]);
+  }, [ensureAudio, isPlaying]);
+
+  // 시크바 클릭으로 위치 이동
+  const handleSeek = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    const audio = ensureAudio();
+    if (!audio || !progressBarRef.current) return;
+    const rect = progressBarRef.current.getBoundingClientRect();
+    const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    audio.currentTime = ratio * (audio.duration || 0);
+    setCurrentTime(audio.currentTime);
+  }, [ensureAudio]);
 
   // 컴포넌트 언마운트 시 정리
   useEffect(() => {
@@ -301,42 +321,56 @@ function TranscriptSection({
     };
   }, []);
 
+  const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
+
   return (
     <div>
-      <div className="mb-1.5 flex items-center justify-between md:mb-2">
-        <p className="text-xs font-medium text-foreground-muted md:text-sm">
-          나의 답변
-        </p>
-        {audioUrl && (
+      <p className="mb-1.5 text-xs font-medium text-foreground-muted md:mb-2 md:text-sm">
+        나의 답변
+      </p>
+
+      {/* 오디오 플레이어 바 */}
+      {audioUrl && (
+        <div className="mb-2 flex items-center gap-2 rounded-lg border border-border bg-surface-secondary/50 px-3 py-2 md:gap-3 md:px-4 md:py-2.5">
+          {/* 재생/정지 버튼 */}
           <button
             onClick={togglePlay}
-            className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-medium transition-colors md:text-xs ${
-              isPlaying
-                ? "bg-primary-100 text-primary-700"
-                : "bg-surface-secondary text-foreground-secondary hover:bg-border"
-            }`}
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-500 text-white transition-colors hover:bg-primary-600 active:scale-95 md:h-9 md:w-9"
           >
-            {isPlaying ? (
-              <Pause size={12} className="shrink-0" />
-            ) : (
-              <Volume2 size={12} className="shrink-0" />
-            )}
-            {isPlaying ? "일시정지" : "내 답변 듣기"}
+            {isPlaying ? <Pause size={14} /> : <Play size={14} className="ml-0.5" />}
           </button>
-        )}
-      </div>
-      {/* 오디오 프로그레스 바 */}
-      {audioUrl && isPlaying && (
-        <div className="mb-2 h-1 overflow-hidden rounded-full bg-surface-secondary">
-          <div
-            className="h-full rounded-full bg-primary-500 transition-[width] duration-300 ease-linear"
-            style={{ width: `${progress}%` }}
-          />
+
+          {/* 시간 + 시크바 */}
+          <div className="flex min-w-0 flex-1 flex-col gap-1">
+            {/* 시크바 */}
+            <div
+              ref={progressBarRef}
+              onClick={handleSeek}
+              className="group relative h-1.5 cursor-pointer rounded-full bg-border md:h-2"
+            >
+              <div
+                className="h-full rounded-full bg-primary-500 transition-[width] duration-150 ease-linear"
+                style={{ width: `${progress}%` }}
+              />
+              {/* 시크 핸들 (재생 중 or 호버) */}
+              <div
+                className="absolute top-1/2 h-3 w-3 -translate-y-1/2 rounded-full bg-primary-500 opacity-0 shadow-sm transition-opacity group-hover:opacity-100 md:h-3.5 md:w-3.5"
+                style={{ left: `calc(${progress}% - 6px)`, opacity: isPlaying || progress > 0 ? 1 : undefined }}
+              />
+            </div>
+            {/* 시간 표시 */}
+            <div className="flex justify-between text-[10px] text-foreground-muted md:text-[11px]">
+              <span>{formatTime(currentTime)}</span>
+              <span>{duration > 0 ? formatTime(duration) : audioDuration ? formatTime(audioDuration) : "--:--"}</span>
+            </div>
+          </div>
         </div>
       )}
-      <p className="whitespace-pre-wrap rounded-lg bg-white p-3 text-sm leading-relaxed text-foreground border border-border md:p-4 md:text-base md:leading-7">
+      <p className="whitespace-pre-wrap rounded-lg border border-border bg-white p-3 text-sm leading-relaxed text-foreground md:p-4 md:text-base md:leading-7">
         {transcript}
       </p>
+
+      {/* 메타 정보 */}
       <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5 text-[10px] text-foreground-muted md:mt-2 md:text-xs">
         {wpm != null && wpm > 0 && <span>WPM: {wpm.toFixed(0)}</span>}
         {audioDuration != null && audioDuration > 0 && (

@@ -527,8 +527,8 @@ export function MockExamSession({
         <div className="relative mb-2 rounded-xl border border-border bg-surface p-2 md:mb-4 md:p-3">
           {/* 훈련 모드: 평가 완료 알림 배너 (오버랩) */}
           {isTraining && evalBanner && (
-            <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-emerald-50/95 animate-fadeIn">
-              <div className="flex items-center gap-2 text-xs font-medium text-emerald-700">
+            <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-primary-50/95 animate-fadeIn">
+              <div className="flex items-center gap-2 text-xs font-medium text-primary-700">
                 <CheckCircle2 size={14} className="shrink-0" />
                 <span>
                   <strong>Q{evalBanner}</strong> 평가 완료 — 상단 번호를 눌러 결과를 확인하세요
@@ -662,7 +662,7 @@ export function MockExamSession({
                     {/* 상단: 주제 태그 + EN/한글 토글 버튼 */}
                     <div className="absolute inset-x-0 top-0 z-10 flex items-start justify-between p-2 md:hidden">
                       <span className="rounded-full bg-black/40 px-2 py-0.5 text-[10px] font-medium text-white backdrop-blur-sm">
-                        Q{currentQ} · {currentQuestion.category} · {currentQuestion.topic}
+                        Q{currentQ} · {currentQuestion.topic}
                       </span>
                       <div className="flex gap-1">
                         <button
