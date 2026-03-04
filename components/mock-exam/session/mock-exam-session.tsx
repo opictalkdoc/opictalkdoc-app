@@ -28,6 +28,7 @@ import { SessionTimer } from "./session-timer";
 import { QuestionGrid } from "./question-grid";
 import { AvaAvatar } from "./ava-avatar";
 import { EvalWaiting } from "../evaluation/eval-waiting";
+import { TrainingEvalPanel } from "./training-eval-panel";
 import { submitAnswer, completeSession } from "@/lib/actions/mock-exam";
 import type {
   MockTestSession,
@@ -143,10 +144,12 @@ export function MockExamSession({
   });
 
   // ── 커스텀 훅: 평가 폴링 ──
+  // 훈련 모드: 시험 중에도 폴링 (개별 평가 결과 실시간 표시)
+  // 실전 모드: 평가 대기 화면에서만 폴링
   const evalPolling = useEvalPolling({
     sessionId,
-    enabled: phase === "waiting",
-    interval: 5000,
+    enabled: phase === "waiting" || (isTraining && phase === "exam"),
+    interval: isTraining && phase === "exam" ? 8000 : 5000,
   });
 
   // 폴링 결과를 로컬 상태에 반영
@@ -1071,6 +1074,16 @@ export function MockExamSession({
             </div>
           </div>
         </div>
+      )}
+
+      {/* ── 훈련 모드 개별 평가 패널 ── */}
+      {isTraining && (
+        <TrainingEvalPanel
+          sessionId={sessionId}
+          evalStatusMap={evalStatusMap}
+          questions={questions}
+          questionIds={session.question_ids || []}
+        />
       )}
     </div>
   );

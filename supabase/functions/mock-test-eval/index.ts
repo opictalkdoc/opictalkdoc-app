@@ -421,27 +421,36 @@ Deno.serve(async (req) => {
       "completed",
     );
 
-    // ── Q15 완료 시 Stage C 트리거 확인 ──
-    // 모든 문항 평가 완료 여부 체크
-    const { data: pendingAnswers } = await supabase
-      .from("mock_test_answers")
-      .select("question_number, eval_status")
+    // ── Stage C 트리거 조건: 세션 completed + 모든 답변 평가 완료 ──
+    // 1) 세션이 completed 상태인지 확인 (유저가 15문항 모두 마친 후 completeSession 호출)
+    const { data: sessionData } = await supabase
+      .from("mock_test_sessions")
+      .select("status")
       .eq("session_id", session_id)
-      .not("eval_status", "in", '("completed","skipped","failed")');
+      .single();
 
-    if (!pendingAnswers || pendingAnswers.length === 0) {
-      // 전체 평가 완료 → Stage C (mock-test-report) fire-and-forget
-      // raw fetch 사용: EF 내부 네트워크 JWT 검증 이슈 방지
-      fetch(`${SUPABASE_URL}/functions/v1/mock-test-report`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-        },
-        body: JSON.stringify({ session_id }),
-      }).catch(() => {
-        // fire-and-forget: 실패 시 폴링에서 stuck 감지
-      });
+    if (sessionData?.status === "completed") {
+      // 2) 제출된 답변 중 아직 평가 미완료인 것이 있는지 확인
+      const { data: pendingAnswers } = await supabase
+        .from("mock_test_answers")
+        .select("question_number, eval_status")
+        .eq("session_id", session_id)
+        .not("eval_status", "in", '("completed","skipped","failed")');
+
+      if (!pendingAnswers || pendingAnswers.length === 0) {
+        // 세션 completed + 모든 답변 평가 완료 → Stage C fire-and-forget
+        // raw fetch 사용: EF 내부 네트워크 JWT 검증 이슈 방지
+        fetch(`${SUPABASE_URL}/functions/v1/mock-test-report`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+          },
+          body: JSON.stringify({ session_id }),
+        }).catch(() => {
+          // fire-and-forget: 실패 시 폴링에서 stuck 감지
+        });
+      }
     }
 
     return new Response(

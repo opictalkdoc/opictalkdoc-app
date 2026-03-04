@@ -558,8 +558,29 @@ export async function completeSession(
       return { error: "세션 완료 처리 실패" };
     }
 
-    // 아직 pending인 답변이 없고 모든 평가가 completed면 → Stage C 트리거
-    // (Stage B의 마지막 문항 완료 시 자동 트리거하므로 여기서는 상태만 변경)
+    // 모든 답변 평가가 이미 완료된 경우 → Stage C 즉시 트리거
+    // (Stage B보다 completeSession이 늦게 호출되는 Case A 대응)
+    const { data: pendingAnswers } = await supabase
+      .from("mock_test_answers")
+      .select("question_number, eval_status")
+      .eq("session_id", parsed.data.session_id)
+      .not("eval_status", "in", '("completed","skipped","failed")');
+
+    if (!pendingAnswers || pendingAnswers.length === 0) {
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+      const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+
+      fetch(`${supabaseUrl}/functions/v1/mock-test-report`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${serviceRoleKey}`,
+        },
+        body: JSON.stringify({ session_id: parsed.data.session_id }),
+      }).catch(() => {
+        // fire-and-forget: 실패 시 폴링에서 stuck 감지
+      });
+    }
 
     return {};
   } catch (err) {
@@ -739,7 +760,36 @@ export async function getActiveSession(): Promise<
 }
 
 // ============================================================
-// 10. 모의고사 크레딧 확인 (checkMockExamCredit)
+// 10. 개별 평가 결과 조회 (getEvaluation)
+// ============================================================
+
+export async function getEvaluation(input: {
+  session_id: string;
+  question_number: number;
+}): Promise<ActionResult<MockTestEvaluation | null>> {
+  try {
+    const { supabase, userId } = await requireUser();
+
+    const { data, error } = await supabase
+      .from("mock_test_evaluations")
+      .select("*")
+      .eq("session_id", input.session_id)
+      .eq("question_number", input.question_number)
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (error) {
+      return { error: "평가 조회 실패" };
+    }
+
+    return { data: (data as MockTestEvaluation) || null };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "평가 조회 실패" };
+  }
+}
+
+// ============================================================
+// 11. 모의고사 크레딧 확인 (checkMockExamCredit)
 // ============================================================
 
 export async function checkMockExamCredit(): Promise<
