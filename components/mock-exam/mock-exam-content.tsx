@@ -14,7 +14,10 @@ import {
   Trophy,
   Calendar,
   Filter,
+  ChevronDown,
+  AlertTriangle,
 } from "lucide-react";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { ExamPoolSelector } from "./start/exam-pool-selector";
 import { ModeSelector, TestModeConfirm } from "./start/mode-selector";
 import { ResultSummary } from "./result/result-summary";
@@ -71,15 +74,15 @@ export function MockExamContent({ initialHistory }: MockExamContentProps) {
   return (
     <div>
       {/* 탭 네비게이션 */}
-      <div className="mb-6 overflow-x-auto">
-        <div className="flex min-w-max border-b border-border">
+      <div className="mb-4 overflow-x-auto sm:mb-6">
+        <div className="flex border-b border-border">
           {tabs.map((tab) => {
             const active = activeTab === tab.id;
             return (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-1.5 border-b-2 px-3 py-3 text-sm font-medium transition-colors sm:gap-2 sm:px-4 ${
+                className={`flex flex-1 items-center justify-center gap-1.5 border-b-2 px-3 py-3 text-sm font-medium transition-colors sm:min-w-[120px] sm:flex-none sm:gap-2 sm:px-4 ${
                   active
                     ? "border-primary-500 text-primary-600"
                     : "border-transparent text-foreground-muted hover:border-border hover:text-foreground-secondary"
@@ -121,6 +124,8 @@ function StartTab() {
   const [showTestConfirm, setShowTestConfirm] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [isAbandoning, setIsAbandoning] = useState(false);
+  const [showAbandonConfirm, setShowAbandonConfirm] = useState(false);
+  const [bannerOpen, setBannerOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // 활성 세션 확인
@@ -217,14 +222,7 @@ function StartTab() {
             </div>
             <div className="flex gap-2">
             <button
-              onClick={async () => {
-                if (!confirm("진행 중인 모의고사를 포기하시겠습니까? 사용한 크레딧은 복구되지 않습니다.")) return;
-                setIsAbandoning(true);
-                await expireSession({ session_id: activeSession.session_id });
-                queryClient.invalidateQueries({ queryKey: ["mock-active-session"] });
-                queryClient.invalidateQueries({ queryKey: ["mock-exam-history"] });
-                setIsAbandoning(false);
-              }}
+              onClick={() => setShowAbandonConfirm(true)}
               disabled={isAbandoning}
               className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm font-medium text-foreground-secondary hover:bg-surface-secondary disabled:opacity-50 sm:w-28 sm:flex-none"
             >
@@ -247,18 +245,73 @@ function StartTab() {
         </div>
       )}
 
-      {/* 안내 배너 */}
-      <div className="flex items-start gap-2.5 rounded-xl border border-primary-200 bg-primary-50/50 p-3 sm:gap-3 sm:p-4">
-        <Info size={18} className="mt-0.5 shrink-0 text-primary-500" />
-        <div>
+      {/* 안내 배너 (접이식) */}
+      <button
+        onClick={() => setBannerOpen(!bannerOpen)}
+        className="flex w-full items-start gap-2.5 rounded-xl border border-primary-200 bg-primary-50/50 p-3 text-left sm:gap-3 sm:p-4"
+      >
+        <Info size={18} className="shrink-0 text-primary-500" />
+        <div className="min-w-0 flex-1">
           <p className="text-sm font-medium text-foreground">
             모의고사 안내
           </p>
-          <p className="mt-0.5 text-xs text-foreground-secondary sm:mt-1 sm:text-sm">
-            실제 OPIc과 동일하게 15문제를 풀고, 예상 등급과 상세 피드백을 받습니다.
-            <span className="font-medium text-foreground-secondary"> 훈련 모드</span>는 자유롭게 연습하고,
-            <span className="font-medium text-foreground-secondary"> 실전 모드</span>는 40분 제한으로 실제 시험처럼 진행됩니다.
-          </p>
+          {bannerOpen && (
+            <p className="mt-0.5 text-xs text-foreground-secondary sm:mt-1 sm:text-sm">
+              실제 OPIc과 동일하게 15문제를 풀고, 예상 등급과 상세 피드백을 받습니다.
+              <span className="font-medium text-foreground-secondary"> 훈련 모드</span>는 자유롭게 연습하고,
+              <span className="font-medium text-foreground-secondary"> 실전 모드</span>는 40분 제한으로 실제 시험처럼 진행됩니다.
+            </p>
+          )}
+        </div>
+        <ChevronDown
+          size={16}
+          className={`shrink-0 text-primary-400 transition-transform ${bannerOpen ? "rotate-180" : ""}`}
+        />
+      </button>
+
+      {/* 진행 과정 + CTA 카드 */}
+      <div className="rounded-xl border border-border bg-surface p-4 sm:p-6">
+        <h3 className="text-sm font-semibold text-foreground sm:text-base">모의고사 진행 과정</h3>
+        <p className="mt-0.5 text-xs text-foreground-secondary sm:mt-1 sm:text-sm">
+          3단계로 실전 OPIc을 체험하고 평가를 받습니다
+        </p>
+
+        {/* 모바일 세로 */}
+        <div className="relative mt-4 sm:hidden">
+          {[
+            { step: 1, title: "기출 문제 선택", desc: "후기 기반 기출 세트 선택" },
+            { step: 2, title: "모드 선택 + 응시", desc: "훈련/실전 모드로 15문항 답변" },
+            { step: 3, title: "평가 리포트 확인", desc: "예상 등급과 문항별 피드백 확인" },
+          ].map((s, i) => (
+            <div key={s.step} className="relative flex gap-3 pb-4 last:pb-0">
+              {i < 2 && (
+                <div className="absolute left-3.5 top-7 bottom-0 w-px bg-border" />
+              )}
+              <div className="relative z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 border-border bg-surface-secondary text-xs font-bold text-foreground-muted">
+                {s.step}
+              </div>
+              <div className="pt-0.5">
+                <p className="text-sm font-semibold text-foreground">{s.title}</p>
+                <p className="text-xs text-foreground-secondary">{s.desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+        {/* PC 가로 3컬럼 */}
+        <div className="hidden sm:mt-6 sm:grid sm:grid-cols-3 sm:gap-4">
+          {[
+            { step: 1, title: "기출 문제 선택", desc: "후기 기반 기출 세트 선택" },
+            { step: 2, title: "모드 선택 + 응시", desc: "훈련/실전 모드로 15문항 답변" },
+            { step: 3, title: "평가 리포트 확인", desc: "예상 등급과 문항별 피드백 확인" },
+          ].map((s) => (
+            <div key={s.step} className="flex flex-col items-center text-center">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-border bg-surface-secondary text-sm font-bold text-foreground-muted">
+                {s.step}
+              </div>
+              <p className="mt-2 text-sm font-semibold text-foreground">{s.title}</p>
+              <p className="mt-0.5 text-xs text-foreground-secondary">{s.desc}</p>
+            </div>
+          ))}
         </div>
       </div>
 
@@ -335,6 +388,27 @@ function StartTab() {
         onCancel={() => setShowTestConfirm(false)}
         isLoading={isCreating}
       />
+
+      {/* 모의고사 포기 확인 다이얼로그 */}
+      <ConfirmDialog
+        open={showAbandonConfirm}
+        onConfirm={async () => {
+          setShowAbandonConfirm(false);
+          setIsAbandoning(true);
+          await expireSession({ session_id: activeSession!.session_id });
+          queryClient.invalidateQueries({ queryKey: ["mock-active-session"] });
+          queryClient.invalidateQueries({ queryKey: ["mock-exam-history"] });
+          setIsAbandoning(false);
+        }}
+        onCancel={() => setShowAbandonConfirm(false)}
+        title="모의고사를 포기하시겠습니까?"
+        description="사용한 크레딧은 복구되지 않습니다."
+        confirmLabel="포기하기"
+        cancelLabel="계속하기"
+        variant="warning"
+        icon={AlertTriangle}
+        isLoading={isAbandoning}
+      />
     </div>
   );
 }
@@ -388,6 +462,10 @@ function ResultsTab({
   if (!sessionId || completed.length === 0) {
     return (
       <div className="space-y-6">
+        <CollapsibleBanner
+          title="모의고사 결과란?"
+          description="모의고사 응시 후 FACT 영역별 점수, 예상 등급, 문항별 상세 피드백을 확인할 수 있습니다."
+        />
         <div className="rounded-xl border border-border bg-surface p-4 sm:p-6">
           <h3 className="font-semibold text-foreground">모의고사 결과</h3>
           <div className="mt-4 flex flex-col items-center py-6 text-center sm:mt-6 sm:py-8">
@@ -427,7 +505,12 @@ function ResultsTab({
   }
 
   return (
-    <div>
+    <div className="space-y-4">
+      <CollapsibleBanner
+        title="모의고사 결과란?"
+        description="모의고사 응시 후 FACT 영역별 점수, 예상 등급, 문항별 상세 피드백을 확인할 수 있습니다."
+      />
+
       {/* 다른 세션 보기 중 표시 */}
       {targetSessionId && targetSessionId !== completed[0]?.session_id && (
         <button
@@ -491,6 +574,10 @@ function HistoryTab({
   if (items.length === 0) {
     return (
       <div className="space-y-6">
+        <CollapsibleBanner
+          title="나의 이력이란?"
+          description="모의고사 응시 기록과 등급 변화 추이를 한눈에 확인할 수 있습니다."
+        />
         <div className="rounded-xl border border-border bg-surface p-4 sm:p-6">
           <h3 className="font-semibold text-foreground">나의 응시 이력</h3>
           <div className="mt-4 flex flex-col items-center py-6 text-center sm:mt-6 sm:py-8">
@@ -511,6 +598,11 @@ function HistoryTab({
 
   return (
     <div className="space-y-4">
+      <CollapsibleBanner
+        title="나의 이력이란?"
+        description="모의고사 응시 기록과 등급 변화 추이를 한눈에 확인할 수 있습니다."
+      />
+
       {/* 등급 추이 미니 차트 (2건 이상일 때만) */}
       {trendData.length >= 2 && (
         <LevelTrendMini data={trendData} />
@@ -684,5 +776,32 @@ function LevelTrendMini({
         <span>AL</span>
       </div>
     </div>
+  );
+}
+
+/* ── 접이식 안내 배너 ── */
+
+function CollapsibleBanner({ title, description }: { title: string; description: string }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <button
+      onClick={() => setOpen(!open)}
+      className="flex w-full items-start gap-2.5 rounded-xl border border-primary-200 bg-primary-50/50 p-3 text-left sm:gap-3 sm:p-4"
+    >
+      <Info size={18} className="shrink-0 text-primary-500" />
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-medium text-foreground">{title}</p>
+        {open && (
+          <p className="mt-0.5 text-xs text-foreground-secondary sm:mt-1 sm:text-sm">
+            {description}
+          </p>
+        )}
+      </div>
+      <ChevronDown
+        size={16}
+        className={`shrink-0 text-primary-400 transition-transform ${open ? "rotate-180" : ""}`}
+      />
+    </button>
   );
 }

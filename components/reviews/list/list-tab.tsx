@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { MessageSquare, ChevronDown, Loader2, Calendar, Award } from "lucide-react";
+import { MessageSquare, ChevronDown, Loader2, Calendar, Award, Info } from "lucide-react";
 import { getPublicReviews } from "@/lib/actions/reviews";
 import type { Submission } from "@/lib/types/reviews";
 import {
@@ -28,6 +28,7 @@ interface ListTabProps {
 
 export function ListTab({ initialData: initialPublicReviews }: ListTabProps) {
   const [levelFilter, setLevelFilter] = useState<string>("");
+  const [bannerOpen, setBannerOpen] = useState(false);
 
   const limit = 10;
 
@@ -63,9 +64,32 @@ export function ListTab({ initialData: initialPublicReviews }: ListTabProps) {
   const total = data?.pages[0]?.total || 0;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
+      {/* 안내 배너 (접이식) */}
+      <button
+        onClick={() => setBannerOpen(!bannerOpen)}
+        className="flex w-full items-start gap-2.5 rounded-[var(--radius-xl)] border border-primary-200 bg-primary-50/50 p-3 text-left sm:gap-3 sm:p-4"
+      >
+        <Info size={18} className="shrink-0 text-primary-500" />
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-medium text-foreground">
+            시험 후기란?
+          </p>
+          {bannerOpen && (
+            <p className="mt-0.5 text-xs text-foreground-secondary sm:mt-1 sm:text-sm">
+              실제 OPIc 응시자들이 작성한 후기를 등급별로 열람할 수 있습니다.
+              시험 난이도, 준비 기간, 학습 방법 등 실전 정보를 참고하세요.
+            </p>
+          )}
+        </div>
+        <ChevronDown
+          size={16}
+          className={`shrink-0 text-primary-400 transition-transform ${bannerOpen ? "rotate-180" : ""}`}
+        />
+      </button>
+
       {/* 필터 */}
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="flex flex-wrap items-center gap-2 sm:gap-3">
         <select
           value={levelFilter}
           onChange={(e) => setLevelFilter(e.target.value)}
@@ -94,8 +118,8 @@ export function ListTab({ initialData: initialPublicReviews }: ListTabProps) {
           ))}
         </div>
       ) : reviews.length === 0 ? (
-        <div className="rounded-[var(--radius-xl)] border border-border bg-surface p-6">
-          <div className="flex flex-col items-center py-8 text-center">
+        <div className="rounded-[var(--radius-xl)] border border-border bg-surface p-4 sm:p-6">
+          <div className="flex flex-col items-center py-6 text-center sm:py-8">
             <div className="flex h-14 w-14 items-center justify-center rounded-full bg-surface-secondary">
               <MessageSquare size={24} className="text-foreground-muted" />
             </div>
@@ -112,7 +136,7 @@ export function ListTab({ initialData: initialPublicReviews }: ListTabProps) {
           {reviews.map((review) => (
             <div
               key={review.id}
-              className="rounded-[var(--radius-xl)] border border-border bg-surface p-5"
+              className="rounded-[var(--radius-xl)] border border-border bg-surface p-3.5 sm:p-5"
             >
               {/* 헤더 */}
               <div className="flex items-center gap-1.5 text-xs">
@@ -194,11 +218,11 @@ export function ListTab({ initialData: initialPublicReviews }: ListTabProps) {
       )}
 
       {/* 후기 작성 유도 */}
-      <div className="rounded-[var(--radius-xl)] border border-primary-200 bg-gradient-to-br from-primary-50 to-primary-100/50 p-5">
+      <div className="rounded-[var(--radius-xl)] border border-primary-200 bg-gradient-to-br from-primary-50 to-primary-100/50 p-4 sm:p-5">
         <p className="text-sm font-semibold text-primary-700">
           시험을 보셨나요?
         </p>
-        <p className="mt-1 text-sm text-primary-600/80">
+        <p className="mt-0.5 text-xs text-primary-600/80 sm:mt-1 sm:text-sm">
           후기를 공유하면 모두의 빈도 분석 정확도가 올라갑니다.
           &quot;후기 제출&quot; 탭에서 간단하게 제출해 보세요.
         </p>

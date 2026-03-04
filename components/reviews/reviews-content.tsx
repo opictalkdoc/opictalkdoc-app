@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { BarChart3, Send, MessageSquare } from "lucide-react";
 import { FrequencyTab } from "./frequency/frequency-tab";
@@ -30,7 +31,11 @@ interface ReviewsContentProps {
 
 export function ReviewsContent({ initialStats, initialFrequency, initialSubmissions, initialPublicReviews, initialSubmissionDetails }: ReviewsContentProps) {
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<TabId>("frequency");
+  const searchParams = useSearchParams();
+
+  // 위저드 완료 후 돌아오면 submit 탭 자동 활성화
+  const fromCompleted = searchParams.get("completed") === "true";
+  const [activeTab, setActiveTab] = useState<TabId>(fromCompleted ? "submit" : "frequency");
 
   // 서버에서 조회한 완료 후기 상세를 캐시에 즉시 세팅 (클라이언트 RTT 0회)
   useEffect(() => {
@@ -42,15 +47,15 @@ export function ReviewsContent({ initialStats, initialFrequency, initialSubmissi
   return (
     <div>
       {/* 탭 네비게이션 */}
-      <div className="mb-6 overflow-x-auto">
-        <div className="flex min-w-max border-b border-border">
+      <div className="mb-4 overflow-x-auto sm:mb-6">
+        <div className="flex border-b border-border">
           {tabs.map((tab) => {
             const active = activeTab === tab.id;
             return (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-1.5 border-b-2 px-3 py-3 text-sm font-medium transition-colors sm:gap-2 sm:px-4 ${
+                className={`flex flex-1 items-center justify-center gap-1.5 border-b-2 px-3 py-3 text-sm font-medium transition-colors sm:min-w-[120px] sm:flex-none sm:gap-2 sm:px-4 ${
                   active
                     ? "border-primary-500 text-primary-600"
                     : "border-transparent text-foreground-muted hover:border-border hover:text-foreground-secondary"

@@ -330,7 +330,7 @@ export function StoreContent({ userId }: { userId: string }) {
       {/* 메시지 토스트 */}
       {message && (
         <div
-          className={`mb-6 rounded-[var(--radius-lg)] border p-4 text-sm font-medium ${
+          className={`mb-4 rounded-[var(--radius-lg)] border p-3 text-sm font-medium sm:mb-6 sm:p-4 ${
             message.type === "success"
               ? "border-green-200 bg-green-50 text-green-700"
               : "border-red-200 bg-red-50 text-red-700"
@@ -341,9 +341,9 @@ export function StoreContent({ userId }: { userId: string }) {
       )}
 
       {/* 현재 플랜 + 크레딧 정보 */}
-      <div className="mb-8 rounded-[var(--radius-xl)] border border-primary-200 bg-primary-50/50 p-4">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-[var(--radius-lg)] bg-primary-100">
+      <div className="mb-6 rounded-[var(--radius-xl)] border border-primary-200 bg-primary-50/50 p-3 sm:mb-8 sm:p-4">
+        <div className="flex items-center gap-2.5 sm:gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-[var(--radius-lg)] bg-primary-100 sm:h-10 sm:w-10">
             <Crown size={20} className="text-primary-600" />
           </div>
           <div className="flex-1">
@@ -359,7 +359,7 @@ export function StoreContent({ userId }: { userId: string }) {
           </div>
         </div>
         {credits && (
-          <div className="mt-3 flex flex-wrap gap-4 border-t border-primary-200/50 pt-3 text-sm">
+          <div className="mt-2.5 flex flex-wrap gap-3 border-t border-primary-200/50 pt-2.5 text-xs sm:mt-3 sm:gap-4 sm:pt-3 sm:text-sm">
             <span className="text-foreground-secondary">
               모의고사{" "}
               <span className="font-semibold text-foreground">
@@ -397,19 +397,19 @@ export function StoreContent({ userId }: { userId: string }) {
       </div>
 
       {/* 플랜 카드 */}
-      <div className="mb-12">
-        <h2 className="mb-5 flex items-center gap-2 text-lg font-bold text-foreground">
+      <div className="mb-8 sm:mb-12">
+        <h2 className="mb-4 flex items-center gap-2 text-base font-bold text-foreground sm:mb-5 sm:text-lg">
           <Package size={20} className="text-primary-500" />
           플랜
         </h2>
-        <div className="grid gap-5 lg:grid-cols-3">
+        <div className="grid gap-4 lg:grid-cols-3 sm:gap-5">
           {plans.map((plan) => {
             const current = isCurrent(plan.productId);
             const loading = loadingProduct === plan.productId;
             return (
               <div
                 key={plan.name}
-                className={`relative flex flex-col rounded-[var(--radius-xl)] border p-5 transition-shadow hover:shadow-lg ${
+                className={`relative flex flex-col rounded-[var(--radius-xl)] border p-4 transition-shadow hover:shadow-lg sm:p-5 ${
                   plan.highlight
                     ? "border-primary-500 shadow-md"
                     : current
@@ -501,21 +501,21 @@ export function StoreContent({ userId }: { userId: string }) {
       </div>
 
       {/* 횟수권 스토어 */}
-      <div className="mb-12">
-        <h2 className="mb-2 flex items-center gap-2 text-lg font-bold text-foreground">
+      <div className="mb-8 sm:mb-12">
+        <h2 className="mb-1.5 flex items-center gap-2 text-base font-bold text-foreground sm:mb-2 sm:text-lg">
           <Zap size={20} className="text-secondary-600" />
           횟수권
         </h2>
-        <p className="mb-5 text-sm text-foreground-secondary">
+        <p className="mb-4 text-xs text-foreground-secondary sm:mb-5 sm:text-sm">
           플랜과 별도로 필요한 만큼만 개별 구매할 수 있습니다.
         </p>
-        <div className="grid gap-5 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-2 sm:gap-5">
           {addons.map((addon) => {
             const loading = loadingProduct === addon.productId;
             return (
               <div
                 key={addon.name}
-                className="flex flex-col rounded-[var(--radius-xl)] border border-border bg-surface p-5"
+                className="flex flex-col rounded-[var(--radius-xl)] border border-border bg-surface p-4 sm:p-5"
               >
                 <div className="flex items-center gap-3">
                   <div
@@ -557,7 +557,7 @@ export function StoreContent({ userId }: { userId: string }) {
       </div>
 
       {/* 하단 안내 */}
-      <div className="rounded-[var(--radius-xl)] border border-border bg-surface-secondary p-5 text-center text-sm text-foreground-secondary">
+      <div className="rounded-[var(--radius-xl)] border border-border bg-surface-secondary p-4 text-center text-xs text-foreground-secondary sm:p-5 sm:text-sm">
         <p>
           결제는 KG이니시스 신용카드를 통해 안전하게 처리됩니다. 플랜 상세 비교는{" "}
           <Link

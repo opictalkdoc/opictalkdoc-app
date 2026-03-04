@@ -191,31 +191,32 @@ export function WizardStep1({ onComplete, submissionId }: WizardStep1Props) {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       {/* ── 섹션 1: 시험 기본 정보 ── */}
-      <section className="rounded-2xl border border-border bg-surface p-5">
-        <div className="flex items-center gap-3 border-b border-border pb-4">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary-50">
-            <CalendarDays size={18} className="text-primary-500" />
+      <section className="rounded-xl border border-border bg-surface p-3.5 sm:rounded-2xl sm:p-5">
+        <div className="flex items-center gap-2.5 border-b border-border pb-3 sm:gap-3 sm:pb-4">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary-50 sm:h-9 sm:w-9 sm:rounded-xl">
+            <CalendarDays size={16} className="text-primary-500 sm:hidden" />
+            <CalendarDays size={18} className="hidden text-primary-500 sm:block" />
           </div>
           <div>
-            <h4 className="text-sm font-semibold text-foreground">
+            <h4 className="text-[13px] font-semibold text-foreground sm:text-sm">
               시험 기본 정보
             </h4>
-            <p className="text-xs text-foreground-muted">
+            <p className="text-[11px] text-foreground-muted sm:text-xs">
               응시한 시험의 날짜와 등급을 입력해 주세요
             </p>
           </div>
         </div>
 
-        <div className="mt-4 grid gap-5 sm:grid-cols-2">
+        <div className="mt-3 grid gap-4 sm:mt-4 sm:grid-cols-2 sm:gap-5">
           {/* 시험 날짜 */}
           <div>
-            <label className="mb-1.5 block text-[13px] font-medium text-foreground">
+            <label className="mb-1 block text-xs font-medium text-foreground sm:mb-1.5 sm:text-[13px]">
               시험 날짜 <span className="text-accent-500">*</span>
             </label>
             <input
               type="date"
               {...register("exam_date")}
-              className="h-11 w-full rounded-xl border border-border bg-surface-secondary/40 px-3.5 text-sm text-foreground transition-colors focus:border-primary-400 focus:bg-surface focus:outline-none focus:ring-2 focus:ring-primary-100"
+              className="h-10 w-full rounded-lg border border-border bg-surface-secondary/40 px-3 sm:h-11 sm:rounded-xl sm:px-3.5 text-sm text-foreground transition-colors focus:border-primary-400 focus:bg-surface focus:outline-none focus:ring-2 focus:ring-primary-100"
             />
             {errors.exam_date && (
               <p className="mt-1 text-xs text-accent-500">
@@ -226,12 +227,12 @@ export function WizardStep1({ onComplete, submissionId }: WizardStep1Props) {
 
           {/* 응시 난이도 — 시작 + 재조정 2단계 */}
           <div>
-            <label className="mb-1.5 block text-[13px] font-medium text-foreground">
+            <label className="mb-1 block text-xs font-medium text-foreground sm:mb-1.5 sm:text-[13px]">
               Self-Assessment <span className="text-accent-500">*</span>
             </label>
             <div className="flex gap-2">
               <select
-                className="h-11 flex-1 appearance-none rounded-xl border border-border bg-surface-secondary/40 px-3.5 text-sm text-foreground transition-colors focus:border-primary-400 focus:bg-surface focus:outline-none focus:ring-2 focus:ring-primary-100"
+                className="h-10 flex-1 appearance-none rounded-lg border border-border bg-surface-secondary/40 px-3 sm:h-11 sm:rounded-xl sm:px-3.5 text-sm text-foreground transition-colors focus:border-primary-400 focus:bg-surface focus:outline-none focus:ring-2 focus:ring-primary-100"
                 value={diffStart ?? ''}
                 onChange={(e) => {
                   const val = Number(e.target.value);
@@ -247,7 +248,7 @@ export function WizardStep1({ onComplete, submissionId }: WizardStep1Props) {
                 ))}
               </select>
               <select
-                className="h-11 flex-1 appearance-none rounded-xl border border-border bg-surface-secondary/40 px-3.5 text-sm text-foreground transition-colors focus:border-primary-400 focus:bg-surface focus:outline-none focus:ring-2 focus:ring-primary-100 disabled:opacity-40"
+                className="h-10 flex-1 appearance-none rounded-lg border border-border bg-surface-secondary/40 px-3 sm:h-11 sm:rounded-xl sm:px-3.5 text-sm text-foreground transition-colors focus:border-primary-400 focus:bg-surface focus:outline-none focus:ring-2 focus:ring-primary-100 disabled:opacity-40"
                 value={diffAdj ?? ''}
                 disabled={diffStart === null}
                 onChange={(e) => {
@@ -274,12 +275,12 @@ export function WizardStep1({ onComplete, submissionId }: WizardStep1Props) {
 
           {/* 응시 전 등급 */}
           <div>
-            <label className="mb-1.5 block text-[13px] font-medium text-foreground">
+            <label className="mb-1 block text-xs font-medium text-foreground sm:mb-1.5 sm:text-[13px]">
               시험 전 보유 등급 <span className="text-accent-500">*</span>
             </label>
             <select
               {...register("pre_exam_level")}
-              className="h-11 w-full appearance-none rounded-xl border border-border bg-surface-secondary/40 px-3.5 text-sm text-foreground transition-colors focus:border-primary-400 focus:bg-surface focus:outline-none focus:ring-2 focus:ring-primary-100"
+              className="h-10 w-full appearance-none rounded-lg border border-border bg-surface-secondary/40 px-3 text-sm text-foreground transition-colors focus:border-primary-400 focus:bg-surface focus:outline-none focus:ring-2 focus:ring-primary-100 sm:h-11 sm:rounded-xl sm:px-3.5"
               defaultValue=""
             >
               <option value="" disabled>선택해주세요</option>
@@ -298,12 +299,12 @@ export function WizardStep1({ onComplete, submissionId }: WizardStep1Props) {
 
           {/* 취득 등급 */}
           <div>
-            <label className="mb-1.5 block text-[13px] font-medium text-foreground">
+            <label className="mb-1 block text-xs font-medium text-foreground sm:mb-1.5 sm:text-[13px]">
               취득 등급 <span className="text-accent-500">*</span>
             </label>
             <select
               {...register("achieved_level")}
-              className="h-11 w-full appearance-none rounded-xl border border-border bg-surface-secondary/40 px-3.5 text-sm text-foreground transition-colors focus:border-primary-400 focus:bg-surface focus:outline-none focus:ring-2 focus:ring-primary-100"
+              className="h-10 w-full appearance-none rounded-lg border border-border bg-surface-secondary/40 px-3 text-sm text-foreground transition-colors focus:border-primary-400 focus:bg-surface focus:outline-none focus:ring-2 focus:ring-primary-100 sm:h-11 sm:rounded-xl sm:px-3.5"
               defaultValue=""
             >
               <option value="" disabled>선택해주세요</option>
@@ -324,22 +325,23 @@ export function WizardStep1({ onComplete, submissionId }: WizardStep1Props) {
       </section>
 
       {/* ── 섹션 2: 시험 배경 ── */}
-      <section className="rounded-2xl border border-border bg-surface p-5">
-        <div className="flex items-center gap-3 border-b border-border pb-4">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-secondary-50">
-            <BookOpen size={18} className="text-secondary-600" />
+      <section className="rounded-xl border border-border bg-surface p-3.5 sm:rounded-2xl sm:p-5">
+        <div className="flex items-center gap-2.5 border-b border-border pb-3 sm:gap-3 sm:pb-4">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-secondary-50 sm:h-9 sm:w-9 sm:rounded-xl">
+            <BookOpen size={16} className="text-secondary-600 sm:hidden" />
+            <BookOpen size={18} className="hidden text-secondary-600 sm:block" />
           </div>
           <div>
-            <h4 className="text-sm font-semibold text-foreground">
+            <h4 className="text-[13px] font-semibold text-foreground sm:text-sm">
               시험 배경
             </h4>
-            <p className="text-xs text-foreground-muted">
+            <p className="text-[11px] text-foreground-muted sm:text-xs">
               어떻게 준비하셨는지 알려주세요
             </p>
           </div>
         </div>
 
-        <div className="mt-4 grid gap-6 sm:grid-cols-2">
+        <div className="mt-3 grid gap-5 sm:mt-4 sm:grid-cols-2 sm:gap-6">
           {/* 시험 목적 — 라디오 */}
           <Controller
             name="exam_purpose"
@@ -537,22 +539,23 @@ export function WizardStep1({ onComplete, submissionId }: WizardStep1Props) {
       </section>
 
       {/* ── 섹션 3: 체감 후기 ── */}
-      <section className="rounded-2xl border border-border bg-surface p-5">
-        <div className="flex items-center gap-3 border-b border-border pb-4">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-accent-50">
-            <MessageCircle size={18} className="text-accent-500" />
+      <section className="rounded-xl border border-border bg-surface p-3.5 sm:rounded-2xl sm:p-5">
+        <div className="flex items-center gap-2.5 border-b border-border pb-3 sm:gap-3 sm:pb-4">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-accent-50 sm:h-9 sm:w-9 sm:rounded-xl">
+            <MessageCircle size={16} className="text-accent-500 sm:hidden" />
+            <MessageCircle size={18} className="hidden text-accent-500 sm:block" />
           </div>
           <div>
-            <h4 className="text-sm font-semibold text-foreground">
+            <h4 className="text-[13px] font-semibold text-foreground sm:text-sm">
               체감 후기
             </h4>
-            <p className="text-xs text-foreground-muted">
+            <p className="text-[11px] text-foreground-muted sm:text-xs">
               시험장에서 느낀 점을 선택해 주세요
             </p>
           </div>
         </div>
 
-        <div className="mt-4 grid gap-5 sm:grid-cols-2">
+        <div className="mt-3 grid gap-4 sm:mt-4 sm:grid-cols-2 sm:gap-5">
           <PillField
             label="체감 난이도"
             required
@@ -588,24 +591,25 @@ export function WizardStep1({ onComplete, submissionId }: WizardStep1Props) {
       </section>
 
       {/* ── 섹션 4: 서베이 정보 ── */}
-      <section className="rounded-2xl border border-border bg-surface p-5">
-        <div className="flex items-center gap-3 border-b border-border pb-4">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary-50">
-            <ClipboardList size={18} className="text-primary-500" />
+      <section className="rounded-xl border border-border bg-surface p-3.5 sm:rounded-2xl sm:p-5">
+        <div className="flex items-center gap-2.5 border-b border-border pb-3 sm:gap-3 sm:pb-4">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary-50 sm:h-9 sm:w-9 sm:rounded-xl">
+            <ClipboardList size={16} className="text-primary-500 sm:hidden" />
+            <ClipboardList size={18} className="hidden text-primary-500 sm:block" />
           </div>
           <div>
-            <h4 className="text-sm font-semibold text-foreground">
+            <h4 className="text-[13px] font-semibold text-foreground sm:text-sm">
               OPIc 서베이 선택 확인
             </h4>
-            <p className="text-xs text-foreground-muted">
+            <p className="text-[11px] text-foreground-muted sm:text-xs">
               시험 응시 시 선택한 배경설문(서베이)을 알려주세요
             </p>
           </div>
         </div>
 
-        <div className="mt-4 space-y-5">
+        <div className="mt-3 space-y-4 sm:mt-4 sm:space-y-5">
           {/* 추천 서베이 안내 카드 — 2컬럼 */}
-          <div className="rounded-xl border border-primary-200 bg-primary-50/60 p-4">
+          <div className="rounded-lg border border-primary-200 bg-primary-50/60 p-3 sm:rounded-xl sm:p-4">
             <div className="flex items-center gap-2">
               <ClipboardList size={16} className="text-primary-600" />
               <p className="text-sm font-semibold text-primary-800">
@@ -667,7 +671,7 @@ export function WizardStep1({ onComplete, submissionId }: WizardStep1Props) {
               name="used_recommended_survey"
               control={control}
               render={({ field }) => (
-                <div className="flex gap-3">
+                <div className="flex flex-col gap-2 sm:flex-row sm:gap-3">
                   {[
                     { value: true, label: "네, 추천 서베이 사용" },
                     { value: false, label: "아니요, 다른 서베이 선택" },
@@ -678,7 +682,7 @@ export function WizardStep1({ onComplete, submissionId }: WizardStep1Props) {
                         key={String(opt.value)}
                         type="button"
                         onClick={() => field.onChange(opt.value)}
-                        className={`flex-1 rounded-xl border py-3 text-sm font-medium transition-all ${
+                        className={`flex-1 rounded-lg border py-2.5 text-[13px] font-medium transition-all sm:rounded-xl sm:py-3 sm:text-sm ${
                           selected
                             ? "border-primary-300 bg-primary-50 text-primary-700"
                             : "border-border bg-surface text-foreground-secondary hover:border-border-hover hover:bg-surface-secondary/50"
@@ -892,7 +896,7 @@ export function WizardStep1({ onComplete, submissionId }: WizardStep1Props) {
       <button
         type="submit"
         disabled={submitting}
-        className="flex w-full items-center justify-center gap-2 rounded-2xl bg-primary-500 py-3.5 text-[15px] font-semibold text-white shadow-[var(--shadow-primary)] transition-all hover:bg-primary-600 active:scale-[0.98] disabled:opacity-50"
+        className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary-500 py-3 text-sm font-semibold text-white shadow-[var(--shadow-primary)] transition-all hover:bg-primary-600 active:scale-[0.98] disabled:opacity-50 sm:rounded-2xl sm:py-3.5 sm:text-[15px]"
       >
         {submitting && <Loader2 size={18} className="animate-spin" />}
         다음 단계로

@@ -298,6 +298,8 @@ export interface ScriptListItem {
   topic: string | null;
   category: string | null;
   question_korean: string | null;
+  question_english: string | null;
+  question_short: string | null;
   target_level: TargetLevel | null;
   answer_type: string | null;
   word_count: number | null;

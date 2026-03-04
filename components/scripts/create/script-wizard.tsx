@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect, useRef } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -465,7 +466,7 @@ export function ScriptWizard({
     selectedQuestion?.answer_type || scriptDetail?.answer_type || undefined;
 
   return (
-    <div className="flex flex-1 flex-col">
+    <div className="flex h-0 flex-grow flex-col md:h-auto md:flex-1">
       {/* ── 단계 표시 (5단계) ── */}
       <div className="border-b border-border bg-surface px-4 py-4 sm:px-6">
         <div className="mx-auto flex max-w-3xl items-center justify-center gap-1.5 sm:gap-3">
@@ -529,8 +530,8 @@ export function ScriptWizard({
         </div>
       )}
 
-      {/* ── 콘텐츠 영역 ── */}
-      <div className="mx-auto w-full max-w-3xl flex-1 px-4 py-6 sm:px-6">
+      {/* ── 콘텐츠 영역 (스크롤) ── */}
+      <div className="mx-auto w-full max-w-3xl h-0 flex-grow overflow-y-auto px-4 py-6 sm:px-6 max-md:[scrollbar-width:none] max-md:[&::-webkit-scrollbar]:hidden md:h-auto md:flex-1">
         {step === 1 && (
           <Step1Selection
             selectedCategory={selectedCategory}
@@ -570,10 +571,8 @@ export function ScriptWizard({
             onRefinePromptChange={setRefinePrompt}
             isRefining={isRefining}
             onRefine={handleRefine}
-            isConfirming={isConfirming}
-            onConfirm={handleConfirm}
-            onRegenerate={openRegenerateModal}
           />
+
         )}
 
         {step === 5 && (
@@ -586,6 +585,82 @@ export function ScriptWizard({
           />
         )}
       </div>
+
+      {/* ── Step 4 하단 액션 바 (스크롤 밖 고정) ── */}
+      {step === 4 && scriptDetail && (
+        <div className="border-t border-border bg-surface px-4 py-3 sm:px-6 sm:py-4">
+          <div className="mx-auto max-w-3xl">
+            {scriptDetail.status !== "confirmed" ? (
+              /* 초안: 재생성 + 확정 */
+              <div className="flex items-center justify-between gap-3">
+                <button
+                  onClick={openRegenerateModal}
+                  className="inline-flex items-center gap-1.5 text-sm text-foreground-secondary hover:text-foreground"
+                >
+                  <RotateCcw size={14} />
+                  재생성 (1크레딧)
+                </button>
+                <button
+                  onClick={handleConfirm}
+                  disabled={isConfirming}
+                  className="inline-flex h-10 items-center gap-2 rounded-[var(--radius-lg)] bg-green-600 px-5 text-sm font-medium text-white transition-colors hover:bg-green-700 disabled:opacity-50"
+                >
+                  {isConfirming ? (
+                    <Loader2 size={16} className="animate-spin" />
+                  ) : (
+                    <CheckCircle2 size={16} />
+                  )}
+                  스크립트 확정
+                </button>
+              </div>
+            ) : (
+              /* 확정: 패키지 생성 / 쉐도잉 / 내 스크립트 */
+              <div className="flex flex-wrap items-center justify-center gap-3">
+                {scriptDetail.package?.status === "completed" && (
+                  <Link
+                    href={`/scripts/shadowing?packageId=${scriptDetail.package.id}&scriptId=${scriptDetail.id}`}
+                    className="inline-flex h-10 items-center gap-2 rounded-[var(--radius-lg)] bg-primary-500 px-5 text-sm font-medium text-white transition-colors hover:bg-primary-600"
+                  >
+                    <Headphones size={16} />
+                    쉐도잉 훈련
+                  </Link>
+                )}
+                {!scriptDetail.package && (
+                  <button
+                    onClick={() => setStep(5)}
+                    className="inline-flex h-10 items-center gap-2 rounded-[var(--radius-lg)] bg-primary-500 px-5 text-sm font-medium text-white transition-colors hover:bg-primary-600"
+                  >
+                    <Package size={16} />
+                    패키지 생성
+                  </button>
+                )}
+                {scriptDetail.package && scriptDetail.package.status !== "completed" && scriptDetail.package.status !== "failed" && (
+                  <span className="inline-flex h-10 items-center gap-2 rounded-[var(--radius-lg)] bg-surface-secondary px-5 text-sm font-medium text-foreground-secondary">
+                    <Loader2 size={16} className="animate-spin" />
+                    패키지 생성중 {scriptDetail.package.progress}%
+                  </span>
+                )}
+                {scriptDetail.package?.status === "failed" && (
+                  <button
+                    onClick={() => setStep(5)}
+                    className="inline-flex h-10 items-center gap-2 rounded-[var(--radius-lg)] bg-primary-500 px-5 text-sm font-medium text-white transition-colors hover:bg-primary-600"
+                  >
+                    <RotateCcw size={16} />
+                    패키지 재생성
+                  </button>
+                )}
+                <Link
+                  href="/scripts"
+                  className="inline-flex h-10 items-center gap-2 rounded-[var(--radius-lg)] border border-border bg-surface px-5 text-sm font-medium text-foreground-secondary transition-colors hover:bg-surface-secondary"
+                >
+                  <FileText size={14} />
+                  내 스크립트
+                </Link>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* ── 재생성 확인 모달 ── */}
       {showRegenerateModal && (
@@ -1044,9 +1119,6 @@ function Step4Result({
   onRefinePromptChange,
   isRefining,
   onRefine,
-  isConfirming,
-  onConfirm,
-  onRegenerate,
 }: {
   detail?: ScriptDetail | null;
   isLoading: boolean;
@@ -1054,9 +1126,6 @@ function Step4Result({
   onRefinePromptChange: (v: string) => void;
   isRefining: boolean;
   onRefine: () => void;
-  isConfirming: boolean;
-  onConfirm: () => void;
-  onRegenerate: () => void;
 }) {
   const [viewTab, setViewTab] = useState<"script" | "expressions">("script");
   const [scriptMode, setScriptMode] = useState<
@@ -1263,31 +1332,7 @@ function Step4Result({
         </div>
       )}
 
-      {/* 액션 버튼 */}
-      {!isConfirmed && (
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
-          <button
-            onClick={onRegenerate}
-            className="inline-flex items-center gap-1.5 text-sm text-foreground-secondary hover:text-foreground"
-          >
-            <RotateCcw size={14} />
-            재생성 (1크레딧)
-          </button>
-
-          <button
-            onClick={onConfirm}
-            disabled={isConfirming}
-            className="inline-flex h-10 items-center gap-2 rounded-[var(--radius-lg)] bg-green-600 px-5 text-sm font-medium text-white transition-colors hover:bg-green-700 disabled:opacity-50"
-          >
-            {isConfirming ? (
-              <Loader2 size={16} className="animate-spin" />
-            ) : (
-              <CheckCircle2 size={16} />
-            )}
-            스크립트 확정
-          </button>
-        </div>
-      )}
+      {/* 액션 버튼은 부모(ScriptWizard)의 스크롤 밖 고정 영역에서 렌더링 */}
     </div>
   );
 }
@@ -1391,19 +1436,20 @@ function Step5Complete({
   // 패키지 생성 전 (idle)
   if (packageState === "idle") {
     return (
-      <div className="flex flex-col items-center justify-center py-12">
-        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
-          <CheckCircle2 size={32} className="text-green-600" />
+      <div className="flex flex-col items-center justify-center py-8 sm:py-12">
+        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-green-100 sm:h-16 sm:w-16">
+          <CheckCircle2 size={28} className="text-green-600 sm:hidden" />
+          <CheckCircle2 size={32} className="hidden text-green-600 sm:block" />
         </div>
-        <h2 className="mt-4 text-lg font-semibold text-foreground">
+        <h2 className="mt-3 text-base font-semibold text-foreground sm:mt-4 sm:text-lg">
           스크립트가 확정되었습니다!
         </h2>
-        <p className="mt-2 text-center text-sm text-foreground-secondary">
+        <p className="mt-1.5 text-center text-xs text-foreground-secondary sm:mt-2 sm:text-sm">
           원어민 음성 패키지를 생성하면 쉐도잉 훈련을 시작할 수 있습니다.
         </p>
 
         {/* 음성 선택 */}
-        <div className="mt-6 w-full max-w-xs">
+        <div className="mt-5 w-full max-w-xs sm:mt-6">
           <p className="mb-2 text-center text-xs font-medium text-foreground-secondary">
             원어민 음성 선택
           </p>
@@ -1412,7 +1458,7 @@ function Step5Complete({
               <button
                 key={voice}
                 onClick={() => setSelectedVoice(voice)}
-                className={`flex flex-1 items-center justify-center gap-1.5 rounded-[var(--radius-lg)] border px-3 py-2.5 text-sm font-medium transition-colors ${
+                className={`flex flex-1 items-center justify-center gap-1.5 rounded-[var(--radius-lg)] border px-3 py-2 text-xs font-medium transition-colors sm:py-2.5 sm:text-sm ${
                   selectedVoice === voice
                     ? "border-primary-400 bg-primary-50 text-primary-600"
                     : "border-border bg-surface text-foreground-secondary hover:border-primary-200"
@@ -1429,25 +1475,25 @@ function Step5Complete({
         <button
           onClick={handleCreatePackage}
           disabled={!scriptId}
-          className="mt-5 inline-flex h-10 items-center gap-2 rounded-[var(--radius-lg)] bg-primary-500 px-6 text-sm font-medium text-white transition-colors hover:bg-primary-600 disabled:opacity-50"
+          className="mt-4 flex h-9 w-full max-w-xs items-center justify-center gap-2 rounded-[var(--radius-lg)] bg-primary-500 text-sm font-medium text-white transition-colors hover:bg-primary-600 disabled:opacity-50 sm:mt-5 sm:h-10 sm:w-auto sm:px-6"
         >
           <Package size={16} />
           패키지 생성 (음성 + 쉐도잉)
         </button>
 
-        <div className="mt-6 flex gap-3">
+        <div className="mt-4 flex gap-3 sm:mt-6">
           <button
             onClick={onGoToScripts}
-            className="inline-flex h-9 items-center gap-1.5 rounded-[var(--radius-lg)] border border-border bg-surface px-4 text-xs font-medium text-foreground-secondary transition-colors hover:bg-surface-secondary"
+            className="inline-flex h-8 items-center gap-1.5 rounded-[var(--radius-lg)] border border-border bg-surface px-3 text-xs font-medium text-foreground-secondary transition-colors hover:bg-surface-secondary sm:h-9 sm:px-4"
           >
-            <FileText size={14} />
+            <FileText size={13} />
             내 스크립트
           </button>
           <button
             onClick={onCreateNew}
-            className="inline-flex h-9 items-center gap-1.5 rounded-[var(--radius-lg)] border border-border bg-surface px-4 text-xs font-medium text-foreground-secondary transition-colors hover:bg-surface-secondary"
+            className="inline-flex h-8 items-center gap-1.5 rounded-[var(--radius-lg)] border border-border bg-surface px-3 text-xs font-medium text-foreground-secondary transition-colors hover:bg-surface-secondary sm:h-9 sm:px-4"
           >
-            <Sparkles size={14} />
+            <Sparkles size={13} />
             새 스크립트
           </button>
         </div>
@@ -1478,26 +1524,30 @@ function Step5Complete({
     };
 
     return (
-      <div className="flex flex-col items-center justify-center py-8">
-        {/* 브랜드 스피너 (Step 3과 통일) */}
-        <div className="relative mb-6">
-          <div className="h-16 w-16 animate-spin rounded-full border-4 border-primary-100 border-t-primary-500" />
+      <div className="flex flex-col items-center justify-center py-6 sm:py-8">
+        {/* 브랜드 스피너 */}
+        <div className="relative mb-5 sm:mb-6">
+          <div className="h-14 w-14 animate-spin rounded-full border-4 border-primary-100 border-t-primary-500 sm:h-16 sm:w-16" />
+          <Headphones
+            size={20}
+            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-primary-500 sm:hidden"
+          />
           <Headphones
             size={24}
-            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-primary-500"
+            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-primary-500 max-sm:hidden"
           />
         </div>
 
-        <p className="text-sm font-medium text-foreground">
+        <p className="text-sm font-medium text-foreground sm:text-base">
           원어민 음성을 준비하고 있어요...
         </p>
-        <p className="mt-1 text-xs text-foreground-muted">약 30~60초 소요</p>
+        <p className="mt-1 text-xs text-foreground-muted sm:mt-1.5">약 30~60초 소요</p>
 
         {/* 프로그레스 바 */}
-        <div className="mt-5 w-full max-w-xs">
-          <div className="h-2 overflow-hidden rounded-full bg-surface-secondary">
+        <div className="mt-4 w-full max-w-xs sm:mt-5">
+          <div className="h-1.5 overflow-hidden rounded-full bg-surface-secondary sm:h-2">
             <div
-              className="h-2 rounded-full bg-primary-500 transition-all duration-1000"
+              className="h-full rounded-full bg-primary-500 transition-all duration-1000"
               style={{ width: `${Math.round(progress)}%` }}
             />
           </div>
@@ -1523,27 +1573,31 @@ function Step5Complete({
   // 에러
   if (packageState === "error") {
     return (
-      <div className="flex flex-col items-center justify-center py-12">
-        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-red-100">
-          <AlertTriangle size={32} className="text-red-500" />
+      <div className="flex flex-col items-center justify-center py-8 sm:py-12">
+        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-red-100 sm:h-16 sm:w-16">
+          <AlertTriangle size={28} className="text-red-500 sm:hidden" />
+          <AlertTriangle size={32} className="hidden text-red-500 sm:block" />
         </div>
-        <h2 className="mt-4 text-lg font-semibold text-foreground">
+        <h2 className="mt-3 text-base font-semibold text-foreground sm:mt-4 sm:text-lg">
           패키지 생성 실패
         </h2>
-        <p className="mt-2 text-center text-sm text-red-500">{errorMsg}</p>
+        <p className="mt-1.5 text-center text-xs text-red-500 sm:mt-2 sm:text-sm">{errorMsg}</p>
 
-        <div className="mt-6 flex gap-3">
+        <div className="mt-5 flex gap-2.5 sm:mt-6 sm:gap-3">
           <button
             onClick={() => setPackageState("idle")}
-            className="inline-flex h-10 items-center gap-2 rounded-[var(--radius-lg)] border border-border bg-surface px-5 text-sm font-medium text-foreground transition-colors hover:bg-surface-secondary"
+            className="inline-flex h-8 items-center gap-1.5 rounded-[var(--radius-lg)] border border-border bg-surface px-3 text-xs font-medium text-foreground transition-colors hover:bg-surface-secondary sm:h-10 sm:gap-2 sm:px-5 sm:text-sm"
           >
-            <RotateCcw size={16} />
+            <RotateCcw size={14} className="sm:hidden" />
+            <RotateCcw size={16} className="hidden sm:block" />
             다시 시도
           </button>
           <button
             onClick={onGoToScripts}
-            className="inline-flex h-10 items-center gap-2 rounded-[var(--radius-lg)] border border-border bg-surface px-5 text-sm font-medium text-foreground-secondary transition-colors hover:bg-surface-secondary"
+            className="inline-flex h-8 items-center gap-1.5 rounded-[var(--radius-lg)] border border-border bg-surface px-3 text-xs font-medium text-foreground-secondary transition-colors hover:bg-surface-secondary sm:h-10 sm:gap-2 sm:px-5 sm:text-sm"
           >
+            <FileText size={13} className="sm:hidden" />
+            <FileText size={16} className="hidden sm:block" />
             내 스크립트
           </button>
         </div>
@@ -1553,18 +1607,19 @@ function Step5Complete({
 
   // 완료 (completed / partial)
   return (
-    <div className="flex flex-col items-center justify-center py-12">
-      <div className="flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
-        <CheckCircle2 size={32} className="text-green-600" />
+    <div className="flex flex-col items-center justify-center py-8 sm:py-12">
+      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-green-100 sm:h-16 sm:w-16">
+        <CheckCircle2 size={28} className="text-green-600 sm:hidden" />
+        <CheckCircle2 size={32} className="hidden text-green-600 sm:block" />
       </div>
-      <h2 className="mt-4 text-lg font-semibold text-foreground">
+      <h2 className="mt-3 text-base font-semibold text-foreground sm:mt-4 sm:text-lg">
         패키지가 생성되었습니다!
       </h2>
-      <p className="mt-2 text-center text-sm text-foreground-secondary">
+      <p className="mt-1.5 text-center text-xs text-foreground-secondary sm:mt-2 sm:text-sm">
         이제 쉐도잉 훈련을 시작할 수 있습니다.
       </p>
 
-      <div className="mt-8 flex flex-wrap justify-center gap-3">
+      <div className="mt-5 flex w-full flex-col items-center gap-2.5 sm:mt-8 sm:w-auto sm:flex-row sm:gap-3">
         {packageId && (
           <button
             onClick={() =>
@@ -1572,26 +1627,30 @@ function Step5Complete({
                 `/scripts/shadowing?packageId=${packageId}&scriptId=${scriptId}`
               )
             }
-            className="inline-flex h-10 items-center gap-2 rounded-[var(--radius-lg)] bg-primary-500 px-5 text-sm font-medium text-white transition-colors hover:bg-primary-600"
+            className="flex h-9 w-full max-w-xs items-center justify-center gap-2 rounded-[var(--radius-lg)] bg-primary-500 text-sm font-medium text-white transition-colors hover:bg-primary-600 sm:h-10 sm:w-auto sm:px-5"
           >
             <Headphones size={16} />
             쉐도잉 훈련 시작
           </button>
         )}
-        <button
-          onClick={onGoToScripts}
-          className="inline-flex h-10 items-center gap-2 rounded-[var(--radius-lg)] border border-border bg-surface px-5 text-sm font-medium text-foreground transition-colors hover:bg-surface-secondary"
-        >
-          <FileText size={16} />
-          내 스크립트
-        </button>
-        <button
-          onClick={onCreateNew}
-          className="inline-flex h-10 items-center gap-2 rounded-[var(--radius-lg)] border border-border bg-surface px-5 text-sm font-medium text-foreground-secondary transition-colors hover:bg-surface-secondary"
-        >
-          <Sparkles size={14} />
-          새 스크립트
-        </button>
+        <div className="flex gap-2.5 sm:gap-3">
+          <button
+            onClick={onGoToScripts}
+            className="inline-flex h-8 items-center gap-1.5 rounded-[var(--radius-lg)] border border-border bg-surface px-3 text-xs font-medium text-foreground transition-colors hover:bg-surface-secondary sm:h-10 sm:gap-2 sm:px-5 sm:text-sm"
+          >
+            <FileText size={13} className="sm:hidden" />
+            <FileText size={16} className="hidden sm:block" />
+            내 스크립트
+          </button>
+          <button
+            onClick={onCreateNew}
+            className="inline-flex h-8 items-center gap-1.5 rounded-[var(--radius-lg)] border border-border bg-surface px-3 text-xs font-medium text-foreground-secondary transition-colors hover:bg-surface-secondary sm:h-10 sm:gap-2 sm:px-5 sm:text-sm"
+          >
+            <Sparkles size={13} className="sm:hidden" />
+            <Sparkles size={14} className="hidden sm:block" />
+            새 스크립트
+          </button>
+        </div>
       </div>
     </div>
   );

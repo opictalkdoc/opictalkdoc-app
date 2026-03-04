@@ -37,11 +37,11 @@ async function fetchUserCredits(userId: string) {
 
 function StatsPlaceholder() {
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="grid gap-3 grid-cols-2 sm:gap-4 lg:grid-cols-4">
       {[1, 2, 3, 4].map((i) => (
         <div
           key={i}
-          className="h-[118px] rounded-[var(--radius-xl)] border border-border bg-surface p-5"
+          className="h-[100px] rounded-[var(--radius-xl)] border border-border bg-surface p-3.5 sm:h-[118px] sm:p-5"
         />
       ))}
     </div>
@@ -107,37 +107,36 @@ export function DashboardStats({ userId }: { userId: string }) {
   ];
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="grid gap-3 grid-cols-2 sm:gap-4 lg:grid-cols-4">
       {stats.map((s) => {
         const inner = (
-          <>
-            <div className="flex items-center justify-between">
-              <p className="text-sm text-foreground-secondary">{s.label}</p>
-              <div
-                className={`flex h-9 w-9 items-center justify-center rounded-[var(--radius-lg)] ${s.color}`}
-              >
-                <s.icon size={18} />
-              </div>
+          <div className="flex flex-col items-center text-center">
+            <div
+              className={`flex h-9 w-9 items-center justify-center rounded-[var(--radius-lg)] sm:h-10 sm:w-10 ${s.color}`}
+            >
+              <s.icon size={18} className="sm:hidden" />
+              <s.icon size={20} className="hidden sm:block" />
             </div>
-            <p className="mt-3 text-2xl font-bold text-foreground">
+            <p className="mt-2 text-xs text-foreground-secondary sm:mt-2.5 sm:text-sm">{s.label}</p>
+            <p className="mt-1 text-xl font-bold text-foreground sm:text-2xl">
               {s.value}
             </p>
             <p className="mt-0.5 text-xs text-foreground-muted">{s.sub}</p>
-          </>
+          </div>
         );
 
         return s.href ? (
           <Link
             key={s.label}
             href={s.href}
-            className="rounded-[var(--radius-xl)] border border-border bg-surface p-5 transition-all hover:border-border-hover hover:shadow-[var(--shadow-card)]"
+            className="rounded-[var(--radius-xl)] border border-border bg-surface p-3.5 transition-all hover:border-border-hover hover:shadow-[var(--shadow-card)] sm:p-5"
           >
             {inner}
           </Link>
         ) : (
           <div
             key={s.label}
-            className="rounded-[var(--radius-xl)] border border-border bg-surface p-5"
+            className="rounded-[var(--radius-xl)] border border-border bg-surface p-3.5 sm:p-5"
           >
             {inner}
           </div>

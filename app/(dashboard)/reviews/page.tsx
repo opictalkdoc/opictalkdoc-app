@@ -37,7 +37,7 @@ function ReviewsPlaceholder() {
   return (
     <div>
       {/* 탭 바 플레이스홀더 */}
-      <div className="mb-6 border-b border-border">
+      <div className="mb-4 border-b border-border sm:mb-6">
         <div className="flex gap-2">
           {["빈도 분석", "후기 제출", "시험 후기"].map((label) => (
             <div
@@ -67,11 +67,11 @@ function ReviewsPlaceholder() {
 
 export default function ReviewsPage() {
   return (
-    <div className="pb-8 pt-2 lg:pt-0">
+    <div className="pb-6 pt-1 sm:pb-8 sm:pt-2 lg:pt-0">
       {/* 페이지 헤더 — 즉시 렌더 */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-foreground">시험후기</h1>
-        <p className="mt-1 text-foreground-secondary">
+      <div className="mb-4 sm:mb-6">
+        <h1 className="text-xl font-bold text-foreground sm:text-2xl">시험후기</h1>
+        <p className="mt-0.5 text-sm text-foreground-secondary sm:mt-1 sm:text-base">
           실제 시험 후기를 분석하여 출제 빈도를 파악하세요.
         </p>
       </div>

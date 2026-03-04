@@ -77,7 +77,7 @@ export function TrainingEvalPanel({
   }, [sessionId, questionNumber]);
 
   return (
-    <div className="mx-auto flex h-0 w-full max-w-5xl flex-grow flex-col overflow-hidden px-3 py-2 sm:px-6 sm:py-4 animate-fadeIn">
+    <div className="mx-auto flex h-0 w-full max-w-5xl flex-grow flex-col overflow-hidden px-3 py-2 sm:px-6 sm:py-4 animate-fadeIn md:h-auto md:flex-1 md:overflow-visible">
       {/* 헤더 */}
       <div className="mb-3 flex items-center gap-3 md:mb-4">
         <button
@@ -105,7 +105,7 @@ export function TrainingEvalPanel({
       </div>
 
       {/* 콘텐츠 — 스크롤 영역 */}
-      <div className="h-0 flex-grow overflow-y-auto rounded-xl border border-border bg-surface p-4 max-md:[scrollbar-width:none] max-md:[&::-webkit-scrollbar]:hidden md:p-6">
+      <div className="h-0 flex-grow overflow-y-auto rounded-xl border border-border bg-surface p-4 max-md:[scrollbar-width:none] max-md:[&::-webkit-scrollbar]:hidden md:h-auto md:flex-1 md:p-6">
         {loading ? (
           <div className="flex flex-col items-center py-12">
             <Loader2 size={24} className="animate-spin text-primary-500" />

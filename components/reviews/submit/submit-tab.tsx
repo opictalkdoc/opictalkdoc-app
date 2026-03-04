@@ -1,20 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Send, FileText, Trash2, ChevronRight, ChevronDown, CheckCircle2 } from "lucide-react";
+import { Send, FileText, Trash2, ChevronDown, CheckCircle2, Info } from "lucide-react";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { SubmissionDetail } from "./submission-detail";
-import { WizardStep1 } from "./wizard-step1";
-import { WizardStep2, type ComboResult } from "./wizard-step2";
-import { WizardStep3, type CreditResult } from "./wizard-step3";
-import { getMySubmissions, deleteSubmission, getDraftQuestions } from "@/lib/actions/reviews";
+import { getMySubmissions, deleteSubmission } from "@/lib/actions/reviews";
 import type { Submission } from "@/lib/types/reviews";
-import {
-  ACHIEVED_LEVEL_OPTION_LABELS,
-  PRE_EXAM_LEVEL_LABELS,
-  type AchievedLevelOption,
-  type PreExamLevel,
-} from "@/lib/types/reviews";
 
 interface SubmitTabProps {
   initialSubmissions?: Submission[];
@@ -22,13 +16,21 @@ interface SubmitTabProps {
 
 export function SubmitTab({ initialSubmissions }: SubmitTabProps) {
   const queryClient = useQueryClient();
-  const [wizardOpen, setWizardOpen] = useState(false);
-  const [currentStep, setCurrentStep] = useState(1);
-  const [submissionId, setSubmissionId] = useState<number | null>(null);
-  const [completed, setCompleted] = useState(false);
-  const [creditResult, setCreditResult] = useState<CreditResult | null>(null);
-  const [comboResults, setComboResults] = useState<Record<string, ComboResult>>({});
+  const searchParams = useSearchParams();
   const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
+  const [bannerOpen, setBannerOpen] = useState(false);
+
+  // URL params로 완료 배너 표시
+  const completed = searchParams.get("completed") === "true";
+  const creditGranted = searchParams.get("credit") === "true";
+
+  // 완료 후 돌아왔을 때 URL params 정리 (히스토리 교체)
+  useEffect(() => {
+    if (completed) {
+      window.history.replaceState(null, "", "/reviews");
+    }
+  }, [completed]);
 
   const { data: submissions = [] } = useQuery({
     queryKey: ["my-submissions"],
@@ -41,158 +43,50 @@ export function SubmitTab({ initialSubmissions }: SubmitTabProps) {
     staleTime: 5 * 60 * 1000, // 5분
   });
 
-  const handleDelete = async (id: number) => {
-    if (!confirm("정말 삭제하시겠습니까?")) return;
+  const handleDeleteConfirm = async () => {
+    if (confirmDeleteId === null) return;
+    const id = confirmDeleteId;
+    setConfirmDeleteId(null);
     const result = await deleteSubmission(id);
     if (!result.error) {
       queryClient.invalidateQueries({ queryKey: ["my-submissions"] });
     }
   };
 
-  // 이어쓰기
-  const handleResume = async (sub: Submission) => {
-    setSubmissionId(sub.id);
-    setCompleted(false);
-
-    // step_completed에 따라 진입 Step 결정
-    const nextStep = Math.min((sub.step_completed || 0) + 1, 3);
-
-    // Step 2 완료된 draft → comboResults 복원 (Step 3 → Step 2 뒤로가기 대비)
-    if (sub.step_completed >= 2) {
-      const result = await getDraftQuestions(sub.id);
-      if (result.data) {
-        const restored: Record<string, ComboResult> = {};
-        for (const q of result.data) {
-          if (!restored[q.combo_type]) {
-            restored[q.combo_type] = { questions: [] };
-          }
-          restored[q.combo_type].questions.push({
-            question_id: q.question_id,
-            custom_question_text: q.custom_question_text,
-            is_not_remembered: q.is_not_remembered,
-            topic: q.topic,
-            question_text: q.question_korean || undefined,
-            question_title: q.question_title || undefined,
-          });
-        }
-        setComboResults(restored);
-      }
-    } else {
-      setComboResults({});
-    }
-
-    setCurrentStep(nextStep);
-    setWizardOpen(true);
-  };
-
-  // 위저드 완료
-  const handleComplete = (result: CreditResult) => {
-    setCompleted(true);
-    setCreditResult(result);
-    queryClient.invalidateQueries({ queryKey: ["my-submissions"] });
-    queryClient.invalidateQueries({ queryKey: ["review-frequency"] });
-    queryClient.invalidateQueries({ queryKey: ["user-credits"] });
-    setWizardOpen(false);
-    setCurrentStep(1);
-    setSubmissionId(null);
-    setComboResults({});
-  };
-
-  // 위저드 모드
-  if (wizardOpen) {
-    return (
-      <div className="space-y-6">
-        {/* 스텝 인디케이터 */}
-        <div className="flex items-center gap-3">
-          {[
-            { step: 1, label: "시험 정보" },
-            { step: 2, label: "출제 질문" },
-            { step: 3, label: "후기 + 팁" },
-          ].map((s, i) => (
-            <div key={s.step} className="flex items-center gap-2">
-              <div
-                className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold ${
-                  currentStep === s.step
-                    ? "bg-primary-500 text-white"
-                    : currentStep > s.step
-                      ? "bg-primary-100 text-primary-700"
-                      : "bg-surface-secondary text-foreground-muted"
-                }`}
-              >
-                {currentStep > s.step ? <CheckCircle2 size={14} /> : s.step}
-              </div>
-              <span
-                className={`text-xs font-medium ${
-                  currentStep === s.step
-                    ? "text-foreground"
-                    : "text-foreground-muted"
-                }`}
-              >
-                {s.label}
-              </span>
-              {i < 2 && (
-                <ChevronRight size={14} className="text-foreground-muted" />
-              )}
-            </div>
-          ))}
-        </div>
-
-        {/* 스텝 콘텐츠 — 각 스텝이 자체 카드를 관리 */}
-        {currentStep === 1 && (
-          <WizardStep1
-            submissionId={submissionId}
-            onComplete={(id) => {
-              setSubmissionId(id);
-              setCurrentStep(2);
-            }}
-          />
-        )}
-        {currentStep === 2 && submissionId && (
-          <WizardStep2
-            submissionId={submissionId}
-            comboResults={comboResults}
-            setComboResults={setComboResults}
-            onComplete={() => setCurrentStep(3)}
-            onBack={() => setCurrentStep(1)}
-          />
-        )}
-        {currentStep === 3 && submissionId && (
-          <WizardStep3
-            submissionId={submissionId}
-            onComplete={handleComplete}
-            onBack={() => setCurrentStep(2)}
-          />
-        )}
-
-        {/* 취소 */}
-        <div className="text-center">
-          <button
-            onClick={() => {
-              setWizardOpen(false);
-              setCurrentStep(1);
-              setSubmissionId(null);
-              setComboResults({});
-            }}
-            className="text-xs text-foreground-muted underline hover:text-foreground-secondary"
-          >
-            취소하고 돌아가기
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-6">
-      {/* 완료 메시지 */}
+    <div className="space-y-4 sm:space-y-6">
+      {/* 안내 배너 (접이식) */}
+      <button
+        onClick={() => setBannerOpen(!bannerOpen)}
+        className="flex w-full items-start gap-2.5 rounded-[var(--radius-xl)] border border-primary-200 bg-primary-50/50 p-3 text-left sm:gap-3 sm:p-4"
+      >
+        <Info size={18} className="shrink-0 text-primary-500" />
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-medium text-foreground">
+            후기 제출이란?
+          </p>
+          {bannerOpen && (
+            <p className="mt-0.5 text-xs text-foreground-secondary sm:mt-1 sm:text-sm">
+              OPIc 시험 후기를 제출하면 스크립트 패키지 생성권 2개가 지급됩니다.
+              여러분의 후기 데이터가 빈도 분석의 정확도를 높여줍니다.
+            </p>
+          )}
+        </div>
+        <ChevronDown
+          size={16}
+          className={`shrink-0 text-primary-400 transition-transform ${bannerOpen ? "rotate-180" : ""}`}
+        />
+      </button>
+
+      {/* 완료 메시지 (몰입형 위저드에서 돌아온 경우) */}
       {completed && (
-        <div className="flex items-start gap-3 rounded-[var(--radius-xl)] border border-green-200 bg-green-50/50 p-4">
+        <div className="flex items-start gap-2.5 rounded-[var(--radius-xl)] border border-green-200 bg-green-50/50 p-3 sm:gap-3 sm:p-4">
           <CheckCircle2 size={18} className="mt-0.5 shrink-0 text-green-600" />
           <div>
             <p className="text-sm font-medium text-green-800">
               후기가 성공적으로 제출되었습니다!
             </p>
-            {creditResult?.creditGranted ? (
+            {creditGranted ? (
               <p className="mt-0.5 text-xs text-green-600">
                 스크립트 패키지 생성권 2개가 지급되었습니다. 감사합니다.
               </p>
@@ -207,77 +101,90 @@ export function SubmitTab({ initialSubmissions }: SubmitTabProps) {
       )}
 
       {/* 제출 가이드 + CTA */}
-      <div className="rounded-[var(--radius-xl)] border border-border bg-surface p-6">
-        <h3 className="font-semibold text-foreground">시험 후기 제출하기</h3>
-        <p className="mt-1 text-sm text-foreground-secondary">
+      <div className="rounded-[var(--radius-xl)] border border-border bg-surface p-4 sm:p-6">
+        <h3 className="text-sm font-semibold text-foreground sm:text-base">시험 후기 제출하기</h3>
+        <p className="mt-0.5 text-xs text-foreground-secondary sm:mt-1 sm:text-sm">
           시험 후기를 제출하면 스크립트 패키지 생성권 2개가 지급됩니다.
           여러분의 데이터가 더 정확한 빈도 분석을 만듭니다.
         </p>
 
-        {/* 3단계 안내 */}
-        <div className="relative mt-6">
+        {/* 3단계 안내 — 모바일: 세로 타임라인, PC: 가로 3컬럼 */}
+        {/* 모바일 세로 */}
+        <div className="relative mt-4 sm:hidden">
           {[
-            { step: 1, title: "시험 정보 + 배경 설문", desc: "시험 날짜, Self-Assessment, 등급, 서베이 선택 등을 입력합니다" },
-            { step: 2, title: "출제 질문 입력", desc: "콤보별로 어떤 주제와 질문이 나왔는지 선택합니다" },
-            { step: 3, title: "한줄 후기 + 팁", desc: "간단한 후기와 팁을 남기면 완료!" },
+            { step: 1, title: "시험 정보 입력", desc: "시험 날짜, 등급, 서베이 선택" },
+            { step: 2, title: "출제 질문 입력", desc: "콤보별 주제와 질문 선택" },
+            { step: 3, title: "한줄 후기 + 팁", desc: "후기 작성 후 제출 완료" },
           ].map((s, i) => (
-            <div key={s.step} className="relative flex gap-4 pb-5 last:pb-0">
-              {/* 연결선 — 마지막 제외 */}
+            <div key={s.step} className="relative flex gap-3 pb-4 last:pb-0">
               {i < 2 && (
-                <div className="absolute left-4 top-8 bottom-0 w-px bg-border" />
+                <div className="absolute left-3.5 top-7 bottom-0 w-px bg-border" />
               )}
-              <div className="relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-border bg-surface-secondary text-sm font-bold text-foreground-muted">
+              <div className="relative z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 border-border bg-surface-secondary text-xs font-bold text-foreground-muted">
                 {s.step}
               </div>
               <div className="pt-0.5">
-                <p className="font-semibold text-foreground">{s.title}</p>
-                <p className="text-sm text-foreground-secondary">{s.desc}</p>
+                <p className="text-sm font-semibold text-foreground">{s.title}</p>
+                <p className="text-xs text-foreground-secondary">{s.desc}</p>
               </div>
+            </div>
+          ))}
+        </div>
+        {/* PC 가로 3컬럼 */}
+        <div className="hidden sm:mt-6 sm:grid sm:grid-cols-3 sm:gap-4">
+          {[
+            { step: 1, title: "시험 정보 입력", desc: "시험 날짜, 등급, 서베이 선택" },
+            { step: 2, title: "출제 질문 입력", desc: "콤보별 주제와 질문 선택" },
+            { step: 3, title: "한줄 후기 + 팁", desc: "후기 작성 후 제출 완료" },
+          ].map((s) => (
+            <div key={s.step} className="flex flex-col items-center text-center">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-border bg-surface-secondary text-sm font-bold text-foreground-muted">
+                {s.step}
+              </div>
+              <p className="mt-2 text-sm font-semibold text-foreground">{s.title}</p>
+              <p className="mt-0.5 text-xs text-foreground-secondary">{s.desc}</p>
             </div>
           ))}
         </div>
 
         {/* CTA */}
-        <div className="mt-6 border-t border-border pt-4">
-          <button
-            onClick={() => {
-              setWizardOpen(true);
-              setCompleted(false);
-              setCreditResult(null);
-            }}
-            className="inline-flex h-10 items-center justify-center gap-2 rounded-[var(--radius-lg)] bg-primary-500 px-5 text-sm font-medium text-white transition-colors hover:bg-primary-600"
+        <div className="mt-4 border-t border-border pt-3 sm:mt-6 sm:pt-4">
+          <Link
+            href="/reviews/submit"
+            className="flex h-9 w-full items-center justify-center gap-2 rounded-[var(--radius-lg)] bg-primary-500 px-4 text-sm font-medium text-white transition-colors hover:bg-primary-600 sm:h-10"
           >
             <Send size={16} />
             후기 제출 시작하기
-          </button>
+          </Link>
         </div>
       </div>
 
       {/* 내 제출 이력 */}
-      <div className="rounded-[var(--radius-xl)] border border-border bg-surface p-6">
-        <h3 className="font-semibold text-foreground">내 제출 이력</h3>
+      <div className="rounded-xl border border-border bg-surface p-3 sm:rounded-[var(--radius-xl)] sm:p-6">
+        <h3 className="text-[13px] font-semibold text-foreground sm:text-base">내 제출 이력</h3>
         {submissions.length === 0 ? (
-          <div className="mt-6 flex flex-col items-center py-8 text-center">
-            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-surface-secondary">
-              <Send size={24} className="text-foreground-muted" />
+          <div className="mt-3 flex flex-col items-center py-5 text-center sm:mt-6 sm:py-8">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-surface-secondary sm:h-14 sm:w-14">
+              <Send size={20} className="text-foreground-muted sm:hidden" />
+              <Send size={24} className="hidden text-foreground-muted sm:block" />
             </div>
-            <p className="mt-3 text-sm font-medium text-foreground-secondary">
+            <p className="mt-2.5 text-[13px] font-medium text-foreground-secondary sm:mt-3 sm:text-sm">
               아직 제출한 후기가 없습니다
             </p>
-            <p className="mt-1 text-xs text-foreground-muted">
+            <p className="mt-0.5 text-[11px] text-foreground-muted sm:mt-1 sm:text-xs">
               시험 후기를 제출하면 여기에 이력이 표시됩니다
             </p>
           </div>
         ) : (
-          <div className="mt-4 space-y-3">
+          <div className="mt-3 space-y-2 sm:mt-4 sm:space-y-3">
             {submissions.map((sub) => {
               const isExpanded = expandedId === sub.id;
               return (
                 <div
                   key={sub.id}
-                  className="rounded-[var(--radius-lg)] border border-border p-3"
+                  className="rounded-lg border border-border p-2.5 sm:rounded-[var(--radius-lg)] sm:p-3"
                 >
-                  <div className="flex items-start gap-2 sm:gap-3">
+                  <div className="flex items-center gap-2 sm:items-start sm:gap-3">
                     <div className="hidden h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius-md)] bg-surface-secondary sm:flex">
                       {sub.status === "complete" ? (
                         <FileText size={16} className="text-primary-500" />
@@ -293,8 +200,8 @@ export function SubmitTab({ initialSubmissions }: SubmitTabProps) {
                         }
                       }}
                     >
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-sm font-medium text-foreground">
+                      <div className="flex flex-wrap items-center gap-1 sm:gap-1.5">
+                        <span className="text-[13px] font-medium text-foreground sm:text-sm">
                           {sub.exam_date}
                         </span>
                         <span className="rounded-full bg-surface-secondary px-1.5 py-0.5 text-[10px] font-medium text-foreground-muted">
@@ -315,16 +222,16 @@ export function SubmitTab({ initialSubmissions }: SubmitTabProps) {
                         </span>
                       </div>
                       {sub.one_line_review && (
-                        <p className="mt-0.5 truncate text-xs text-foreground-secondary">
+                        <p className="mt-0.5 truncate text-[11px] text-foreground-secondary sm:text-xs">
                           {sub.one_line_review}
                         </p>
                       )}
                     </div>
-                    <div className="flex shrink-0 items-center gap-1">
+                    <div className="flex shrink-0 items-center gap-0.5 sm:gap-1">
                       {sub.status === "complete" && (
                         <button
                           onClick={() => setExpandedId(isExpanded ? null : sub.id)}
-                          className="rounded-[var(--radius-md)] p-1.5 text-foreground-muted transition-colors hover:bg-surface-secondary"
+                          className="rounded-md p-1 text-foreground-muted transition-colors hover:bg-surface-secondary sm:rounded-[var(--radius-md)] sm:p-1.5"
                         >
                           <ChevronDown
                             size={14}
@@ -334,17 +241,18 @@ export function SubmitTab({ initialSubmissions }: SubmitTabProps) {
                       )}
                       {sub.status === "draft" && (
                         <>
-                          <button
-                            onClick={() => handleResume(sub)}
-                            className="rounded-[var(--radius-md)] px-2 py-1.5 text-xs font-medium text-primary-600 transition-colors hover:bg-primary-50"
+                          <Link
+                            href={`/reviews/submit?resume=${sub.id}`}
+                            className="rounded-md px-1.5 py-1 text-[11px] font-medium text-primary-600 transition-colors hover:bg-primary-50 sm:rounded-[var(--radius-md)] sm:px-2 sm:py-1.5 sm:text-xs"
                           >
                             이어쓰기
-                          </button>
+                          </Link>
                           <button
-                            onClick={() => handleDelete(sub.id)}
-                            className="rounded-[var(--radius-md)] p-1.5 text-foreground-muted transition-colors hover:bg-accent-50 hover:text-accent-500"
+                            onClick={() => setConfirmDeleteId(sub.id)}
+                            className="rounded-md p-1 text-foreground-muted transition-colors hover:bg-accent-50 hover:text-accent-500 sm:rounded-[var(--radius-md)] sm:p-1.5"
                           >
-                            <Trash2 size={14} />
+                            <Trash2 size={13} className="sm:hidden" />
+                            <Trash2 size={14} className="hidden sm:block" />
                           </button>
                         </>
                       )}
@@ -360,6 +268,18 @@ export function SubmitTab({ initialSubmissions }: SubmitTabProps) {
           </div>
         )}
       </div>
+
+      {/* 삭제 확인 다이얼로그 */}
+      <ConfirmDialog
+        open={confirmDeleteId !== null}
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setConfirmDeleteId(null)}
+        title="작성 중인 후기를 삭제하시겠습니까?"
+        description="삭제하면 복구할 수 없습니다."
+        confirmLabel="삭제"
+        cancelLabel="취소"
+        variant="danger"
+      />
     </div>
   );
 }

@@ -27,6 +27,7 @@ export function FrequencyTab({ initialStats, initialFrequency }: FrequencyTabPro
   const [subTab, setSubTab] = useState<FrequencyCategory>("일반");
   const [expandedTopic, setExpandedTopic] = useState<string | null>(null);
   const [displayCount, setDisplayCount] = useState<number>(10);
+  const [bannerOpen, setBannerOpen] = useState(false);
   const prefetchedRef = useRef(false);
 
   const { data: frequencyData = [], isLoading: loading } = useQuery({
@@ -100,20 +101,29 @@ export function FrequencyTab({ initialStats, initialFrequency }: FrequencyTabPro
   };
 
   return (
-    <div className="space-y-6">
-      {/* 안내 배너 */}
-      <div className="flex items-start gap-3 rounded-[var(--radius-xl)] border border-primary-200 bg-primary-50/50 p-4">
-        <Info size={18} className="mt-0.5 shrink-0 text-primary-500" />
-        <div>
+    <div className="space-y-4 sm:space-y-6">
+      {/* 안내 배너 (접이식) */}
+      <button
+        onClick={() => setBannerOpen(!bannerOpen)}
+        className="flex w-full items-start gap-2.5 rounded-[var(--radius-xl)] border border-primary-200 bg-primary-50/50 p-3 text-left sm:gap-3 sm:p-4"
+      >
+        <Info size={18} className="shrink-0 text-primary-500" />
+        <div className="min-w-0 flex-1">
           <p className="text-sm font-medium text-foreground">
             출제 빈도 분석이란?
           </p>
-          <p className="mt-1 text-sm text-foreground-secondary">
-            실제 시험 응시자들의 후기를 분석하여, 어떤 주제가 자주 출제되는지
-            빈도순으로 보여줍니다. 높은 빈도의 주제부터 준비하면 효율적입니다.
-          </p>
+          {bannerOpen && (
+            <p className="mt-0.5 text-xs text-foreground-secondary sm:mt-1 sm:text-sm">
+              실제 시험 응시자들의 후기를 분석하여, 어떤 주제가 자주 출제되는지
+              빈도순으로 보여줍니다. 높은 빈도의 주제부터 준비하면 효율적입니다.
+            </p>
+          )}
         </div>
-      </div>
+        <ChevronDown
+          size={16}
+          className={`shrink-0 text-primary-400 transition-transform ${bannerOpen ? "rotate-180" : ""}`}
+        />
+      </button>
 
       {/* 통계 요약 — 모바일: 가로 1줄 컴팩트 / 데스크톱: 카드 3열 */}
       <div className="grid grid-cols-3 gap-2 rounded-[var(--radius-xl)] border border-border bg-surface p-3 sm:gap-4 sm:border-0 sm:bg-transparent sm:p-0">
@@ -138,9 +148,9 @@ export function FrequencyTab({ initialStats, initialFrequency }: FrequencyTabPro
       </div>
 
       {/* 카테고리별 서브탭 */}
-      <div className="rounded-[var(--radius-xl)] border border-border bg-surface p-6">
-        <div className="flex items-center justify-between gap-4">
-          <h3 className="font-semibold text-foreground">카테고리별 출제 빈도</h3>
+      <div className="rounded-[var(--radius-xl)] border border-border bg-surface p-4 sm:p-6">
+        <div className="flex items-center justify-between gap-2 sm:gap-4">
+          <h3 className="text-sm font-semibold text-foreground sm:text-base">카테고리별 출제 빈도</h3>
           <div className="flex items-center gap-1">
             {([10, 15, 20, 0] as const).map((count) => {
               const label = count === 0 ? "모두" : `${count}`;
@@ -161,8 +171,8 @@ export function FrequencyTab({ initialStats, initialFrequency }: FrequencyTabPro
             })}
           </div>
         </div>
-        <p className="mt-1 text-sm text-foreground-secondary">
-          일반 질문 / 롤플레이 / 어드밴스 카테고리별 출제 빈도를 분석합니다
+        <p className="mt-0.5 text-xs text-foreground-secondary sm:mt-1 sm:text-sm">
+          일반 / 롤플레이 / 어드밴스 카테고리별 출제 빈도를 분석합니다
         </p>
 
         {/* 서브탭 */}

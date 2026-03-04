@@ -391,10 +391,11 @@ export async function getMyScripts(): Promise<ActionResult<ScriptListItem[]>> {
       .from("scripts")
       .select(`
         id, question_id, source, title, english_text,
-        topic, category, question_korean, target_level,
+        topic, category, question_korean, question_english, target_level,
         answer_type, word_count, status, refine_count,
         created_at, updated_at,
-        script_packages(id, status, progress)
+        script_packages(id, status, progress),
+        questions(question_short)
       `)
       .eq("user_id", userId)
       .order("updated_at", { ascending: false });
@@ -403,13 +404,17 @@ export async function getMyScripts(): Promise<ActionResult<ScriptListItem[]>> {
       return { error: "스크립트 목록 조회에 실패했습니다" };
     }
 
-    // script_packages는 1:N이지만 최신 1개만 사용
-    const items: ScriptListItem[] = (data ?? []).map((s) => ({
-      ...s,
-      package: Array.isArray(s.script_packages) && s.script_packages.length > 0
-        ? s.script_packages[0]
-        : null,
-    }));
+    // script_packages는 1:N이지만 최신 1개만 사용, questions nested → 플랫
+    const items: ScriptListItem[] = (data ?? []).map((s) => {
+      const { questions, script_packages, ...rest } = s as typeof s & { questions: { question_short: string } | null };
+      return {
+        ...rest,
+        question_short: questions?.question_short ?? null,
+        package: Array.isArray(script_packages) && script_packages.length > 0
+          ? script_packages[0]
+          : null,
+      };
+    });
 
     return { data: items };
   } catch (err) {
@@ -818,7 +823,7 @@ export async function getShadowableScripts(): Promise<
       .from("scripts")
       .select(`
         id, question_id, source, title, english_text,
-        topic, category, question_korean, target_level,
+        topic, category, question_korean, question_english, target_level,
         answer_type, word_count, status, refine_count,
         created_at, updated_at,
         script_packages!inner(id, status, progress)

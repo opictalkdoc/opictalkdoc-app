@@ -464,7 +464,7 @@ export function MockExamSession({
 
   // ── 시험 진행 화면 ──
   return (
-    <div className="flex flex-1 flex-col overflow-hidden">
+    <div className="flex flex-1 flex-col overflow-hidden md:h-auto md:overflow-visible">
       {/* 오프라인 배너 */}
       {!isOnline && (
         <div className="flex items-center gap-2 bg-accent-500 px-4 py-2 text-sm text-white">
@@ -522,7 +522,7 @@ export function MockExamSession({
           onClose={() => setViewingEvalQNum(null)}
         />
       ) : (
-      <div className="mx-auto flex w-full max-w-5xl min-h-0 flex-1 flex-col overflow-hidden px-3 py-2 sm:px-6 sm:py-4">
+      <div className="mx-auto flex w-full max-w-5xl min-h-0 flex-1 flex-col overflow-hidden px-3 py-2 sm:px-6 sm:py-4 md:min-h-auto md:overflow-visible">
         {/* 5단계 진행 가이드 (relative 컨테이너 — 알림 배너 오버랩용) */}
         <div className="relative mb-2 rounded-xl border border-border bg-surface p-2 md:mb-4 md:p-3">
           {/* 훈련 모드: 평가 완료 알림 배너 (오버랩) */}
@@ -645,8 +645,8 @@ export function MockExamSession({
             좌측: AVA 면접관 + 재생 컨트롤
             우측: 녹음 시간 + 볼륨 + 상태 + Next
            ════════════════════════════════════════════════════ */}
-        <div className="flex min-h-0 flex-1 flex-col md:flex-none md:rounded-2xl md:border md:border-border md:bg-surface md:p-5">
-          <div className="flex min-h-0 flex-1 flex-col gap-2 md:flex-row md:gap-5">
+        <div className="flex min-h-0 flex-1 flex-col md:flex-none md:min-h-auto md:rounded-2xl md:border md:border-border md:bg-surface md:p-5">
+          <div className="flex min-h-0 flex-1 flex-col gap-2 md:flex-row md:min-h-auto md:flex-none md:gap-5">
             {/* === 좌측: AVA 면접관 === */}
             <div className="flex min-h-0 flex-1 flex-col gap-2 md:flex-none md:w-[42%] md:gap-3">
               {/* 아바타 — aspect-ratio로 이미지와 비율 일치 */}

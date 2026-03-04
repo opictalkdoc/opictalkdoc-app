@@ -16,6 +16,7 @@ import {
   Clock,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   Package,
   Loader2,
   AlertCircle,
@@ -27,6 +28,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { TOPIC_ICONS } from "@/components/reviews/submit/topic-pagination";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
   getMyScripts,
   getShadowingHistory,
@@ -71,15 +73,15 @@ export function ScriptsContent({
   return (
     <div>
       {/* 탭 네비게이션 */}
-      <div className="mb-6 overflow-x-auto">
-        <div className="flex min-w-max border-b border-border">
+      <div className="mb-4 overflow-x-auto sm:mb-6">
+        <div className="flex border-b border-border">
           {tabs.map((tab) => {
             const active = activeTab === tab.id;
             return (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-1.5 border-b-2 px-3 py-3 text-sm font-medium transition-colors sm:gap-2 sm:px-4 ${
+                className={`flex flex-1 items-center justify-center gap-1.5 border-b-2 px-3 py-3 text-sm font-medium transition-colors sm:min-w-[120px] sm:flex-none sm:gap-2 sm:px-4 ${
                   active
                     ? "border-primary-500 text-primary-600"
                     : "border-transparent text-foreground-muted hover:border-border hover:text-foreground-secondary"
@@ -106,56 +108,84 @@ export function ScriptsContent({
 /* ── 스크립트 생성 탭 ── */
 
 function CreateTab() {
+  const [bannerOpen, setBannerOpen] = useState(false);
+
   return (
-    <div className="space-y-6">
-      {/* 안내 배너 */}
-      <div className="flex items-start gap-3 rounded-[var(--radius-xl)] border border-primary-200 bg-primary-50/50 p-4">
-        <Info size={18} className="mt-0.5 shrink-0 text-primary-500" />
-        <div>
+    <div className="space-y-4 sm:space-y-6">
+      {/* 안내 배너 (접이식) */}
+      <button
+        onClick={() => setBannerOpen(!bannerOpen)}
+        className="flex w-full items-start gap-2.5 rounded-[var(--radius-xl)] border border-primary-200 bg-primary-50/50 p-3 text-left sm:gap-3 sm:p-4"
+      >
+        <Info size={18} className="shrink-0 text-primary-500" />
+        <div className="min-w-0 flex-1">
           <p className="text-sm font-medium text-foreground">
             나만의 맞춤 스크립트란?
           </p>
-          <p className="mt-1 text-sm text-foreground-secondary">
-            시험 빈출 주제와 내 경험을 조합하여, 자연스럽고 외우기 쉬운 영어
-            답변 스크립트가 자동으로 만들어집니다.
-          </p>
+          {bannerOpen && (
+            <p className="mt-0.5 text-xs text-foreground-secondary sm:mt-1 sm:text-sm">
+              시험 빈출 주제와 내 경험을 조합하여, 자연스럽고 외우기 쉬운 영어
+              답변 스크립트가 자동으로 만들어집니다.
+            </p>
+          )}
         </div>
-      </div>
+        <ChevronDown
+          size={16}
+          className={`shrink-0 text-primary-400 transition-transform ${bannerOpen ? "rotate-180" : ""}`}
+        />
+      </button>
 
       {/* 생성 과정 + CTA 카드 */}
-      <div className="rounded-[var(--radius-xl)] border border-border bg-surface p-6">
-        <h3 className="font-semibold text-foreground">스크립트 생성 과정</h3>
-        <p className="mt-1 text-sm text-foreground-secondary">
-          3단계로 나만의 맞춤 스크립트를 완성합니다
+      <div className="rounded-[var(--radius-xl)] border border-border bg-surface p-4 sm:p-6">
+        <h3 className="text-sm font-semibold text-foreground sm:text-base">스크립트 생성 및 활용</h3>
+        <p className="mt-0.5 text-xs text-foreground-secondary sm:mt-1 sm:text-sm">
+          빈출 주제로 맞춤 스크립트를 만들고 쉐도잉으로 체화합니다
         </p>
 
-        {/* 3단계 안내 */}
-        <div className="relative mt-6">
+        {/* 3단계 안내 — 모바일: 세로 타임라인, PC: 가로 3컬럼 */}
+        {/* 모바일 세로 */}
+        <div className="relative mt-4 sm:hidden">
           {[
-            { step: 1, title: "주제·질문 선택", desc: "빈출 주제 목록에서 준비할 질문을 선택합니다" },
-            { step: 2, title: "내 경험 입력 + 목표 등급 선택", desc: "한국어로 경험을 입력하고 목표 등급을 설정합니다" },
-            { step: 3, title: "AI 스크립트 생성 → 확인 → 확정", desc: "AI가 생성한 답변을 확인하고, 최대 3회 수정 후 확정합니다" },
+            { step: 1, title: "주제·질문 + 내 경험", desc: "빈출 주제에서 질문 선택, 경험 입력" },
+            { step: 2, title: "맞춤 스크립트 생성", desc: "내 경험 기반 영어 답변 자동 생성" },
+            { step: 3, title: "확정 + 쉐도잉 패키지", desc: "확정 후 원어민 음성으로 쉐도잉 훈련" },
           ].map((s, i) => (
-            <div key={s.step} className="relative flex gap-4 pb-5 last:pb-0">
+            <div key={s.step} className="relative flex gap-3 pb-4 last:pb-0">
               {i < 2 && (
-                <div className="absolute left-4 top-8 bottom-0 w-px bg-border" />
+                <div className="absolute left-3.5 top-7 bottom-0 w-px bg-border" />
               )}
-              <div className="relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-border bg-surface-secondary text-sm font-bold text-foreground-muted">
+              <div className="relative z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 border-border bg-surface-secondary text-xs font-bold text-foreground-muted">
                 {s.step}
               </div>
               <div className="pt-0.5">
-                <p className="font-semibold text-foreground">{s.title}</p>
-                <p className="text-sm text-foreground-secondary">{s.desc}</p>
+                <p className="text-sm font-semibold text-foreground">{s.title}</p>
+                <p className="text-xs text-foreground-secondary">{s.desc}</p>
               </div>
+            </div>
+          ))}
+        </div>
+        {/* PC 가로 3컬럼 */}
+        <div className="hidden sm:mt-6 sm:grid sm:grid-cols-3 sm:gap-4">
+          {[
+            { step: 1, title: "주제·질문 + 내 경험", desc: "빈출 주제에서 질문 선택, 경험 입력" },
+            { step: 2, title: "맞춤 스크립트 생성", desc: "내 경험 기반 영어 답변 자동 생성" },
+            { step: 3, title: "확정 + 쉐도잉 패키지", desc: "확정 후 원어민 음성으로 쉐도잉 훈련" },
+          ].map((s) => (
+            <div key={s.step} className="flex flex-col items-center text-center">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-border bg-surface-secondary text-sm font-bold text-foreground-muted">
+                {s.step}
+              </div>
+              <p className="mt-2 text-sm font-semibold text-foreground">{s.title}</p>
+              <p className="mt-0.5 text-xs text-foreground-secondary">{s.desc}</p>
             </div>
           ))}
         </div>
 
         {/* CTA */}
-        <div className="mt-6 border-t border-border pt-4">
+        <div className="mt-4 border-t border-border pt-3 sm:mt-6 sm:pt-4">
           <Link
             href="/scripts/create"
-            className="inline-flex h-10 items-center justify-center gap-2 rounded-[var(--radius-lg)] bg-primary-500 px-5 text-sm font-medium text-white transition-colors hover:bg-primary-600"
+            className="flex h-9 w-full items-center justify-center gap-2 rounded-[var(--radius-lg)] bg-primary-500 px-4 text-sm font-medium text-white transition-colors hover:bg-primary-600 sm:h-10"
           >
             <PenTool size={16} />
             스크립트 생성 시작하기
@@ -197,6 +227,8 @@ function MyScriptsTab({
   });
 
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [bannerOpen, setBannerOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
   const [topicPage, setTopicPage] = useState(0);
@@ -283,11 +315,16 @@ function MyScriptsTab({
     setTopicPage(0);
   }
 
-  async function handleDelete(scriptId: string) {
-    if (!confirm("이 스크립트를 삭제하시겠습니까? 연결된 패키지도 함께 삭제됩니다.")) return;
-    setDeletingId(scriptId);
+  function handleDeleteRequest(scriptId: string) {
+    setConfirmDeleteId(scriptId);
+  }
+
+  async function handleDeleteConfirm() {
+    if (!confirmDeleteId) return;
+    setDeletingId(confirmDeleteId);
+    setConfirmDeleteId(null);
     try {
-      const result = await deleteScript(scriptId);
+      const result = await deleteScript(confirmDeleteId);
       if (result.error) {
         alert(result.error);
       } else {
@@ -306,12 +343,36 @@ function MyScriptsTab({
     );
   }
 
+  const myScriptsBanner = (
+    <button
+      onClick={() => setBannerOpen(!bannerOpen)}
+      className="flex w-full items-start gap-2.5 rounded-[var(--radius-xl)] border border-primary-200 bg-primary-50/50 p-3 text-left sm:gap-3 sm:p-4"
+    >
+      <Info size={18} className="shrink-0 text-primary-500" />
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-medium text-foreground">
+          내 스크립트란?
+        </p>
+        {bannerOpen && (
+          <p className="mt-0.5 text-xs text-foreground-secondary sm:mt-1 sm:text-sm">
+            생성한 스크립트를 관리하고, 패키지를 만들어 쉐도잉 훈련에 활용할 수 있습니다.
+          </p>
+        )}
+      </div>
+      <ChevronDown
+        size={16}
+        className={`shrink-0 text-primary-400 transition-transform ${bannerOpen ? "rotate-180" : ""}`}
+      />
+    </button>
+  );
+
   if (!scripts?.length) {
     return (
       <div className="space-y-6">
-        <div className="rounded-[var(--radius-xl)] border border-border bg-surface p-6">
-          <h3 className="font-semibold text-foreground">내 스크립트 목록</h3>
-          <div className="mt-6 flex flex-col items-center py-8 text-center">
+        {myScriptsBanner}
+        <div className="rounded-[var(--radius-xl)] border border-border bg-surface p-4 sm:p-6">
+          <h3 className="text-sm font-semibold text-foreground sm:text-base">내 스크립트 목록</h3>
+          <div className="mt-4 flex flex-col items-center py-6 text-center sm:mt-6 sm:py-8">
             <div className="flex h-14 w-14 items-center justify-center rounded-full bg-surface-secondary">
               <FileText size={24} className="text-foreground-muted" />
             </div>
@@ -329,6 +390,8 @@ function MyScriptsTab({
 
   return (
     <div className="space-y-4">
+      {myScriptsBanner}
+
       {/* 카테고리 필터 */}
       <div className="flex items-center gap-2">
         <button
@@ -440,12 +503,24 @@ function MyScriptsTab({
             <ScriptCard
               key={script.id}
               script={script}
-              onDelete={handleDelete}
+              onDelete={handleDeleteRequest}
               isDeleting={deletingId === script.id}
             />
           ))}
         </div>
       )}
+
+      {/* 삭제 확인 다이얼로그 */}
+      <ConfirmDialog
+        open={!!confirmDeleteId}
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setConfirmDeleteId(null)}
+        title="스크립트를 삭제하시겠습니까?"
+        description="연결된 패키지도 함께 삭제되며, 복구할 수 없습니다."
+        confirmLabel="삭제"
+        cancelLabel="취소"
+        variant="danger"
+      />
     </div>
   );
 }
@@ -483,8 +558,18 @@ function ScriptCard({
 
   return (
     <div className="rounded-[var(--radius-xl)] border border-border bg-surface p-4 transition-colors hover:border-primary-200">
-      {/* 상단: 뱃지 + 메타 */}
+      {/* 상단: 주제 + 뱃지 + 메타 */}
       <div className="flex flex-wrap items-center gap-2">
+        {/* 주제 */}
+        {script.topic && (
+          <span className="flex items-center gap-1.5 text-sm font-medium text-foreground">
+            {(() => {
+              const Icon = TOPIC_ICONS[script.topic] || DEFAULT_TOPIC_ICON;
+              return <Icon size={14} className="shrink-0 text-foreground-secondary" />;
+            })()}
+            {script.topic}
+          </span>
+        )}
         {/* answer_type 뱃지 */}
         {script.answer_type && (
           <span
@@ -499,10 +584,12 @@ function ScriptCard({
             {levelLabel}
           </span>
         )}
-        {/* 소스 뱃지 */}
-        <span className="text-xs text-foreground-muted">
-          {SCRIPT_SOURCE_LABELS[script.source]}
-        </span>
+        {/* 짧은 질문 (PC만) */}
+        {(script.question_short || script.question_korean) && (
+          <span className="hidden text-xs text-foreground-muted line-clamp-1 sm:inline">
+            {script.question_short || script.question_korean}
+          </span>
+        )}
         {/* 상태 */}
         <span className="ml-auto flex items-center gap-1 text-xs">
           {script.status === "confirmed" ? (
@@ -519,26 +606,23 @@ function ScriptCard({
         </span>
       </div>
 
-      {/* 주제 + 질문 */}
-      <div className="mt-2">
-        {script.topic && (
-          <p className="flex items-center gap-1.5 text-sm font-medium text-foreground">
-            {(() => {
-              const Icon = TOPIC_ICONS[script.topic] || DEFAULT_TOPIC_ICON;
-              return <Icon size={14} className="shrink-0 text-foreground-secondary" />;
-            })()}
-            {script.topic}
+      {/* 질문 */}
+      <div className="mt-1.5">
+        {/* 질문: PC=영어 1줄, 모바일=question_short */}
+        {script.question_english && (
+          <p className="hidden truncate text-sm text-foreground sm:block">
+            {script.question_english}
           </p>
         )}
-        {script.question_korean && (
-          <p className="mt-0.5 text-xs text-foreground-secondary line-clamp-1">
-            {script.question_korean}
+        {(script.question_short || script.question_korean) && (
+          <p className="text-xs text-foreground line-clamp-1 sm:hidden">
+            {script.question_short || script.question_korean}
           </p>
         )}
       </div>
 
       {/* 미리보기 */}
-      <p className="mt-2 text-sm text-foreground-secondary line-clamp-2">
+      <p className="mt-1.5 text-xs text-foreground-muted line-clamp-1 sm:text-sm">
         {preview}
       </p>
 
@@ -614,6 +698,7 @@ function ShadowingTab({
 }: {
   initialData?: ShadowingHistoryItem[];
 }) {
+  const [bannerOpen, setBannerOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
   const [topicPage, setTopicPage] = useState(0);
@@ -714,11 +799,34 @@ function ShadowingTab({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
+      {/* 안내 배너 (접이식) */}
+      <button
+        onClick={() => setBannerOpen(!bannerOpen)}
+        className="flex w-full items-start gap-2.5 rounded-[var(--radius-xl)] border border-primary-200 bg-primary-50/50 p-3 text-left sm:gap-3 sm:p-4"
+      >
+        <Info size={18} className="shrink-0 text-primary-500" />
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-medium text-foreground">
+            쉐도잉 훈련이란?
+          </p>
+          {bannerOpen && (
+            <p className="mt-0.5 text-xs text-foreground-secondary sm:mt-1 sm:text-sm">
+              원어민 발화를 듣고 따라하며 스크립트를 입에 붙이는 4단계 점진 훈련입니다.
+              듣기 → 따라읽기 → 혼자말하기 → 실전 순서로 진행됩니다.
+            </p>
+          )}
+        </div>
+        <ChevronDown
+          size={16}
+          className={`shrink-0 text-primary-400 transition-transform ${bannerOpen ? "rotate-180" : ""}`}
+        />
+      </button>
+
       {/* 훈련 가능 스크립트 */}
-      <div className="rounded-[var(--radius-xl)] border border-border bg-surface p-6">
-        <h3 className="font-semibold text-foreground">쉐도잉 훈련</h3>
-        <p className="mt-1 text-sm text-foreground-secondary">
+      <div className="rounded-[var(--radius-xl)] border border-border bg-surface p-4 sm:p-6">
+        <h3 className="text-sm font-semibold text-foreground sm:text-base">쉐도잉 훈련</h3>
+        <p className="mt-0.5 text-xs text-foreground-secondary sm:mt-1 sm:text-sm">
           패키지가 완료된 스크립트를 선택하여 4단계 점진 훈련을 시작합니다.
         </p>
 
@@ -727,7 +835,7 @@ function ShadowingTab({
             <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary-500 border-t-transparent" />
           </div>
         ) : !shadowableScripts?.length ? (
-          <div className="mt-6 flex flex-col items-center py-8 text-center">
+          <div className="mt-4 flex flex-col items-center py-6 text-center sm:mt-6 sm:py-8">
             <div className="flex h-14 w-14 items-center justify-center rounded-full bg-surface-secondary">
               <Headphones size={24} className="text-foreground-muted" />
             </div>
@@ -893,9 +1001,9 @@ function ShadowingTab({
 
       {/* 훈련 이력 */}
       {history && history.length > 0 && (
-        <div className="rounded-[var(--radius-xl)] border border-border bg-surface p-6">
-          <h3 className="font-semibold text-foreground">훈련 이력</h3>
-          <div className="mt-4 space-y-3">
+        <div className="rounded-[var(--radius-xl)] border border-border bg-surface p-4 sm:p-6">
+          <h3 className="text-sm font-semibold text-foreground sm:text-base">훈련 이력</h3>
+          <div className="mt-3 space-y-2 sm:mt-4 sm:space-y-3">
             {history.map((session) => (
               <div
                 key={session.id}

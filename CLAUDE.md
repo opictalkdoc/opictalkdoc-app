@@ -153,6 +153,27 @@ docs/
 - **브랜딩 컨셉**: "나는 내 삶의 주인공이다" — 평범한 일상이 완벽한 OPIc 대본
 - **아이콘**: Lucide React 통일
 
+### ⚠️ 모바일 레이아웃 필수 패턴
+
+**Immersive 레이아웃(`h-dvh`)에서 스크롤 가능한 콘텐츠 영역을 만들 때:**
+
+1. **`h-0 flex-grow` 패턴** — `flex-1` 대신 사용
+   - `flex-1`(flex-basis: 0%)이 모바일 브라우저에서 definite height로 인식되지 않아 `overflow-y-auto` 스크롤이 작동하지 않는 문제 방지
+   - `h-0`(명시적 height: 0) + `flex-grow`로 브라우저가 확실히 높이를 계산하도록 강제
+   - 적용 대상: `overflow-y-auto`를 사용하는 flex 자식 요소와 그 부모
+   ```tsx
+   {/* ❌ 모바일에서 스크롤 깨짐 */}
+   <div className="flex-1 overflow-y-auto">...</div>
+
+   {/* ✅ 모바일에서 안정적 스크롤 */}
+   <div className="h-0 flex-grow overflow-y-auto">...</div>
+   ```
+
+2. **모바일 스크롤바 숨김** — 모바일에서 스크롤바 제거, PC에서는 유지
+   ```tsx
+   <div className="overflow-y-auto max-md:[scrollbar-width:none] max-md:[&::-webkit-scrollbar]:hidden">
+   ```
+
 ## 🏗️ 기술 스택
 
 | 영역 | 기술 |

@@ -202,10 +202,10 @@ export function WizardStep2({ submissionId, comboResults, setComboResults, onCom
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3 sm:space-y-4">
       {/* 진행 상태 바 */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between text-xs text-foreground-secondary">
+      <div className="space-y-1.5 sm:space-y-2">
+        <div className="flex items-center justify-between text-[11px] text-foreground-secondary sm:text-xs">
           <span>{currentCombo.label}</span>
           <span>{currentComboIdx + 1} / {COMBO_STEPS.length}</span>
         </div>
@@ -216,7 +216,7 @@ export function WizardStep2({ submissionId, comboResults, setComboResults, onCom
             return (
               <div
                 key={step.comboType}
-                className={`h-1.5 flex-1 rounded-full transition-colors ${
+                className={`h-1 flex-1 rounded-full transition-colors sm:h-1.5 ${
                   isComplete
                     ? "bg-primary-500"
                     : idx === currentComboIdx
@@ -230,18 +230,18 @@ export function WizardStep2({ submissionId, comboResults, setComboResults, onCom
       </div>
 
       {/* 콤보 헤더 */}
-      <div className="rounded-[var(--radius-lg)] border border-border bg-surface p-4">
+      <div className="rounded-xl border border-border bg-surface p-3 sm:rounded-[var(--radius-lg)] sm:p-4">
         <div className="flex items-center justify-between">
           <div>
-            <h4 className="text-sm font-semibold text-foreground">
+            <h4 className="text-[13px] font-semibold text-foreground sm:text-sm">
               {currentCombo.label}
             </h4>
-            <p className="text-xs text-foreground-muted">
+            <p className="text-[11px] text-foreground-muted sm:text-xs">
               {currentCombo.questionNumbers.join(", ")}번 문항 ({currentCombo.questionCount}개)
             </p>
           </div>
           {isCurrentComplete && (
-            <div className="flex items-center gap-1 rounded-full bg-green-50 px-2 py-1 text-xs text-green-700">
+            <div className="flex items-center gap-1 rounded-full bg-green-50 px-1.5 py-0.5 text-[11px] text-green-700 sm:px-2 sm:py-1 sm:text-xs">
               <Check size={12} />
               완료
             </div>
@@ -250,9 +250,9 @@ export function WizardStep2({ submissionId, comboResults, setComboResults, onCom
 
         {/* 선택된 질문 요약 */}
         {isCurrentComplete && (
-          <div className="mt-3 space-y-1.5 border-t border-border pt-3">
+          <div className="mt-2.5 space-y-1 border-t border-border pt-2.5 sm:mt-3 sm:space-y-1.5 sm:pt-3">
             {currentResult.questions.map((q, idx) => (
-              <div key={idx} className="flex items-baseline gap-2 text-xs">
+              <div key={idx} className="flex items-baseline gap-1.5 text-[11px] sm:gap-2 sm:text-xs">
                 <span className="shrink-0 font-medium text-foreground-muted">
                   {currentCombo.questionNumbers[idx]}번
                 </span>
@@ -280,8 +280,8 @@ export function WizardStep2({ submissionId, comboResults, setComboResults, onCom
 
       {/* 주제 선택 (아직 주제 미선택 + 완료 아닐 때) */}
       {!selectedTopic && !isCurrentComplete && (
-        <div className="rounded-[var(--radius-lg)] border border-border bg-surface p-4">
-          <p className="mb-3 text-sm font-medium text-foreground">
+        <div className="rounded-xl border border-border bg-surface p-3 sm:rounded-[var(--radius-lg)] sm:p-4">
+          <p className="mb-2.5 text-[13px] font-medium text-foreground sm:mb-3 sm:text-sm">
             주제를 선택해주세요
           </p>
           <TopicPagination
@@ -297,9 +297,9 @@ export function WizardStep2({ submissionId, comboResults, setComboResults, onCom
 
       {/* 질문 선택 (주제 선택됨) */}
       {selectedTopic && !isCurrentComplete && (
-        <div className="rounded-[var(--radius-lg)] border border-border bg-surface p-4">
-          <div className="mb-3 flex items-center justify-between">
-            <p className="text-sm font-medium text-foreground">
+        <div className="rounded-xl border border-border bg-surface p-3 sm:rounded-[var(--radius-lg)] sm:p-4">
+          <div className="mb-2.5 flex items-center justify-between sm:mb-3">
+            <p className="text-[13px] font-medium text-foreground sm:text-sm">
               {isCustomMode
                 ? "직접 입력"
                 : `"${selectedTopic}" 질문`}
@@ -328,18 +328,19 @@ export function WizardStep2({ submissionId, comboResults, setComboResults, onCom
 
       {/* 에러 */}
       {error && (
-        <div className="rounded-[var(--radius-md)] bg-accent-50 p-3 text-sm text-accent-600">
+        <div className="rounded-lg bg-accent-50 p-2.5 text-[13px] text-accent-600 sm:rounded-[var(--radius-md)] sm:p-3 sm:text-sm">
           {error}
         </div>
       )}
 
       {/* 네비게이션 */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 sm:gap-3">
         <button
           onClick={currentComboIdx === 0 ? onBack : handlePrevCombo}
-          className="flex items-center gap-1 rounded-[var(--radius-lg)] border border-border px-4 py-2.5 text-sm font-medium text-foreground-secondary transition-colors hover:bg-surface-secondary"
+          className="flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-[13px] font-medium text-foreground-secondary transition-colors hover:bg-surface-secondary sm:rounded-[var(--radius-lg)] sm:px-4 sm:py-2.5 sm:text-sm"
         >
-          <ChevronLeft size={16} />
+          <ChevronLeft size={14} className="sm:hidden" />
+          <ChevronLeft size={16} className="hidden sm:block" />
           {currentComboIdx === 0 ? "이전 단계" : "이전 콤보"}
         </button>
 
@@ -348,10 +349,11 @@ export function WizardStep2({ submissionId, comboResults, setComboResults, onCom
         {isCurrentComplete && currentComboIdx < COMBO_STEPS.length - 1 && (
           <button
             onClick={handleNextCombo}
-            className="flex items-center gap-1 rounded-[var(--radius-lg)] bg-primary-500 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary-600"
+            className="flex items-center gap-1 rounded-lg bg-primary-500 px-3 py-2 text-[13px] font-medium text-white transition-colors hover:bg-primary-600 sm:rounded-[var(--radius-lg)] sm:px-4 sm:py-2.5 sm:text-sm"
           >
             다음 콤보
-            <ChevronRight size={16} />
+            <ChevronRight size={14} className="sm:hidden" />
+            <ChevronRight size={16} className="hidden sm:block" />
           </button>
         )}
 
@@ -359,7 +361,7 @@ export function WizardStep2({ submissionId, comboResults, setComboResults, onCom
           <button
             onClick={handleSubmit}
             disabled={submitting}
-            className="flex items-center gap-2 rounded-[var(--radius-lg)] bg-primary-500 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary-600 disabled:opacity-50"
+            className="flex items-center gap-2 rounded-lg bg-primary-500 px-4 py-2 text-[13px] font-medium text-white transition-colors hover:bg-primary-600 disabled:opacity-50 sm:rounded-[var(--radius-lg)] sm:px-5 sm:py-2.5 sm:text-sm"
           >
             {submitting && <Loader2 size={16} className="animate-spin" />}
             다음 단계로

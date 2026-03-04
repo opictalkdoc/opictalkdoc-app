@@ -23,11 +23,11 @@ async function ScriptsLoader() {
 
 export default function ScriptsPage() {
   return (
-    <div className="pb-8 pt-2 lg:pt-0">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-foreground">스크립트</h1>
-        <p className="mt-1 text-foreground-secondary">
-          AI가 만드는 맞춤 영어 답변으로 OPIc을 준비하세요.
+    <div className="pb-6 pt-1 sm:pb-8 sm:pt-2 lg:pt-0">
+      <div className="mb-4 sm:mb-6">
+        <h1 className="text-xl font-bold text-foreground sm:text-2xl">스크립트</h1>
+        <p className="mt-0.5 text-sm text-foreground-secondary sm:mt-1 sm:text-base">
+          내 경험으로 만드는 맞춤 영어 답변으로 OPIc을 준비하세요.
         </p>
       </div>
       <Suspense
