@@ -483,8 +483,8 @@ origin: https://opictalkdoc@github.com/opictalkdoc/opictalkdoc-app.git
 
 ## 🔮 현재 상태 & 다음 단계
 
-**현재**: Phase 3 (핵심 모듈 이관) — Step 3 모의고사 ✅ 완료 + 안정화 완료
-**다음 작업**: EF 배포(mock-test-process/eval/report) + 통합 테스트 → Step 4 튜터링 → 리브랜딩(P-5)
+**현재**: Phase 3 (핵심 모듈 이관) — Step 3 ✅ + EF 배포 ✅ + 모바일 최적화 ✅
+**다음 작업**: Step 4 튜터링 이관 → 리브랜딩(P-5)
 
 ### ⏳ 리브랜딩 작업 (P-5: 오픽톡닥 → 하루오픽)
 > Phase 3 전체 완료(Step 4 튜터링까지) 후 진행. 상세는 `docs/의사결정.md` P-5, `docs/실행계획.md` 참조.
@@ -573,7 +573,7 @@ origin: https://opictalkdoc@github.com/opictalkdoc/opictalkdoc-app.git
 | PG사 | 상태 | 비고 |
 |------|------|------|
 | KG이니시스 | ✅ 사전심사 완료 (2026-02-20) | 본계약 절차 진행 대기 |
-| 카카오페이 | 🔄 카드사 심사 진행 중 (2026-02-23~) | 영업일 2~3주, 완료 후 가맹점코드 발급 |
+| 카카오페이 | 🔄 카드사 심사 진행 중 (2026-02-23~) | 하나카드 반려(충전 판단)→미사용 요청(03-06), 나머지 통과 |
 | 네이버페이 | ❌ 직가맹 거절 (2026-02-23) | 고위험군(횟수권 판매) + 매출 이력 없음. PG사 인증형 대안 |
 | 토스페이 | 입점 정보 회신 완료 | MID 발급 대기 |
 
@@ -593,5 +593,5 @@ PGPASSWORD='opictalk2026' PGCLIENTENCODING='UTF8' "/c/Program Files/PostgreSQL/1
 > 의사결정 기록은 `docs/의사결정.md` 참조
 
 ---
-*최종 업데이트: 2026-03-03*
-*상태: Phase 3 Step 3 모의고사 ✅ 완료 + 안정화. 다음: EF 배포 → Step 4 튜터링*
+*최종 업데이트: 2026-03-06*
+*상태: Phase 3 Step 3 ✅ + EF 배포 ✅ + 모바일 최적화 ✅. 다음: Step 4 튜터링 이관*

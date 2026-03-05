@@ -77,9 +77,9 @@ export function TrainingEvalPanel({
   }, [sessionId, questionNumber]);
 
   return (
-    <div className="mx-auto flex h-0 w-full max-w-5xl flex-grow flex-col overflow-hidden px-3 py-2 sm:px-6 sm:py-4 animate-fadeIn md:h-auto md:flex-1 md:overflow-visible">
+    <div className="mx-auto flex h-0 w-full max-w-5xl flex-grow flex-col overflow-hidden px-3 py-2 sm:px-6 sm:py-4 animate-fadeIn">
       {/* 헤더 */}
-      <div className="mb-3 flex items-center gap-3 md:mb-4">
+      <div className="shrink-0 mb-3 flex items-center gap-3 md:mb-4">
         <button
           onClick={onClose}
           className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-surface-secondary md:h-9 md:w-9"
@@ -105,7 +105,7 @@ export function TrainingEvalPanel({
       </div>
 
       {/* 콘텐츠 — 스크롤 영역 */}
-      <div className="h-0 flex-grow overflow-y-auto rounded-xl border border-border bg-surface p-4 max-md:[scrollbar-width:none] max-md:[&::-webkit-scrollbar]:hidden md:h-auto md:flex-1 md:p-6">
+      <div className="h-0 flex-grow overflow-y-auto rounded-xl border border-border bg-surface p-4 max-md:[scrollbar-width:none] max-md:[&::-webkit-scrollbar]:hidden md:p-6">
         {loading ? (
           <div className="flex flex-col items-center py-12">
             <Loader2 size={24} className="animate-spin text-primary-500" />
@@ -175,7 +175,7 @@ export function TrainingEvalPanel({
       </div>
 
       {/* 하단 돌아가기 버튼 */}
-      <div className="mt-3 md:mt-4">
+      <div className="shrink-0 mt-3 md:mt-4">
         <button
           onClick={onClose}
           className="w-full rounded-xl bg-surface-secondary py-2.5 text-sm font-medium text-foreground-secondary transition-colors hover:bg-border md:py-3"
@@ -359,7 +359,7 @@ function TranscriptSection({
               />
             </div>
             {/* 시간 표시 */}
-            <div className="flex justify-between text-[10px] text-foreground-muted md:text-[11px]">
+            <div className="flex justify-between text-[10px] text-foreground-muted md:text-xs">
               <span>{formatTime(currentTime)}</span>
               <span>{duration > 0 ? formatTime(duration) : audioDuration ? formatTime(audioDuration) : "--:--"}</span>
             </div>
@@ -371,7 +371,7 @@ function TranscriptSection({
       </p>
 
       {/* 메타 정보 */}
-      <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5 text-[10px] text-foreground-muted md:mt-2 md:text-xs">
+      <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5 text-[10px] text-foreground-muted md:mt-2 md:gap-x-4 md:text-sm">
         {wpm != null && wpm > 0 && <span>WPM: {wpm.toFixed(0)}</span>}
         {audioDuration != null && audioDuration > 0 && (
           <span>{audioDuration.toFixed(0)}초</span>
@@ -430,8 +430,8 @@ function PronunciationSection({
               key={s.label}
               className={`flex-1 rounded-lg ${bgColor} px-3 py-2 text-center md:rounded-xl md:px-4 md:py-3`}
             >
-              <p className="text-[10px] text-foreground-muted md:text-xs">{s.label}</p>
-              <p className={`text-lg font-bold md:text-xl ${color}`}>
+              <p className="text-[10px] text-foreground-muted md:text-sm">{s.label}</p>
+              <p className={`text-lg font-bold md:text-2xl ${color}`}>
                 {v > 0 ? v.toFixed(0) : "-"}
               </p>
             </div>
@@ -440,21 +440,21 @@ function PronunciationSection({
       </div>
       {mispronounced && mispronounced.length > 0 && (
         <div className="mt-2">
-          <p className="mb-1 text-[10px] text-foreground-muted">
+          <p className="mb-1 text-[10px] text-foreground-muted md:text-xs">
             오발음 단어 ({mispronounced.length})
           </p>
-          <div className="flex flex-wrap gap-1">
+          <div className="flex flex-wrap gap-1 md:gap-1.5">
             {mispronounced.slice(0, 8).map((w, i) => (
               <span
                 key={i}
-                className="rounded bg-red-50 px-1.5 py-0.5 text-[10px] text-red-500"
+                className="rounded bg-red-50 px-1.5 py-0.5 text-[10px] text-red-500 md:px-2 md:py-1 md:text-xs"
               >
                 {w.word}{" "}
                 <span className="text-red-400">({w.accuracyScore})</span>
               </span>
             ))}
             {mispronounced.length > 8 && (
-              <span className="text-[10px] text-foreground-muted">
+              <span className="text-[10px] text-foreground-muted md:text-xs">
                 +{mispronounced.length - 8}개
               </span>
             )}
@@ -499,11 +499,11 @@ function CheckboxSection({
                 className="mt-0.5 shrink-0 text-red-400"
               />
               <div className="min-w-0">
-                <span className="text-[10px] font-mono font-medium text-red-500 md:text-xs">
+                <span className="text-[10px] font-mono font-medium text-red-500 md:text-sm">
                   {id}
                 </span>
                 {cb.evidence && (
-                  <p className="text-[10px] leading-relaxed text-foreground-secondary md:text-xs md:leading-5">
+                  <p className="text-[10px] leading-relaxed text-foreground-secondary md:text-sm md:leading-5">
                     {cb.evidence}
                   </p>
                 )}
@@ -516,7 +516,7 @@ function CheckboxSection({
       {/* 통과 항목 */}
       {passed.length > 0 && (
         <details className="mt-2">
-          <summary className="cursor-pointer text-[10px] text-green-600 hover:underline">
+          <summary className="cursor-pointer text-[10px] text-green-600 hover:underline md:text-xs">
             통과 항목 {passed.length}개 보기
           </summary>
           <div className="mt-1 space-y-1">
@@ -529,7 +529,7 @@ function CheckboxSection({
                   size={10}
                   className="shrink-0 text-green-400"
                 />
-                <span className="text-[10px] font-mono text-green-600">
+                <span className="text-[10px] font-mono text-green-600 md:text-xs">
                   {id}
                 </span>
               </div>
@@ -550,7 +550,7 @@ function CorrectionsSection({
 }) {
   return (
     <div>
-      <p className="mb-2 flex items-center gap-1 text-xs font-medium text-foreground-muted">
+      <p className="mb-2 flex items-center gap-1 text-xs font-medium text-foreground-muted md:text-sm">
         <AlertTriangle size={12} className="text-yellow-500" />
         교정 사항 ({corrections.length})
       </p>
@@ -558,20 +558,20 @@ function CorrectionsSection({
         {corrections.map((c, i) => (
           <div
             key={i}
-            className="rounded-lg border border-yellow-100 bg-yellow-50/30 p-2.5"
+            className="rounded-lg border border-yellow-100 bg-yellow-50/30 p-2.5 md:p-3"
           >
             {c.error_parts && c.error_parts.length > 0 && (
-              <p className="text-[11px] text-red-500 line-through">
+              <p className="text-[11px] text-red-500 line-through md:text-sm">
                 {c.error_parts.join(" ")}
               </p>
             )}
             {c.corrected_segment && (
-              <p className="text-[11px] font-medium text-green-700">
+              <p className="text-[11px] font-medium text-green-700 md:text-sm">
                 → {c.corrected_segment}
               </p>
             )}
             {c.tip_korean && (
-              <p className="mt-1 text-[10px] text-foreground-secondary">
+              <p className="mt-1 text-[10px] text-foreground-secondary md:text-xs">
                 💡 {c.tip_korean}
               </p>
             )}
@@ -601,7 +601,7 @@ function DeepAnalysisSection({ analysis }: { analysis: DeepAnalysis }) {
     <div>
       <button
         onClick={() => setExpanded(!expanded)}
-        className="flex items-center gap-1 text-xs font-medium text-foreground-muted hover:text-foreground-secondary"
+        className="flex items-center gap-1 text-xs font-medium text-foreground-muted hover:text-foreground-secondary md:text-sm"
       >
         <MessageSquare size={12} className="text-primary-400" />
         심층 분석
@@ -611,10 +611,10 @@ function DeepAnalysisSection({ analysis }: { analysis: DeepAnalysis }) {
         <div className="mt-2 space-y-2.5">
           {sections.map((s, i) => (
             <div key={i}>
-              <p className="text-[10px] font-medium text-primary-500">
+              <p className="text-[10px] font-medium text-primary-500 md:text-sm">
                 {s.label}
               </p>
-              <p className="whitespace-pre-wrap text-[11px] leading-relaxed text-foreground-secondary">
+              <p className="whitespace-pre-wrap text-[11px] leading-relaxed text-foreground-secondary md:text-sm md:leading-6">
                 {s.text}
               </p>
             </div>

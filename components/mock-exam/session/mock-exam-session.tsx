@@ -464,7 +464,7 @@ export function MockExamSession({
 
   // ── 시험 진행 화면 ──
   return (
-    <div className="flex flex-1 flex-col overflow-hidden md:h-auto md:overflow-visible">
+    <div className={`flex flex-1 flex-col overflow-hidden ${viewingEvalQNum ? "" : "md:h-auto md:overflow-visible"}`}>
       {/* 오프라인 배너 */}
       {!isOnline && (
         <div className="flex items-center gap-2 bg-accent-500 px-4 py-2 text-sm text-white">
