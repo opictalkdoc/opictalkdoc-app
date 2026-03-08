@@ -1,7 +1,7 @@
-// mock-test-report — Stage C Edge Function (v3)
+// mock-test-report — Stage C Edge Function (v3 종합평가)
 // 규칙엔진 7-Step 실행 + FACT 점수 + GPT 종합 리포트 (~45초)
 // mock-test-eval-coach에서 전체 평가 완료 시 fire-and-forget으로 호출
-// v3: task_fulfillment + feedback_branch 집계 포함
+// v3: 9섹션 JSON + task_fulfillment 집계 + tutoring_prescription 자동 변환
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import {
@@ -11,6 +11,7 @@ import {
   type EvaluationInput,
   type AggregatedCheckboxes,
 } from "../_shared/rule-engine.ts";
+import { VALID_DRILL_TAGS } from "../_shared/question-type-map.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -51,86 +52,91 @@ function formatCheckboxesForPrompt(
   return `${label} (${entries.length}개):\n${lines.join("\n")}`;
 }
 
-// 문항별 요약 생성 (V3: coaching_feedback + task_fulfillment + feedback_branch)
-function generateQuestionSummaries(
-  evaluations: Array<{
-    question_number: number;
-    question_type: string;
-    checkbox_type: string;
-    pass_count: number;
-    fail_count: number;
-    pass_rate: number;
-    transcript: string;
-    wpm: number;
-    filler_count: number;
-    skipped: boolean;
-    coaching_feedback: Record<string, unknown> | null;
-    task_fulfillment: Record<string, unknown> | null;
-    feedback_branch: string | null;
-    priority_prescription: Array<Record<string, string>> | null;
-  }>,
-): string {
-  return evaluations
-    .map((e) => {
-      if (e.skipped) {
-        const fb = e.feedback_branch || "failed";
-        return `Q${e.question_number}: SKIPPED (branch=${fb})`;
-      }
-      const rate = ((e.pass_rate || 0) * 100).toFixed(0);
-      let line = `Q${e.question_number} (${e.question_type}, ${e.checkbox_type}): ${rate}% pass (${e.pass_count}/${e.pass_count + e.fail_count}), WPM=${e.wpm || 0}, filler=${e.filler_count || 0}`;
+// v3 문항별 요약 — 설계서 §3-5 question_summaries 포맷
+interface QuestionSummaryInput {
+  question_number: number;
+  question_type: string;
+  question_english: string;
+  checkbox_type: string;
+  pass_count: number;
+  fail_count: number;
+  pass_rate: number;
+  transcript: string;
+  wpm: number;
+  filler_count: number;
+  long_pause_count: number;
+  audio_duration: number;
+  word_count: number;
+  skipped: boolean;
+  coaching_feedback: Record<string, unknown> | null;
+  task_fulfillment: Record<string, unknown> | null;
+  feedback_branch: string | null;
+  priority_prescription: Array<Record<string, string>> | null;
+  pronunciation_assessment: Record<string, number> | null;
+}
 
-      // v3: feedback_branch + task_fulfillment
-      if (e.feedback_branch) {
-        line += `, branch=${e.feedback_branch}`;
+function generateQuestionSummaries(inputs: QuestionSummaryInput[]): string {
+  return inputs
+    .map((e) => {
+      const qTitle = `## Q${e.question_number} (${e.question_type}) — ${(e.question_english || "").slice(0, 50)}`;
+
+      if (e.skipped) {
+        return `${qTitle}\n- SKIPPED (feedback_branch=${e.feedback_branch || "failed"})`;
       }
+
+      const lines: string[] = [qTitle];
+
+      // 과제충족
       if (e.task_fulfillment) {
         const tf = e.task_fulfillment;
-        line += `\n  task: ${tf.status} (${((tf.completion_rate as number) * 100 || 0).toFixed(0)}%, req=${tf.required_pass}/${tf.required_total}, adv=${tf.advanced_pass}/${tf.advanced_total})`;
-        if (tf.reason) line += ` — ${tf.reason}`;
+        const rate = Math.round(((tf.completion_rate as number) || 0) * 100);
+        lines.push(`- 과제충족: ${tf.status} (${rate}%)`);
+        lines.push(`- 체크리스트: 🔴필수 ${tf.required_pass || 0}/${tf.required_total || 0}, 🟡심화 ${tf.advanced_pass || 0}/${tf.advanced_total || 0}`);
+        if (tf.reason) lines.push(`- 판정근거: ${tf.reason}`);
       }
+      lines.push(`- 피드백분기: ${e.feedback_branch || "fulfilled"}`);
 
-      // v3: priority_prescription 요약
+      // 최우선처방
       if (e.priority_prescription && e.priority_prescription.length > 0) {
-        const prescStr = e.priority_prescription.map((p) => p.action).join("; ");
-        line += `\n  prescription: ${prescStr}`;
+        lines.push(`- 최우선처방: ${e.priority_prescription[0].action}`);
       }
 
-      // coaching_feedback 데이터
-      if (e.coaching_feedback) {
-        const cf = e.coaching_feedback as Record<string, unknown>;
-        if (cf.one_line_insight) {
-          line += `\n  insight: "${cf.one_line_insight}"`;
-        }
-        // 핵심 교정 요약
+      // 핵심교정
+      const cf = e.coaching_feedback as Record<string, unknown> | null;
+      if (cf) {
         const corrections = cf.key_corrections as Array<Record<string, unknown>> | undefined;
         if (corrections && corrections.length > 0) {
-          const corrSummary = corrections
-            .map((c) => `${(c.why as string || "").split(".")[0]}(${c.impact})`)
-            .join(", ");
-          line += `\n  corrections: ${corrSummary}`;
+          const c = corrections[0];
+          lines.push(`- 핵심교정: ${c.original || ""} → ${c.corrected || ""}`);
         }
-        // 구조 평가 요약
+        // 구조진단
         const structure = cf.structure_evaluation as Record<string, unknown> | undefined;
-        if (structure) {
-          const td = structure.time_distribution as Record<string, number> | undefined;
-          line += `\n  structure: ${structure.structure_score}/5 (${structure.structure_label})`;
-          if (td) {
-            line += `, intro=${td.intro_pct}%, body=${td.body_pct}%, conclusion=${td.conclusion_pct}%`;
-          }
-        }
-        // 영역별 점수 요약
-        const skills = cf.skill_summary as Record<string, Record<string, unknown>> | undefined;
-        if (skills) {
-          const skillStr = Object.entries(skills)
-            .map(([k, v]) => `${k}=${v.score}`)
-            .join(", ");
-          line += `\n  skill: ${skillStr}`;
+        if (structure && structure.structure_label) {
+          lines.push(`- 구조진단: ${structure.structure_label}`);
         }
       }
 
-      return line;
+      // 답변 통계
+      lines.push(`- 답변시간: ${e.audio_duration || 0}초 / 단어: ${e.word_count || 0} / WPM: ${e.wpm || 0}`);
+
+      // 발음
+      const pa = e.pronunciation_assessment;
+      if (pa) {
+        lines.push(`- 발음: 정확도${pa.accuracy_score || 0}/유창성${pa.fluency_score || 0}/운율${pa.prosody_score || 0}`);
+      }
+
+      // 필러/침묵
+      lines.push(`- 필러: ${e.filler_count || 0}회 / 침묵3초+: ${e.long_pause_count || 0}회`);
+
+      // 발화요약 (150단어 제한)
+      if (e.transcript) {
+        const words = e.transcript.split(/\s+/).slice(0, 150).join(" ");
+        lines.push(`- 발화요약: ${words}`);
+      }
+
+      return lines.join("\n");
     })
-    .join("\n");
+    .join("\n\n");
 }
 
 // v3: feedback_branch 집계 (종합 리포트용)
@@ -167,6 +173,56 @@ function aggregateFeedbackBranches(
   };
 }
 
+// v3 tutoring_prescription 자동 변환 — 설계서 §3-8a
+// GPT 응답(top3_priorities, question_type_map, recurring_patterns)에서 추출
+function buildTutoringPrescription(
+  coachingReport: Record<string, unknown>,
+): Record<string, unknown> {
+  const top3 = (coachingReport.top3_priorities || []) as Array<Record<string, unknown>>;
+  const typeMap = (coachingReport.question_type_map || []) as Array<Record<string, unknown>>;
+  const patterns = (coachingReport.recurring_patterns || []) as Array<Record<string, unknown>>;
+
+  // 1. priority_weaknesses: top3에서 직접 추출
+  const priority_weaknesses = top3.map((p) => ({
+    rank: p.rank,
+    area: p.area,
+    drill_tag: VALID_DRILL_TAGS.has(p.drill_tag as string) ? p.drill_tag : null,
+  }));
+
+  // 2. error_drill_tags: recurring_patterns에서 추출 (중복 제거)
+  const error_drill_tags = [
+    ...new Set(
+      patterns
+        .map((p) => p.drill_tag as string)
+        .filter((t) => t && VALID_DRILL_TAGS.has(t)),
+    ),
+  ];
+
+  // 3. weak_types: question_type_map에서 weak/very_weak 추출
+  const weak_types = typeMap
+    .filter((t) => t.status === "weak" || t.status === "very_weak")
+    .sort((a, b) => (a.status === "very_weak" ? 0 : 1) - (b.status === "very_weak" ? 0 : 1))
+    .map((t) => t.type as string);
+
+  // 4. training_order: priority=true인 타입
+  const training_order = typeMap
+    .filter((t) => t.priority === true)
+    .map((t) => t.type as string);
+
+  // 5. must_fix_for_next_grade: top3의 drill_tag
+  const must_fix_for_next_grade = top3
+    .map((p) => p.drill_tag as string)
+    .filter((t) => t && VALID_DRILL_TAGS.has(t));
+
+  return {
+    priority_weaknesses,
+    error_drill_tags,
+    weak_types,
+    training_order,
+    must_fix_for_next_grade,
+  };
+}
+
 // GPT 종합 리포트 생성
 async function generateGPTReport(
   systemPrompt: string,
@@ -180,7 +236,7 @@ async function generateGPTReport(
     },
     body: JSON.stringify({
       model: "gpt-4.1",
-      temperature: 0.5,
+      temperature: 0.4,
       max_tokens: 12000,
       response_format: { type: "json_object" },
       messages: [
@@ -232,8 +288,10 @@ Deno.serve(async (req) => {
   }
 
   // 내부 전용 함수: 수동 인증 검증 (--no-verify-jwt 배포)
+  // eval-coach EF에서 동일 런타임의 SUPABASE_SERVICE_ROLE_KEY로 호출
   const authHeader = req.headers.get("authorization");
-  if (!authHeader || authHeader !== `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`) {
+  const expectedAuth = `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`;
+  if (!authHeader || authHeader !== expectedAuth) {
     return new Response(
       JSON.stringify({ error: "Unauthorized" }),
       { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
@@ -271,25 +329,57 @@ Deno.serve(async (req) => {
       .update({ holistic_status: "processing" })
       .eq("session_id", session_id);
 
-    // ── 개별 평가 결과 전체 조회 (Q2~Q15) ──
-    const { data: evaluations, error: evalError } = await supabase
-      .from("mock_test_evaluations")
-      .select(
-        "question_number, question_type, checkbox_type, checkboxes, " +
-        "pass_count, fail_count, pass_rate, transcript, wpm, " +
-        "filler_count, long_pause_count, pronunciation_assessment, skipped, " +
-        "coaching_feedback, task_fulfillment, feedback_branch, priority_prescription",
-      )
-      .eq("session_id", session_id)
-      .order("question_number");
+    // ── 개별 평가 + 답변 + 질문 병렬 조회 ──
+    const [evalResult, answersResult, questionsResult] = await Promise.all([
+      supabase
+        .from("mock_test_evaluations")
+        .select(
+          "question_number, question_type, checkbox_type, checkboxes, " +
+          "pass_count, fail_count, pass_rate, transcript, wpm, " +
+          "filler_count, long_pause_count, pronunciation_assessment, skipped, " +
+          "coaching_feedback, task_fulfillment, feedback_branch, priority_prescription",
+        )
+        .eq("session_id", session_id)
+        .order("question_number"),
+      supabase
+        .from("mock_test_answers")
+        .select("question_number, audio_duration, word_count")
+        .eq("session_id", session_id)
+        .order("question_number"),
+      supabase
+        .from("questions")
+        .select("id, question_english")
+        .in("id", session.question_ids || []),
+    ]);
 
-    if (evalError) {
-      throw new Error(`평가 결과 조회 실패: ${evalError.message}`);
+    if (evalResult.error) {
+      throw new Error(`평가 결과 조회 실패: ${evalResult.error.message}`);
     }
-
-    if (!evaluations || evaluations.length === 0) {
+    const evaluations = evalResult.data || [];
+    if (evaluations.length === 0) {
       throw new Error("평가 결과가 없습니다");
     }
+
+    // answers → question_number별 인덱스
+    const answersMap = new Map<number, { audio_duration: number; word_count: number }>();
+    for (const a of answersResult.data || []) {
+      answersMap.set(a.question_number, {
+        audio_duration: Number(a.audio_duration) || 0,
+        word_count: a.word_count || 0,
+      });
+    }
+
+    // questions → question_id별 question_english
+    const questionIds = session.question_ids || [];
+    const questionsMap = new Map<string, string>();
+    for (const q of questionsResult.data || []) {
+      questionsMap.set(q.id, q.question_english || "");
+    }
+    // question_number → question_english (Q1=index 0, Q2=index 1, ...)
+    const getQuestionEnglish = (qNum: number): string => {
+      const qId = questionIds[qNum - 1]; // question_number는 1-based
+      return qId ? (questionsMap.get(qId) || "") : "";
+    };
 
     // ── 규칙엔진 파라미터 로드 (DB → 기본값 폴백) ──
     let ruleParams: RuleEngineParams = DEFAULT_PARAMS;
@@ -340,6 +430,21 @@ Deno.serve(async (req) => {
     const avgAccuracy = pronCount > 0 ? Math.round(totalAccuracy / pronCount * 10) / 10 : 0;
     const avgProsody = pronCount > 0 ? Math.round(totalProsody / pronCount * 10) / 10 : 0;
     const avgFluency = pronCount > 0 ? Math.round(totalFluency / pronCount * 10) / 10 : 0;
+
+    // ── v3 신규 변수 계산 (§3-5) ──
+    let totalDuration = 0, totalWordCount = 0, totalFiller = 0, totalLongPause = 0;
+    let validAnswerCount = 0;
+    for (const e of evaluations) {
+      if (e.skipped) continue;
+      const ans = answersMap.get(e.question_number);
+      totalDuration += ans?.audio_duration || 0;
+      totalWordCount += ans?.word_count || 0;
+      totalFiller += e.filler_count || 0;
+      totalLongPause += e.long_pause_count || 0;
+      validAnswerCount++;
+    }
+    const avgDurationSec = validAnswerCount > 0 ? Math.round(totalDuration / validAnswerCount) : 0;
+    const avgWordCount = validAnswerCount > 0 ? Math.round(totalWordCount / validAnswerCount) : 0;
 
     // ── 사용자 프로필 조회 (nickname, target_level) ──
     const { data: userProfile } = await supabase.auth.admin.getUserById(
@@ -411,23 +516,31 @@ Deno.serve(async (req) => {
         .single();
 
       if (promptRow && promptRow.content !== "{{PLACEHOLDER}}") {
-        // 변수 치환
-        const evalData = evaluations.map((e) => ({
-          question_number: e.question_number,
-          question_type: e.question_type || "",
-          checkbox_type: e.checkbox_type || "",
-          pass_count: e.pass_count || 0,
-          fail_count: e.fail_count || 0,
-          pass_rate: Number(e.pass_rate) || 0,
-          transcript: e.transcript || "",
-          wpm: Number(e.wpm) || 0,
-          filler_count: e.filler_count || 0,
-          skipped: e.skipped || false,
-          coaching_feedback: (e.coaching_feedback as Record<string, unknown>) || null,
-          task_fulfillment: (e.task_fulfillment as Record<string, unknown>) || null,
-          feedback_branch: (e.feedback_branch as string) || null,
-          priority_prescription: (e.priority_prescription as Array<Record<string, string>>) || null,
-        }));
+        // v3 question_summaries 데이터 구성
+        const evalData: QuestionSummaryInput[] = evaluations.map((e) => {
+          const ans = answersMap.get(e.question_number);
+          return {
+            question_number: e.question_number,
+            question_type: e.question_type || "",
+            question_english: getQuestionEnglish(e.question_number),
+            checkbox_type: e.checkbox_type || "",
+            pass_count: e.pass_count || 0,
+            fail_count: e.fail_count || 0,
+            pass_rate: Number(e.pass_rate) || 0,
+            transcript: e.transcript || "",
+            wpm: Number(e.wpm) || 0,
+            filler_count: e.filler_count || 0,
+            long_pause_count: e.long_pause_count || 0,
+            audio_duration: ans?.audio_duration || 0,
+            word_count: ans?.word_count || 0,
+            skipped: e.skipped || false,
+            coaching_feedback: (e.coaching_feedback as Record<string, unknown>) || null,
+            task_fulfillment: (e.task_fulfillment as Record<string, unknown>) || null,
+            feedback_branch: (e.feedback_branch as string) || null,
+            priority_prescription: (e.priority_prescription as Array<Record<string, string>>) || null,
+            pronunciation_assessment: (e.pronunciation_assessment as Record<string, number>) || null,
+          };
+        });
 
         const questionSummaries = generateQuestionSummaries(evalData);
         const branchStats = aggregateFeedbackBranches(evalData);
@@ -463,12 +576,13 @@ Deno.serve(async (req) => {
           score_c: ruleResult.fact_scores.score_c,
           score_t: ruleResult.fact_scores.score_t,
           total_score: ruleResult.fact_scores.total_score,
-          // v3 과제충족 집계
-          task_fulfilled_count: branchStats.fulfilled,
-          task_partial_count: branchStats.partial,
-          task_failed_count: branchStats.failed,
-          task_skipped_count: branchStats.skipped,
-          avg_completion_rate: branchStats.avgCompletionRate,
+          // v3 신규 변수 (§3-5)
+          task_fulfillment_summary: `충족 ${branchStats.fulfilled}, 부분충족 ${branchStats.partial}, 실패 ${branchStats.failed}, 스킵 ${branchStats.skipped}`,
+          skip_count: branchStats.skipped,
+          avg_duration_sec: avgDurationSec,
+          avg_word_count: avgWordCount,
+          total_filler_count: totalFiller,
+          total_long_pause_count: totalLongPause,
         };
 
         const fullPrompt = substituteVariables(promptRow.content, variables);
@@ -498,39 +612,42 @@ Deno.serve(async (req) => {
       console.error("GPT 리포트 생성 실패 (규칙엔진 결과는 저장됨):", gptErr);
     }
 
-    // ── reports UPDATE (V2 GPT 리포트 결과) ──
+    // ── reports UPDATE (v3 GPT 리포트 결과) ──
     const updateData: Record<string, unknown> = {
       report_status: "completed",
+      coaching_report: reportResult,
     };
 
-    // V2: coaching_report — GPT 응답 전체를 JSONB로 저장
-    updateData.coaching_report = reportResult;
-
-    // V2: recurring_mistakes — 배열 추출
-    if (reportResult.recurring_mistakes) {
-      updateData.recurring_mistakes = reportResult.recurring_mistakes;
+    // v3: recurring_patterns → recurring_mistakes 컬럼 (하위 호환)
+    if (reportResult.recurring_patterns) {
+      updateData.recurring_mistakes = reportResult.recurring_patterns;
     }
 
-    // V2: overall_comments_ko — coach_diagnosis에서 추출
-    const coachDiag = reportResult.coach_diagnosis as Record<string, unknown> | undefined;
-    if (coachDiag) {
-      const levelSentence = coachDiag.level_sentence || "";
-      const whyThisLevel = coachDiag.why_this_level || "";
-      updateData.overall_comments_ko = `${levelSentence} ${whyThisLevel}`.trim();
-    } else if (reportResult.overall_comments_ko) {
-      // 폴백: GPT가 직접 overall_comments_ko를 반환한 경우
-      updateData.overall_comments_ko = reportResult.overall_comments_ko;
+    // v3: snapshot.headline → overall_comments_ko
+    const snapshot = reportResult.snapshot as Record<string, unknown> | undefined;
+    if (snapshot?.headline) {
+      updateData.overall_comments_ko = snapshot.headline;
     }
 
-    // V2: training_recommendations
-    if (reportResult.training_recommendations) {
-      updateData.training_recommendations = reportResult.training_recommendations;
+    // v3: training_recommendation → training_recommendations
+    if (reportResult.training_recommendation) {
+      updateData.training_recommendations = reportResult.training_recommendation;
     }
 
-    // V2: comprehensive_feedback — 하위 호환 (V2에서는 coaching_report가 주력)
-    if (reportResult.detailed_analysis) {
-      updateData.comprehensive_feedback = JSON.stringify(reportResult.detailed_analysis);
+    // v3: tutoring_prescription 자동 변환 (§3-8a)
+    if (reportResult.top3_priorities) {
+      updateData.tutoring_prescription = buildTutoringPrescription(reportResult);
     }
+
+    // v3: avg_completion_rate 저장
+    const branchStatsForSave = aggregateFeedbackBranches(
+      evaluations.map((e) => ({
+        feedback_branch: (e.feedback_branch as string) || null,
+        skipped: e.skipped || false,
+        task_fulfillment: (e.task_fulfillment as Record<string, unknown>) || null,
+      })),
+    );
+    updateData.avg_completion_rate = branchStatsForSave.avgCompletionRate;
 
     await supabase
       .from("mock_test_reports")

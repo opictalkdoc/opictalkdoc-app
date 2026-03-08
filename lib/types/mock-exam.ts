@@ -307,83 +307,141 @@ export interface CoachingDeepAnalysis {
   practice_suggestion: string;
 }
 
-// 종합 리포트 스킬 점수 (1-10)
-export interface SkillScore {
-  score: number;
+// ============================================================
+// 종합 평가 코칭 리포트 v3 (coaching_report JSONB)
+// 9섹션: snapshot, grade_explanation, top3_priorities, roadmap,
+//        question_type_map, recurring_patterns, delivery_interpretation,
+//        strengths, training_recommendation
+// ============================================================
+
+export interface CoachingReportV3 {
+  snapshot: ReportSnapshot;
+  grade_explanation: GradeExplanation;
+  top3_priorities: Top3Priority[];
+  roadmap: Roadmap;
+  question_type_map: QuestionTypeMapItem[];
+  recurring_patterns: RecurringPattern[];
+  delivery_interpretation: DeliveryInterpretation;
+  strengths: ReportStrength[];
+  training_recommendation: TrainingRecommendationV3;
+}
+
+export interface ReportSnapshot {
+  headline: string;
+  diagnosis_tags: string[];
+  grade_interpretation: string;
+}
+
+export interface GradeExplanation {
+  fact_interpretation: {
+    F: string;
+    A: string;
+    C: string;
+    T: string;
+  };
+  difficulty_interpretation: string;
+  grade_blockers: string[];
+}
+
+export type PriorityArea = "task_performance" | "content_structure" | "delivery";
+
+export interface Top3Priority {
+  rank: number;
+  area: PriorityArea;
   label: string;
-  brief: string;
+  why: string;
+  where: string[];
+  before: string;
+  after: string;
+  fix: string;
+  drill_tag: string;
 }
 
-// 종합 평가 코칭 리포트 (coaching_report JSONB)
-export interface CoachingReport {
-  coach_diagnosis: CoachDiagnosis;
-  level_comparison: LevelComparison;
-  skill_radar: Record<string, SkillScore>;
-  recurring_mistakes: RecurringMistake[];
-  question_type_analysis: QuestionTypeAnalysis;
-  action_plan: ActionPlanItem[];
-  detailed_analysis: DetailedAnalysis;
-  training_recommendations: V2TrainingRecommendation[];
+export interface Roadmap {
+  current_to_next: string;
+  personal_blockers: string[];
+  next_to_target: string | null;
+  long_term_goals: string[];
 }
 
-export interface CoachDiagnosis {
-  level_sentence: string;
-  level_description: string;
-  why_this_level: string;
-  confidence_band: number;
-  key_strength: string;
-  key_weakness: string;
-  next_level_path: string;
+export interface QuestionTypeMapItem {
+  type: string;
+  status: "strong" | "stable" | "weak" | "very_weak";
+  comment: string;
+  priority: boolean;
 }
 
-export interface LevelComparison {
-  current_level: string;
-  next_level: string;
-  comparison_question: string;
-  current_level_answer: string;
-  next_level_answer: string;
-  key_differences: string[];
+export interface RecurringPattern {
+  category: "grammar" | "expression" | "structure" | "task_performance" | "delivery_habit";
+  label: string;
+  frequency: number;
+  severity: "high" | "medium" | "low";
+  where: string[];
+  before: string;
+  after: string;
+  why_recurring: string;
+  fix_principle: string;
+  drill_tag: string;
 }
+
+export interface DeliveryInterpretation {
+  duration_comment: string;
+  filler_comment: string;
+  pause_comment: string;
+  pronunciation_comment: string;
+  overall_delivery: string;
+}
+
+export interface ReportStrength {
+  area: string;
+  label: string;
+  detail: string;
+}
+
+export interface TrainingRecommendationV3 {
+  course_title: string;
+  focus_areas: string[];
+  estimated_daily_minutes: number;
+  session_count: number;
+}
+
+// tutoring_prescription (EF 자동 변환)
+export interface TutoringPrescription {
+  priority_weaknesses: Array<{
+    rank: number;
+    area: string;
+    drill_tag: string | null;
+  }>;
+  error_drill_tags: string[];
+  weak_types: string[];
+  training_order: string[];
+  must_fix_for_next_grade: string[];
+}
+
+// v2 하위 호환: UI 재작성 전까지 유연한 타입 유지
+// Phase D (ResultSummary v3) 완료 후 CoachingReportV3로 교체
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type CoachingReport = CoachingReportV3 & Record<string, any>;
 
 export interface RecurringMistake {
-  pattern_name: string;
+  // v3: RecurringPattern과 동일 구조 (하위 호환 alias)
   category: string;
-  severity: string;
+  label: string;
   frequency: number;
-  affected_questions: number[];
-  example_wrong: string;
-  example_correct: string;
-  practice_sentences: string[];
-  tip: string;
-}
-
-export interface QuestionTypeAnalysis {
-  strong_types: Array<{ type: string; label: string; reason: string }>;
-  weak_types: Array<{ type: string; label: string; reason: string; strategy: string }>;
-  priority_focus: { type: string; label: string; reason: string };
-}
-
-export interface ActionPlanItem {
-  priority: number;
-  action: string;
-  why: string;
-  how: string;
-  expected_result: string;
-}
-
-export interface DetailedAnalysis {
-  strengths_detail: string[];
-  weaknesses_detail: string[];
-  int_adv_gap: string;
-}
-
-export interface V2TrainingRecommendation {
-  category: string;
-  target_type: string;
-  target_label: string;
-  reason: string;
-  practice_tip: string;
-  model_sentence: string;
+  severity: string;
+  where: string[];
+  before: string;
+  after: string;
+  why_recurring: string;
+  fix_principle: string;
+  drill_tag: string;
+  // v2 레거시 필드 (옵션)
+  pattern_name?: string;
+  affected_questions?: number[];
+  example_wrong?: string;
+  example_correct?: string;
+  practice_sentences?: string[];
+  tip?: string;
 }
 
 // mock_test_reports 테이블
@@ -424,9 +482,11 @@ export interface MockTestReport {
   adv_performance: Record<string, unknown> | null;
   comprehensive_feedback: string | null;
   training_recommendations: TrainingRecommendation[] | null;
-  // V2 코칭
-  coaching_report: CoachingReport | null;
-  recurring_mistakes: RecurringMistake[] | null;
+  // v3 코칭
+  coaching_report: CoachingReportV3 | null;
+  recurring_mistakes: RecurringPattern[] | null;
+  tutoring_prescription: TutoringPrescription | null;
+  avg_completion_rate: number | null;
   // 발음 통계
   avg_accuracy_score: number | null;
   avg_prosody_score: number | null;

@@ -32,5 +32,6 @@ DO $$ BEGIN
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
 
--- 4. mock_test_reports: tutoring_prescription 추가
+-- 4. mock_test_reports: v3 종합평가 컬럼 추가
 ALTER TABLE mock_test_reports ADD COLUMN IF NOT EXISTS tutoring_prescription jsonb;
+ALTER TABLE mock_test_reports ADD COLUMN IF NOT EXISTS avg_completion_rate integer DEFAULT 0;
