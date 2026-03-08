@@ -91,21 +91,29 @@ export function getCheckboxIdsForQuestionType(questionType: string): {
   type: "INT" | "ADV" | "AL";
 } {
   switch (questionType) {
+    // v3 DB names
     case "description":
     case "routine":
       return { ids: INT_18_IDS, type: "INT" };
-    case "asking_questions":
+    case "rp_11":         // v3: 정보 요청 롤플레이
+    case "asking_questions": // v2 호환
       return { ids: INT_20_IDS, type: "INT" };
     case "comparison":
-    case "experience_specific":
-    case "experience_habitual":
-    case "experience_past":
+    case "past_childhood":  // v3: 어릴 때 경험
+    case "past_special":    // v3: 기억에 남는 경험
+    case "past_recent":     // v3: 과거 습관
+    case "experience_specific":  // v2 호환
+    case "experience_habitual":  // v2 호환
+    case "experience_past":      // v2 호환
       return { ids: ADV_38_IDS, type: "ADV" };
-    case "suggest_alternatives":
+    case "rp_12":            // v3: 상황 대응 롤플레이
+    case "suggest_alternatives": // v2 호환
       return { ids: ADV_42_IDS, type: "ADV" };
-    case "comparison_change":
+    case "adv_14":           // v3: 사회 비교/변화
+    case "comparison_change": // v2 호환
       return { ids: AL_14_IDS, type: "AL" };
-    case "social_issue":
+    case "adv_15":           // v3: 의견 제시/주장
+    case "social_issue":     // v2 호환
       return { ids: AL_15_IDS, type: "AL" };
     default:
       return { ids: ADV_38_IDS, type: "ADV" };
@@ -189,7 +197,133 @@ export const AL_GATEKEEPER_IDS = [
 ];
 
 // ============================================================
-// 5. 체크박스 검증 (GPT 출력 → 정리)
+// 5. 체크박스 설명 맵 (프롬프트 동적 주입용)
+// ============================================================
+
+export const CHECKBOX_DESCRIPTIONS: Record<
+  string,
+  { group: string; criterion: string; passIf: string }
+> = {
+  // INT-1: Language Creation (GATE) — 3
+  "INT-1-1": { group: "INT-1: Language Creation (GATE)", criterion: "Vocabulary for personal information", passIf: "Can provide personal details with adequate vocabulary" },
+  "INT-1-2": { group: "INT-1: Language Creation (GATE)", criterion: "Listening comprehension", passIf: "Understood the question correctly" },
+  "INT-1-3": { group: "INT-1: Language Creation (GATE)", criterion: "Sentence level discourse", passIf: "Produced sentence-level (not just words/phrases)" },
+  // INT-2: Speaking in Sentences (CORE) — Cumulative — 3
+  "INT-2-1": { group: "INT-2: Speaking in Sentences (CORE) - Cumulative", criterion: "Words and memorized phrases", passIf: "Can produce words, word lists, or memorized phrases" },
+  "INT-2-2": { group: "INT-2: Speaking in Sentences (CORE) - Cumulative", criterion: "Some sentences", passIf: "Can produce some sentences (not just words/phrases)" },
+  "INT-2-3": { group: "INT-2: Speaking in Sentences (CORE) - Cumulative", criterion: "Mostly sentences", passIf: "Produces mostly sentences, occasionally word lists" },
+  // INT-3: Asking Questions (CORE) — rp_11 전용 — 2
+  "INT-3-1": { group: "INT-3: Asking Questions (CORE)", criterion: "Question quantity", passIf: "Asked at least 3 distinct questions" },
+  "INT-3-2": { group: "INT-3: Asking Questions (CORE)", criterion: "Question quality", passIf: "Questions are clear, specific, and appropriate for the context" },
+  // INT-4: Intelligibility (GATE) — 12
+  "INT-4-F1": { group: "INT-4: Intelligibility - Fluency", criterion: "Rate of speech", passIf: "Speed doesn't hinder understanding" },
+  "INT-4-F2": { group: "INT-4: Intelligibility - Fluency", criterion: "Fluidity (pauses)", passIf: "Pauses don't break communication" },
+  "INT-4-F3": { group: "INT-4: Intelligibility - Fluency", criterion: "Dead-ending", passIf: "Completes thoughts without trailing off" },
+  "INT-4-F4": { group: "INT-4: Intelligibility - Fluency", criterion: "False-starts", passIf: "Restarts don't disrupt meaning" },
+  "INT-4-F5": { group: "INT-4: Intelligibility - Fluency", criterion: "Repetition", passIf: "Repetition doesn't hinder comprehension" },
+  "INT-4-P1": { group: "INT-4: Intelligibility - Pronunciation", criterion: "Articulation", passIf: "Words are recognizable" },
+  "INT-4-P2": { group: "INT-4: Intelligibility - Pronunciation", criterion: "Pitch", passIf: "Pitch doesn't obscure meaning" },
+  "INT-4-P3": { group: "INT-4: Intelligibility - Pronunciation", criterion: "Stress", passIf: "Word stress is acceptable" },
+  "INT-4-P4": { group: "INT-4: Intelligibility - Pronunciation", criterion: "Intonation", passIf: "Sentence intonation is understandable" },
+  "INT-4-G1": { group: "INT-4: Intelligibility - Grammar", criterion: "Simple sentence grammar", passIf: "Basic grammar doesn't block meaning" },
+  "INT-4-G2": { group: "INT-4: Intelligibility - Grammar", criterion: "Complete sentences", passIf: "Can form complete sentences" },
+  "INT-4-S1": { group: "INT-4: Intelligibility - Syntax", criterion: "Word order", passIf: "Word order doesn't confuse meaning" },
+  // ADV-1: Narrate and Describe in All Time Frames (CORE) — 11
+  "ADV-1-D1": { group: "ADV-1: Time Frames - Description", criterion: "Description in present time", passIf: "Can describe current state/situation clearly" },
+  "ADV-1-D2": { group: "ADV-1: Time Frames - Description", criterion: "Description in past time", passIf: "Can describe past state/situation clearly" },
+  "ADV-1-D3": { group: "ADV-1: Time Frames - Description", criterion: "Description in future time", passIf: "Can describe future plans/predictions clearly" },
+  "ADV-1-N1": { group: "ADV-1: Time Frames - Narration", criterion: "Narration in present time", passIf: "Can narrate current events/routines" },
+  "ADV-1-N2": { group: "ADV-1: Time Frames - Narration", criterion: "Narration in past time", passIf: "Can narrate past events with proper sequencing" },
+  "ADV-1-N3": { group: "ADV-1: Time Frames - Narration", criterion: "Narration in future time", passIf: "Can narrate future plans/expectations" },
+  "ADV-1-PR1": { group: "ADV-1: Narration Problems", criterion: "Logical sequencing", passIf: "Events are presented in logical order" },
+  "ADV-1-PR2": { group: "ADV-1: Narration Problems", criterion: "Verb forms", passIf: "Correct verb forms for each time frame" },
+  "ADV-1-PR3": { group: "ADV-1: Narration Problems", criterion: "Person markers", passIf: "Consistent use of person markers (I, we, they)" },
+  "ADV-1-L1": { group: "ADV-1: Description Quality", criterion: "Clarity", passIf: "Descriptions are clear and understandable" },
+  "ADV-1-L2": { group: "ADV-1: Description Quality", criterion: "Detail", passIf: "Sufficient detail provided for understanding" },
+  // ADV-2: Connected Discourse (CORE) — 11
+  "ADV-2-SP1": { group: "ADV-2: Speaker Produces - Cumulative", criterion: "Words and phrases", passIf: "Can produce words and phrases" },
+  "ADV-2-SP2": { group: "ADV-2: Speaker Produces - Cumulative", criterion: "Sentences", passIf: "Can produce complete sentences" },
+  "ADV-2-SP3": { group: "ADV-2: Speaker Produces - Cumulative", criterion: "Strings of sentences", passIf: "Can produce multiple related sentences" },
+  "ADV-2-SP4": { group: "ADV-2: Speaker Produces - Cumulative", criterion: "Connected sentences", passIf: "Sentences are logically connected" },
+  "ADV-2-SP5": { group: "ADV-2: Speaker Produces - Cumulative", criterion: "Skeletal paragraphs", passIf: "Can form basic paragraph structure" },
+  "ADV-2-WO1": { group: "ADV-2: Word Order Problems", criterion: "Phrase word order", passIf: "Word order within phrases is acceptable" },
+  "ADV-2-WO2": { group: "ADV-2: Word Order Problems", criterion: "Sentence word order", passIf: "Sentence-level word order is acceptable" },
+  "ADV-2-WO3": { group: "ADV-2: Word Order Problems", criterion: "Paragraph word order", passIf: "Ideas are organized logically in paragraphs" },
+  "ADV-2-CD1": { group: "ADV-2: Cohesive Devices", criterion: "Cohesive devices used", passIf: "Uses connectors (however, in contrast, etc.)" },
+  "ADV-2-CD2": { group: "ADV-2: Cohesive Devices", criterion: "Cohesive devices accurate", passIf: "Connectors used appropriately" },
+  "ADV-2-CD3": { group: "ADV-2: Cohesive Devices", criterion: "Cohesive devices varied", passIf: "Uses variety of connectors (not repetitive)" },
+  // ADV-3: Vocabulary Range (SUPPORT) — 3
+  "ADV-3-V1": { group: "ADV-3: Vocabulary Range", criterion: "Breadth of vocabulary", passIf: "Has adequate vocabulary for the topic" },
+  "ADV-3-V2": { group: "ADV-3: Vocabulary Range", criterion: "Language mixing", passIf: "Avoids inappropriate L1 words" },
+  "ADV-3-V3": { group: "ADV-3: Vocabulary Range", criterion: "False cognates", passIf: "Avoids false cognates or uses them correctly" },
+  // ADV-4: Complication Response (CORE) — rp_12 전용 — 4
+  "ADV-4-CR1": { group: "ADV-4: Complication Response", criterion: "Struggles but succeeds", passIf: "Successfully addresses the complication despite difficulty" },
+  "ADV-4-CR2": { group: "ADV-4: Complication Response", criterion: "Attempts to address", passIf: "Makes genuine attempts to resolve the situation" },
+  "ADV-4-CR3": { group: "ADV-4: Complication Response", criterion: "Linguistic ability", passIf: "Shows linguistic ability to handle unexpected situations" },
+  "ADV-4-CD1": { group: "ADV-4: Complication Response", criterion: "Communicative devices", passIf: "Uses appropriate strategies (apologize, offer alternatives, request understanding)" },
+  // ADV-5: Intelligibility (GATE) — 13
+  "ADV-5-F1": { group: "ADV-5: Intelligibility - Fluency", criterion: "Rate of speech", passIf: "Speed doesn't hinder understanding" },
+  "ADV-5-F2": { group: "ADV-5: Intelligibility - Fluency", criterion: "Fluidity (halting)", passIf: "Speech flows without excessive halting" },
+  "ADV-5-F3": { group: "ADV-5: Intelligibility - Fluency", criterion: "Connectedness", passIf: "Ideas flow logically and smoothly" },
+  "ADV-5-G1": { group: "ADV-5: Intelligibility - Grammar", criterion: "Word Structure (Morphology)", passIf: "Correct word forms (e.g., -ed, -ing, -s)" },
+  "ADV-5-G2": { group: "ADV-5: Intelligibility - Grammar", criterion: "Syntax", passIf: "Sentence structure is appropriate" },
+  "ADV-5-G3": { group: "ADV-5: Intelligibility - Grammar", criterion: "Cases", passIf: "Correct case usage (subject/object pronouns)" },
+  "ADV-5-G4": { group: "ADV-5: Intelligibility - Grammar", criterion: "Prepositions", passIf: "Preposition usage is acceptable" },
+  "ADV-5-G5": { group: "ADV-5: Intelligibility - Grammar", criterion: "Agreement", passIf: "Subject-verb agreement is maintained" },
+  "ADV-5-PC1": { group: "ADV-5: Pragmatic Competence", criterion: "Compensate for weaknesses", passIf: "Uses strategies to overcome language gaps" },
+  "ADV-5-P1": { group: "ADV-5: Intelligibility - Pronunciation", criterion: "Articulation", passIf: "Words are recognizable and clear" },
+  "ADV-5-P2": { group: "ADV-5: Intelligibility - Pronunciation", criterion: "Pitch", passIf: "Pitch doesn't obscure meaning" },
+  "ADV-5-P3": { group: "ADV-5: Intelligibility - Pronunciation", criterion: "Stress", passIf: "Word and sentence stress is acceptable" },
+  "ADV-5-P4": { group: "ADV-5: Intelligibility - Pronunciation", criterion: "Intonation", passIf: "Sentence intonation is understandable" },
+  // AL-14: Comparison/Change — 6
+  "AL-14-PS": { group: "AL-14: Comparison/Change", criterion: "Paragraph Structure", passIf: "Topic→Supporting→Concluding 구조. 도입-본론-결론 명확" },
+  "AL-14-LS": { group: "AL-14: Comparison/Change", criterion: "Logical Sequence", passIf: "비교/대조가 논리적 (과거→현재→결론 또는 원인→결과)" },
+  "AL-14-CS": { group: "AL-14: Comparison/Change", criterion: "Comparison Structure", passIf: "비교급/대조 표현 2개 이상 (more convenient, on the flip side 등)" },
+  "AL-14-CD": { group: "AL-14: Comparison/Change", criterion: "Connector Diversity", passIf: "서로 다른 연결어 3종 이상 사용" },
+  "AL-14-VB": { group: "AL-14: Comparison/Change", criterion: "Vocabulary Breadth", passIf: "고급 어휘 사용 (revolutionize, significant 등). 일상 단어만 시 fail" },
+  "AL-14-GA": { group: "AL-14: Comparison/Change", criterion: "Grammar Accuracy", passIf: "수일치, 전치사, 복문에서 심각한 오류 없음" },
+  // AL-15: Issue/News Discussion — 6
+  "AL-15-AS": { group: "AL-15: Issue/News Discussion", criterion: "Argumentation Structure", passIf: "논리적 분석 구조 (배경→관점→근거→결론)" },
+  "AL-15-MA": { group: "AL-15: Issue/News Discussion", criterion: "Multi-perspective Analysis", passIf: "2개 이상 서로 다른 관점 + 각 관점의 근거" },
+  "AL-15-SI": { group: "AL-15: Issue/News Discussion", criterion: "Social/Institutional Depth", passIf: "개인 경험 넘어 사회적·제도적 차원에서 이슈 논의" },
+  "AL-15-CD": { group: "AL-15: Issue/News Discussion", criterion: "Connector Diversity", passIf: "3종류 이상 서로 다른 연결어로 논리적 흐름 형성" },
+  "AL-15-VB": { group: "AL-15: Issue/News Discussion", criterion: "Vocabulary Breadth", passIf: "이슈 토론 적합 어휘 3개 이상 (significant, controversial 등)" },
+  "AL-15-GA": { group: "AL-15: Issue/News Discussion", criterion: "Grammar Accuracy", passIf: "종속절 포함 복문 사용, 주요 문법 오류 없이 의미 전달" },
+};
+
+// 체크박스 정의 텍스트 생성 (프롬프트 주입용)
+export function buildCheckboxDefinitionsText(checkboxIds: string[]): string {
+  // 그룹별로 묶기
+  const groups = new Map<string, Array<{ id: string; criterion: string; passIf: string }>>();
+  for (const id of checkboxIds) {
+    const desc = CHECKBOX_DESCRIPTIONS[id];
+    if (!desc) continue;
+    if (!groups.has(desc.group)) groups.set(desc.group, []);
+    groups.get(desc.group)!.push({ id, criterion: desc.criterion, passIf: desc.passIf });
+  }
+
+  const lines: string[] = [];
+  for (const [group, items] of groups) {
+    const isCumulative = group.includes("Cumulative");
+    lines.push(`\n**${group}** (${items.length} items)${isCumulative ? " — Cumulative" : ""}`);
+    lines.push("| Code | Criterion | Pass if... |");
+    lines.push("|------|-----------|------------|");
+    for (const item of items) {
+      lines.push(`| ${item.id} | ${item.criterion} | ${item.passIf} |`);
+    }
+    if (isCumulative && group.includes("INT-2")) {
+      lines.push("> **Rule**: If INT-2-3 passes, INT-2-1 and INT-2-2 also pass.");
+    }
+    if (isCumulative && group.includes("ADV-2")) {
+      lines.push("> **Rule**: If ADV-2-SP5 passes, ADV-2-SP1~SP4 also pass.");
+    }
+  }
+
+  return lines.join("\n");
+}
+
+// ============================================================
+// 6. 체크박스 검증 (GPT 출력 → 정리)
 // ============================================================
 
 export interface CheckboxResult {

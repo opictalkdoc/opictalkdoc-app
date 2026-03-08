@@ -123,8 +123,12 @@ export function useEvalPolling(
   const skippedCount = evalTargets.filter(
     ([, status]) => status === "skipped"
   ).length;
+  const failedCount = evalTargets.filter(
+    ([, status]) => status === "failed"
+  ).length;
   const totalCount = evalTargets.length;
-  const isAllCompleted = totalCount > 0 && completedCount + skippedCount >= totalCount;
+  // completed + skipped + failed = 모두 최종 상태
+  const isAllCompleted = totalCount > 0 && completedCount + skippedCount + failedCount >= totalCount;
   const isReportReady = holisticStatus === "completed";
 
   return {

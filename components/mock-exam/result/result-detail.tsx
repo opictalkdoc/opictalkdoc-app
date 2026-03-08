@@ -9,7 +9,6 @@ import {
   Mic2,
   SkipForward,
   Lightbulb,
-  ArrowRight,
   BookOpen,
   BarChart3,
   Target,
@@ -18,10 +17,8 @@ import type {
   MockTestEvaluation,
   MockTestAnswer,
   CoachingFeedback,
-  KeyCorrection,
-  SkillScore,
   PronunciationAssessment,
-  CheckboxResult,
+  TaskFulfillment,
 } from "@/lib/types/mock-exam";
 import { EVAL_STATUS_LABELS, getPronunciationLabel } from "@/lib/types/mock-exam";
 
@@ -40,12 +37,20 @@ interface ResultDetailProps {
   }>;
 }
 
-// question_type 한글
+// question_type 한글 (v3 DB 실제 값 + v2 호환)
 const QT_KO: Record<string, string> = {
   description: "묘사",
   routine: "루틴",
-  asking_questions: "질문하기",
   comparison: "비교",
+  past_childhood: "어린시절",
+  past_special: "특별경험",
+  past_recent: "과거습관",
+  rp_11: "질문하기",
+  rp_12: "대안제시",
+  adv_14: "비교변화",
+  adv_15: "사회이슈",
+  // v2 호환
+  asking_questions: "질문하기",
   experience_specific: "특정경험",
   experience_habitual: "습관경험",
   experience_past: "과거경험",
@@ -68,12 +73,7 @@ function getSkillColor(score: number): string {
   return "text-red-500 bg-red-50";
 }
 
-// impact 색상
-function getImpactColor(impact: string): string {
-  if (impact === "high") return "bg-red-100 text-red-600";
-  if (impact === "medium") return "bg-yellow-100 text-yellow-700";
-  return "bg-surface-secondary text-foreground-muted";
-}
+
 
 // ── 메인 ──
 
@@ -194,33 +194,23 @@ function QuestionCard({
         </div>
       </button>
 
-      {/* 펼침: V2 5-Layer */}
+      {/* 펼침: V3 5단계 표시 */}
       {open && (
         <div className="border-t border-border bg-surface-secondary/10">
           {isSkipped ? (
-            <p className="px-4 py-3 text-sm text-foreground-muted">이 문항은 건너뛰었습니다.</p>
+            <SkippedContent evaluation={evaluation} />
           ) : !evaluation || evaluation.skipped ? (
             <p className="px-4 py-3 text-sm text-foreground-muted">평가 데이터가 없습니다.</p>
           ) : coaching ? (
-            <V2CoachingContent
+            <V3CoachingContent
               evaluation={evaluation}
               coaching={coaching}
               question={question}
             />
           ) : (
-            // 폴백: coaching_feedback이 없는 경우 기본 정보만
-            <div className="px-3 py-3 sm:px-4 space-y-3">
-              {evaluation.transcript && (
-                <TranscriptSection transcript={evaluation.transcript} evaluation={evaluation} />
-              )}
-              {evaluation.checkboxes && (
-                <CheckboxSection
-                  checkboxes={evaluation.checkboxes}
-                  passCount={evaluation.pass_count}
-                  failCount={evaluation.fail_count}
-                />
-              )}
-            </div>
+            <p className="px-4 py-3 text-sm text-foreground-muted">
+              코칭 데이터가 아직 생성되지 않았습니다.
+            </p>
           )}
         </div>
       )}
@@ -228,9 +218,48 @@ function QuestionCard({
   );
 }
 
-// ── V2 코칭 콘텐츠 (5-Layer) ──
+// ── 건너뜀/무응답 콘텐츠 (v3 구제 메시지 포함) ──
 
-function V2CoachingContent({
+function SkippedContent({ evaluation }: { evaluation: MockTestEvaluation | null }) {
+  const coaching = evaluation?.coaching_feedback as CoachingFeedback | null;
+  const rescue = coaching?.rescue;
+  const prescription = evaluation?.priority_prescription;
+
+  return (
+    <div className="px-3 py-3 sm:px-4 space-y-3">
+      <p className="text-sm text-foreground-muted">이 문항은 건너뛰었습니다.</p>
+      {/* v3 구제 메시지 */}
+      {rescue && (
+        <div className="rounded-lg bg-primary-50/50 p-3 space-y-2">
+          <p className="text-xs font-medium text-primary-600">다음엔 이렇게 시작해보세요</p>
+          <p className="text-sm font-medium text-foreground italic">
+            &ldquo;{rescue.start_template}&rdquo;
+          </p>
+          <p className="text-[11px] text-foreground-secondary">{rescue.recovery_tip}</p>
+          {rescue.tone && (
+            <p className="text-[10px] text-foreground-muted">{rescue.tone}</p>
+          )}
+        </div>
+      )}
+      {prescription && prescription.length > 0 && (
+        <div className="rounded-lg border border-primary-200 bg-primary-50/30 p-3">
+          <p className="text-[10px] font-medium text-primary-600 mb-1">처방</p>
+          {prescription.map((p, i) => (
+            <div key={i} className="text-[11px] text-foreground-secondary">
+              <p className="font-medium text-foreground">{p.action}</p>
+              <p className="text-[10px] mt-0.5">{p.why}</p>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── V3 코칭 콘텐츠 (5단계 표시) ──
+// 1. 과제충족 2. 최우선처방 3. 구조+교정 4. 답변개선 5. 전달+습관
+
+function V3CoachingContent({
   evaluation,
   coaching,
   question,
@@ -243,7 +272,10 @@ function V2CoachingContent({
 }) {
   const [showDeep, setShowDeep] = useState(false);
   const [showTranscript, setShowTranscript] = useState(false);
-  const [showCheckboxes, setShowCheckboxes] = useState(false);
+
+  const taskFulfillment = evaluation.task_fulfillment;
+  const priorityPrescription = evaluation.priority_prescription;
+  const feedbackBranch = evaluation.feedback_branch;
 
   return (
     <div className="divide-y divide-border/50">
@@ -255,31 +287,74 @@ function V2CoachingContent({
         </div>
       )}
 
-      {/* Layer 1: AI 코치 한줄 평가 */}
-      <div className="px-3 py-3 sm:px-4">
+      {/* Step 1: 과제충족 + 한줄 인사이트 */}
+      <div className="px-3 py-3 sm:px-4 space-y-2.5">
+        {/* 한줄 인사이트 */}
         <div className="flex items-start gap-2 rounded-lg bg-primary-50/50 p-3">
           <Lightbulb size={14} className="mt-0.5 shrink-0 text-primary-500" />
           <p className="text-sm leading-relaxed text-foreground">
             {coaching.one_line_insight}
           </p>
         </div>
+
+        {/* 과제충족 상태 (v3) */}
+        {taskFulfillment && (
+          <TaskFulfillmentSection fulfillment={taskFulfillment} feedbackBranch={feedbackBranch} />
+        )}
       </div>
 
-      {/* Layer 2: 핵심 교정 */}
-      {coaching.key_corrections && coaching.key_corrections.length > 0 && (
+      {/* Step 2: 최우선 처방 (v3) */}
+      {priorityPrescription && priorityPrescription.length > 0 && (
         <div className="px-3 py-3 sm:px-4">
-          <p className="text-xs font-medium text-foreground-muted mb-2">
-            핵심 교정 ({coaching.key_corrections.length})
+          <p className="text-xs font-medium text-primary-600 mb-2 flex items-center gap-1">
+            <Target size={12} />
+            최우선 처방
           </p>
-          <div className="space-y-2.5">
-            {coaching.key_corrections.map((c, i) => (
-              <CorrectionCard key={i} correction={c} index={i + 1} />
+          <div className="space-y-2">
+            {priorityPrescription.map((p, i) => (
+              <div key={i} className="rounded-lg border border-primary-200 bg-primary-50/30 p-3">
+                <p className="text-[12px] font-medium text-foreground">{p.action}</p>
+                <p className="text-[10px] text-foreground-secondary mt-1">{p.why}</p>
+                {p.example && (
+                  <p className="text-[11px] text-primary-600 mt-1.5 italic">&ldquo;{p.example}&rdquo;</p>
+                )}
+              </div>
             ))}
           </div>
         </div>
       )}
 
-      {/* Layer 3: 답변 개선 */}
+      {/* Step 3: 구조 + 핵심 교정 */}
+      <div className="px-3 py-3 sm:px-4 space-y-3">
+        {/* 구조 평가 */}
+        {coaching.structure_evaluation && (
+          <div>
+            <p className="text-xs font-medium text-foreground-muted mb-2">답변 구조</p>
+            <StructureSection structure={coaching.structure_evaluation} />
+          </div>
+        )}
+
+        {/* 핵심 교정 */}
+        {coaching.key_corrections && coaching.key_corrections.length > 0 && (
+          <div>
+            <p className="text-xs font-medium text-foreground-muted mb-2">
+              핵심 교정 ({coaching.key_corrections.length})
+            </p>
+            <ul className="space-y-1.5">
+              {coaching.key_corrections.map((c, i) => (
+                <li key={i} className="flex items-start gap-2 rounded-lg border border-border bg-surface p-2.5 text-[11px] leading-relaxed text-foreground">
+                  <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-primary-100 text-[9px] font-bold text-primary-600">
+                    {i + 1}
+                  </span>
+                  <span>{c}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+
+      {/* Step 4: 답변 개선 */}
       {coaching.answer_improvement && (
         <div className="px-3 py-3 sm:px-4">
           <p className="text-xs font-medium text-foreground-muted mb-2">
@@ -289,7 +364,7 @@ function V2CoachingContent({
         </div>
       )}
 
-      {/* Layer 4: 영역별 분석 + 구조 */}
+      {/* Step 5: 전달 + 영역별 분석 */}
       <div className="px-3 py-3 sm:px-4 space-y-3">
         {/* 영역별 점수 */}
         {coaching.skill_summary && (
@@ -302,21 +377,13 @@ function V2CoachingContent({
           </div>
         )}
 
-        {/* 구조 평가 */}
-        {coaching.structure_evaluation && (
-          <div>
-            <p className="text-xs font-medium text-foreground-muted mb-2">답변 구조</p>
-            <StructureSection structure={coaching.structure_evaluation} />
-          </div>
-        )}
-
         {/* 발음 이해도 */}
         {evaluation.pronunciation_assessment && (
           <PronunciationSection assessment={evaluation.pronunciation_assessment} />
         )}
       </div>
 
-      {/* Layer 5 + 부가 섹션 (접힘) */}
+      {/* 부가 섹션 (접힘) */}
       <div className="px-3 py-2.5 sm:px-4 space-y-1">
         {/* 심층 분석 */}
         {coaching.deep_analysis && (
@@ -332,7 +399,7 @@ function V2CoachingContent({
           </button>
         )}
         {showDeep && coaching.deep_analysis && (
-          <DeepAnalysisV2 analysis={coaching.deep_analysis} />
+          <DeepAnalysisSection analysis={coaching.deep_analysis} />
         )}
 
         {/* 내 답변 원문 */}
@@ -342,7 +409,7 @@ function V2CoachingContent({
               onClick={() => setShowTranscript(!showTranscript)}
               className="flex w-full items-center justify-between py-1.5 text-xs text-foreground-secondary hover:text-foreground"
             >
-              <span>내 답변 원문 + 오디오</span>
+              <span>내 답변 원문</span>
               {showTranscript ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
             </button>
             {showTranscript && (
@@ -351,79 +418,76 @@ function V2CoachingContent({
           </>
         )}
 
-        {/* 체크박스 상세 */}
-        {evaluation.checkboxes && (
-          <>
-            <button
-              onClick={() => setShowCheckboxes(!showCheckboxes)}
-              className="flex w-full items-center justify-between py-1.5 text-xs text-foreground-secondary hover:text-foreground"
-            >
-              <span>체크박스 상세 ({evaluation.pass_count}/{(evaluation.pass_count || 0) + (evaluation.fail_count || 0)})</span>
-              {showCheckboxes ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-            </button>
-            {showCheckboxes && (
-              <CheckboxSection
-                checkboxes={evaluation.checkboxes}
-                passCount={evaluation.pass_count}
-                failCount={evaluation.fail_count}
-              />
-            )}
-          </>
-        )}
       </div>
     </div>
   );
 }
 
-// ── 교정 카드 (Layer 2) ──
+// ── 과제충족 섹션 (v3 Step 1) ──
 
-function CorrectionCard({ correction, index }: { correction: KeyCorrection; index: number }) {
+function TaskFulfillmentSection({
+  fulfillment,
+  feedbackBranch,
+}: {
+  fulfillment: TaskFulfillment;
+  feedbackBranch: string | null;
+}) {
+  const statusConfig = {
+    fulfilled: { label: "충족", color: "text-green-600 bg-green-50", icon: "✓" },
+    partial: { label: "부분 충족", color: "text-yellow-600 bg-yellow-50", icon: "△" },
+    failed: { label: "미충족", color: "text-red-500 bg-red-50", icon: "✗" },
+  };
+  const s = statusConfig[fulfillment.status] || statusConfig.failed;
+
   return (
-    <div className="rounded-lg border border-border bg-surface p-3">
-      <div className="flex items-center gap-2 mb-1.5">
-        <span className="flex h-4 w-4 items-center justify-center rounded-full bg-primary-100 text-[9px] font-bold text-primary-600">
-          {index}
-        </span>
-        <span className={`rounded-full px-1.5 py-0 text-[9px] font-medium ${getImpactColor(correction.impact)}`}>
-          {correction.impact === "high" ? "영향 큼" : correction.impact === "medium" ? "보통" : "낮음"}
+    <div className="rounded-lg bg-surface-secondary/50 p-3">
+      <div className="flex items-center justify-between mb-2">
+        <p className="text-xs font-medium text-foreground-muted">과제 수행</p>
+        <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${s.color}`}>
+          {s.icon} {s.label}
         </span>
       </div>
-      {/* wrong → correct */}
-      <div className="space-y-1 text-[11px]">
-        <p className="text-red-500 line-through">{correction.original}</p>
-        <p className="text-green-700 flex items-center gap-1">
-          <ArrowRight size={10} className="shrink-0" />
-          {correction.corrected}
-        </p>
-        {correction.better && (
-          <p className="text-primary-600 flex items-center gap-1">
-            <Target size={10} className="shrink-0" />
-            {correction.better}
-          </p>
-        )}
+
+      {/* 체크리스트 */}
+      <div className="space-y-1">
+        {fulfillment.checklist.required.map((item, i) => (
+          <div key={`r-${i}`} className="flex items-start gap-1.5 text-[10px]">
+            {item.pass ? (
+              <CheckCircle2 size={10} className="mt-0.5 shrink-0 text-green-500" />
+            ) : (
+              <XCircle size={10} className="mt-0.5 shrink-0 text-red-400" />
+            )}
+            <span className={item.pass ? "text-foreground-secondary" : "text-red-600 font-medium"}>
+              {item.item}
+            </span>
+          </div>
+        ))}
+        {fulfillment.checklist.advanced.map((item, i) => (
+          <div key={`a-${i}`} className="flex items-start gap-1.5 text-[10px]">
+            {item.pass ? (
+              <CheckCircle2 size={10} className="mt-0.5 shrink-0 text-green-500" />
+            ) : (
+              <XCircle size={10} className="mt-0.5 shrink-0 text-yellow-500" />
+            )}
+            <span className={item.pass ? "text-foreground-secondary" : "text-yellow-700"}>
+              {item.item}
+            </span>
+          </div>
+        ))}
       </div>
-      {correction.why && (
-        <p className="mt-1.5 text-[10px] text-foreground-secondary leading-relaxed">
-          {correction.why}
-        </p>
+
+      {fulfillment.reason && (
+        <p className="mt-2 text-[10px] text-foreground-muted">{fulfillment.reason}</p>
       )}
     </div>
   );
 }
 
-// ── 답변 개선 (Layer 3) ──
+// ── 답변 개선 (Layer 3) — v3 ──
 
 function AnswerImprovementSection({ improvement }: { improvement: CoachingFeedback["answer_improvement"] }) {
   return (
     <div className="space-y-2.5">
-      {/* 내 답변 요약 */}
-      {improvement.student_summary && (
-        <p className="text-[11px] text-foreground-muted italic">
-          {improvement.student_summary}
-        </p>
-      )}
-
-      {/* 교정 답변 */}
       <div className="rounded-lg bg-green-50/50 p-2.5">
         <p className="text-[10px] font-medium text-green-700 mb-1">교정 답변 — 문법만 수정</p>
         <p className="text-[11px] leading-relaxed text-foreground">
@@ -431,7 +495,6 @@ function AnswerImprovementSection({ improvement }: { improvement: CoachingFeedba
         </p>
       </div>
 
-      {/* 더 나은 답변 */}
       <div className="rounded-lg bg-primary-50/50 p-2.5">
         <p className="text-[10px] font-medium text-primary-600 mb-1">더 나은 답변 — 목표 등급 수준</p>
         <p className="text-[11px] leading-relaxed text-foreground">
@@ -439,104 +502,51 @@ function AnswerImprovementSection({ improvement }: { improvement: CoachingFeedba
         </p>
       </div>
 
-      {/* 개선 포인트 */}
-      {improvement.what_changed && improvement.what_changed.length > 0 && (
+      {improvement.what_changed && (
         <div>
           <p className="text-[10px] font-medium text-foreground-muted mb-1">개선 포인트</p>
-          <ul className="space-y-0.5">
-            {improvement.what_changed.map((point, i) => (
-              <li key={i} className="text-[10px] text-foreground-secondary flex items-start gap-1">
-                <span className="text-primary-400 mt-0.5">•</span>
-                {point}
-              </li>
-            ))}
-          </ul>
+          <p className="text-[10px] text-foreground-secondary">{improvement.what_changed}</p>
         </div>
       )}
     </div>
   );
 }
 
-// ── 영역별 분석 그리드 (Layer 4) ──
+// ── 영역별 분석 그리드 (Layer 4) — v3: Record<string, number> ──
 
-function SkillSummaryGrid({ skills }: { skills: Record<string, SkillScore> }) {
-  const skillLabels: Record<string, string> = {
-    fluency: "유창성",
-    accuracy: "정확성",
-    content: "내용",
-    structure: "구조",
-    pronunciation: "발음이해도",
-  };
-
+function SkillSummaryGrid({ skills }: { skills: Record<string, number> }) {
   const entries = Object.entries(skills);
 
   return (
-    <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
-      {entries.map(([key, skill]) => (
+    <div className={`grid gap-1.5 sm:gap-2 ${entries.length <= 5 ? "grid-cols-5" : "grid-cols-3 sm:grid-cols-4"}`}>
+      {entries.map(([key, score]) => (
         <div
           key={key}
-          className={`rounded-lg p-2 text-center ${getSkillColor(skill.score)}`}
+          className={`rounded-lg p-2 text-center ${getSkillColor(score)}`}
         >
-          <p className="text-[9px] font-medium opacity-80">
-            {skillLabels[key] || key}
+          <p className="text-[9px] font-medium opacity-80 truncate">
+            {key}
           </p>
-          <p className="text-sm font-bold">{skill.score}</p>
-          <p className="text-[8px] opacity-70">{skill.label}</p>
+          <p className="text-sm font-bold">{score}</p>
         </div>
       ))}
     </div>
   );
 }
 
-// ── 구조 평가 (Layer 4) ──
+// ── 구조 평가 (Layer 4) — v3: Record<string, string> ──
 
-function StructureSection({ structure }: { structure: CoachingFeedback["structure_evaluation"] }) {
-  const td = structure.time_distribution;
+function StructureSection({ structure }: { structure: Record<string, string> }) {
+  const entries = Object.entries(structure);
 
   return (
-    <div className="rounded-lg bg-surface-secondary/50 p-2.5">
-      <div className="flex items-center gap-2 mb-2">
-        <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
-          structure.structure_score >= 4 ? "bg-green-50 text-green-600" :
-          structure.structure_score >= 3 ? "bg-yellow-50 text-yellow-600" :
-          "bg-red-50 text-red-500"
-        }`}>
-          {structure.structure_score}/5 {structure.structure_label}
-        </span>
-        <div className="flex gap-1 text-[9px]">
-          {structure.has_intro && <span className="rounded bg-green-50 px-1 text-green-600">도입</span>}
-          {structure.has_body && <span className="rounded bg-green-50 px-1 text-green-600">본문</span>}
-          {structure.has_conclusion && <span className="rounded bg-green-50 px-1 text-green-600">마무리</span>}
-          {!structure.has_intro && <span className="rounded bg-red-50 px-1 text-red-400">도입 없음</span>}
-          {!structure.has_conclusion && <span className="rounded bg-red-50 px-1 text-red-400">마무리 없음</span>}
+    <div className="rounded-lg bg-surface-secondary/50 p-2.5 space-y-2">
+      {entries.map(([key, value]) => (
+        <div key={key}>
+          <p className="text-[9px] font-medium text-foreground-muted">{key}</p>
+          <p className="text-[10px] text-foreground-secondary leading-relaxed">{value}</p>
         </div>
-      </div>
-
-      {/* 시간 분배 바 */}
-      {td && (
-        <div className="h-2.5 rounded-full overflow-hidden flex bg-surface-secondary">
-          {td.intro_pct > 0 && (
-            <div className="bg-blue-400 h-full" style={{ width: `${td.intro_pct}%` }} />
-          )}
-          <div className="bg-primary-400 h-full" style={{ width: `${td.body_pct}%` }} />
-          {td.conclusion_pct > 0 && (
-            <div className="bg-green-400 h-full" style={{ width: `${td.conclusion_pct}%` }} />
-          )}
-        </div>
-      )}
-      {td && (
-        <div className="flex justify-between text-[8px] text-foreground-muted mt-0.5">
-          <span>도입 {td.intro_pct}%</span>
-          <span>본문 {td.body_pct}%</span>
-          <span>마무리 {td.conclusion_pct}%</span>
-        </div>
-      )}
-
-      {structure.tip && (
-        <p className="mt-2 text-[10px] text-foreground-secondary">
-          {structure.tip}
-        </p>
-      )}
+      ))}
     </div>
   );
 }
@@ -567,67 +577,36 @@ function PronunciationSection({ assessment }: { assessment: PronunciationAssessm
   );
 }
 
-// ── 심층 분석 V2 (Layer 5) ──
+// ── 심층 분석 (Layer 5) — v3: flat string 구조 ──
 
-function DeepAnalysisV2({ analysis }: { analysis: CoachingFeedback["deep_analysis"] }) {
+function DeepAnalysisSection({ analysis }: { analysis: CoachingFeedback["deep_analysis"] }) {
   return (
     <div className="rounded-lg bg-surface-secondary/30 p-3 space-y-3 mb-2">
-      {/* 강점 */}
-      {analysis.strengths && analysis.strengths.length > 0 && (
+      {analysis.strengths && (
         <div>
           <p className="text-[10px] font-medium text-green-600 mb-1">강점</p>
-          <ul className="space-y-0.5">
-            {analysis.strengths.map((s, i) => (
-              <li key={i} className="text-[10px] text-foreground-secondary">• {s}</li>
-            ))}
-          </ul>
+          <p className="text-[10px] text-foreground-secondary">{analysis.strengths}</p>
         </div>
       )}
 
-      {/* 약점 + L1 원인 */}
-      {analysis.weaknesses && analysis.weaknesses.length > 0 && (
+      {analysis.weaknesses && (
         <div>
           <p className="text-[10px] font-medium text-red-500 mb-1">약점</p>
-          <div className="space-y-1.5">
-            {analysis.weaknesses.map((w, i) => (
-              <div key={i} className="text-[10px]">
-                <p className="text-foreground-secondary">• {w.point}</p>
-                {w.l1_cause && (
-                  <p className="ml-3 text-foreground-muted italic">{w.l1_cause}</p>
-                )}
-              </div>
-            ))}
-          </div>
+          <p className="text-[10px] text-foreground-secondary">{analysis.weaknesses}</p>
         </div>
       )}
 
-      {/* 목표 등급 갭 */}
       {analysis.target_gap && (
         <div>
-          <p className="text-[10px] font-medium text-primary-500 mb-1">
-            {analysis.target_gap.target} 도달을 위해
-          </p>
-          <p className="text-[10px] text-foreground-secondary">{analysis.target_gap.key_gap}</p>
-          {analysis.target_gap.example_at_target && (
-            <div className="mt-1 rounded bg-primary-50/30 p-2">
-              <p className="text-[9px] text-primary-500 mb-0.5">목표 수준 예시</p>
-              <p className="text-[10px] text-foreground leading-relaxed italic">
-                {analysis.target_gap.example_at_target}
-              </p>
-            </div>
-          )}
+          <p className="text-[10px] font-medium text-primary-500 mb-1">목표 도달을 위해</p>
+          <p className="text-[10px] text-foreground-secondary">{analysis.target_gap}</p>
         </div>
       )}
 
-      {/* 연습 제안 */}
       {analysis.practice_suggestion && (
         <div className="rounded bg-surface p-2">
-          <p className="text-[10px] font-medium text-foreground mb-0.5">
-            {analysis.practice_suggestion.focus}
-          </p>
-          <p className="text-[10px] text-foreground-secondary">
-            {analysis.practice_suggestion.method}
-          </p>
+          <p className="text-[10px] font-medium text-foreground mb-0.5">연습 제안</p>
+          <p className="text-[10px] text-foreground-secondary">{analysis.practice_suggestion}</p>
         </div>
       )}
     </div>
@@ -656,59 +635,3 @@ function TranscriptSection({ transcript, evaluation }: { transcript: string; eva
 }
 
 // ── 체크박스 섹션 (접힌 섹션) ──
-
-function CheckboxSection({
-  checkboxes,
-  passCount,
-  failCount,
-}: {
-  checkboxes: Record<string, CheckboxResult>;
-  passCount: number | null;
-  failCount: number | null;
-}) {
-  const entries = Object.entries(checkboxes);
-  const passed = entries.filter(([, v]) => v.pass);
-  const failed = entries.filter(([, v]) => !v.pass);
-
-  return (
-    <div className="mb-2">
-      <div className="flex items-center gap-2 mb-2 text-[10px]">
-        <span className="flex items-center gap-0.5 text-green-600">
-          <CheckCircle2 size={10} /> {passCount ?? passed.length}
-        </span>
-        <span className="flex items-center gap-0.5 text-red-500">
-          <XCircle size={10} /> {failCount ?? failed.length}
-        </span>
-      </div>
-      {failed.length > 0 && (
-        <div className="space-y-1">
-          {failed.map(([id, cb]) => (
-            <div key={id} className="flex items-start gap-2 rounded bg-red-50/50 px-2 py-1">
-              <XCircle size={10} className="mt-0.5 shrink-0 text-red-400" />
-              <div className="min-w-0">
-                <span className="text-[9px] font-mono text-red-500">{id}</span>
-                {cb.evidence && (
-                  <p className="text-[9px] text-foreground-secondary">{cb.evidence}</p>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-      {passed.length > 0 && (
-        <details className="mt-1">
-          <summary className="cursor-pointer text-[9px] text-green-600 hover:underline">
-            통과 {passed.length}개
-          </summary>
-          <div className="mt-1 space-y-0.5">
-            {passed.map(([id]) => (
-              <div key={id} className="flex items-center gap-1 px-2 py-0.5 text-[9px] text-green-600">
-                <CheckCircle2 size={8} /> {id}
-              </div>
-            ))}
-          </div>
-        </details>
-      )}
-    </div>
-  );
-}

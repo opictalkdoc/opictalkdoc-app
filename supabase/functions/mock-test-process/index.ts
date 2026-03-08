@@ -9,6 +9,11 @@ import {
   checkTranscriptSkip,
 } from "../_shared/skip-detector.ts";
 import { assessPronunciation } from "../_shared/azure-pronunciation.ts";
+import {
+  buildRescueMessage,
+  getCheckboxType,
+  TYPE_CHECKLISTS,
+} from "../_shared/question-type-map.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -111,10 +116,9 @@ async function updateAnswerStatus(
     .eq("question_number", questionNumber);
 }
 
-// fire-and-forget → Stage B (mock-test-eval)
-// raw fetch 사용: supabase.functions.invoke()는 EF 내부 네트워크에서 JWT 검증 이슈 발생
-function fireAndForgetEval(payload: Record<string, unknown>) {
-  fetch(`${SUPABASE_URL}/functions/v1/mock-test-eval`, {
+// fire-and-forget → Stage B-1 (mock-test-eval-judge) — v3 4-Stage
+function fireAndForgetJudge(payload: Record<string, unknown>) {
+  fetch(`${SUPABASE_URL}/functions/v1/mock-test-eval-judge`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -234,17 +238,30 @@ Deno.serve(async (req) => {
 
     // ── 2~3차 스킵: 트랜스크립트 기반 ──
     const transcriptSkip = checkTranscriptSkip(transcript);
+
+    // ── question_type 조회 ──
+    let questionType = "";
+    if (question_id) {
+      const { data: q } = await supabase
+        .from("questions")
+        .select("question_type_eng")
+        .eq("id", question_id)
+        .single();
+      questionType = q?.question_type_eng || "";
+    }
+
     if (transcriptSkip.shouldSkip) {
-      // Azure/GPT 생략
+      // 트랜스크립트 기반 스킵 → Azure/GPT 모두 생략
       await updateAnswerStatus(supabase, session_id, question_number, "skipped", {
         transcript,
         word_count: wordCount,
+        wpm,
         filler_word_count: fillerWordCount,
         long_pause_count: longPauseCount,
         skipped: true,
       });
 
-      // skipped 평가 레코드
+      // skipped 평가 레코드 (구제 메시지 포함)
       const { data: session } = await supabase
         .from("mock_test_sessions")
         .select("user_id")
@@ -252,19 +269,37 @@ Deno.serve(async (req) => {
         .single();
 
       if (session) {
+        const rescue = buildRescueMessage(questionType);
+        const checkboxType = questionType ? getCheckboxType(questionType) : null;
+
         await supabase.from("mock_test_evaluations").insert({
           session_id,
           user_id: session.user_id,
           question_number,
           question_id: question_id || "",
-          question_type: "",
+          question_type: questionType,
+          checkbox_type: checkboxType,
           transcript,
           wpm,
           audio_duration: audio_duration || 0,
           filler_count: fillerWordCount,
           long_pause_count: longPauseCount,
           model: "skipped",
+          prompt_version: "v3.0",
           skipped: true,
+          task_fulfillment: {
+            status: "failed",
+            checklist: { required: [], advanced: [] },
+            completion_rate: 0,
+            required_pass: 0,
+            required_total: TYPE_CHECKLISTS[questionType]?.required.length || 0,
+            advanced_pass: 0,
+            advanced_total: TYPE_CHECKLISTS[questionType]?.advanced.length || 0,
+            reason: `무응답 (${transcriptSkip.reason})`,
+          },
+          feedback_branch: "failed",
+          coaching_feedback: rescue.coaching_feedback,
+          priority_prescription: rescue.priority_prescription,
         });
       }
 
@@ -301,16 +336,18 @@ Deno.serve(async (req) => {
     await updateAnswerStatus(supabase, session_id, question_number, "stt_completed", {
       transcript,
       word_count: wordCount,
+      wpm,
       filler_word_count: fillerWordCount,
       long_pause_count: longPauseCount,
       pronunciation_assessment: pronunciationAssessment,
     });
 
-    // ── fire-and-forget → Stage B (GPT 체크박스 평가) ──
-    fireAndForgetEval({
+    // ── fire-and-forget → Stage B-1 (eval-judge) ──
+    fireAndForgetJudge({
       session_id,
       question_number,
       question_id,
+      question_type: questionType,
       transcript,
       word_count: wordCount,
       wpm,

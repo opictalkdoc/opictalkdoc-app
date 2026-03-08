@@ -1,6 +1,7 @@
-// mock-test-report — Stage C Edge Function
+// mock-test-report — Stage C Edge Function (v3)
 // 규칙엔진 7-Step 실행 + FACT 점수 + GPT 종합 리포트 (~45초)
-// mock-test-eval에서 전체 평가 완료 시 fire-and-forget으로 호출
+// mock-test-eval-coach에서 전체 평가 완료 시 fire-and-forget으로 호출
+// v3: task_fulfillment + feedback_branch 집계 포함
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import {
@@ -50,7 +51,7 @@ function formatCheckboxesForPrompt(
   return `${label} (${entries.length}개):\n${lines.join("\n")}`;
 }
 
-// 문항별 요약 생성 (V2: coaching_feedback 포함)
+// 문항별 요약 생성 (V3: coaching_feedback + task_fulfillment + feedback_branch)
 function generateQuestionSummaries(
   evaluations: Array<{
     question_number: number;
@@ -64,15 +65,37 @@ function generateQuestionSummaries(
     filler_count: number;
     skipped: boolean;
     coaching_feedback: Record<string, unknown> | null;
+    task_fulfillment: Record<string, unknown> | null;
+    feedback_branch: string | null;
+    priority_prescription: Array<Record<string, string>> | null;
   }>,
 ): string {
   return evaluations
     .map((e) => {
-      if (e.skipped) return `Q${e.question_number}: SKIPPED`;
+      if (e.skipped) {
+        const fb = e.feedback_branch || "failed";
+        return `Q${e.question_number}: SKIPPED (branch=${fb})`;
+      }
       const rate = ((e.pass_rate || 0) * 100).toFixed(0);
       let line = `Q${e.question_number} (${e.question_type}, ${e.checkbox_type}): ${rate}% pass (${e.pass_count}/${e.pass_count + e.fail_count}), WPM=${e.wpm || 0}, filler=${e.filler_count || 0}`;
 
-      // V2: coaching_feedback 데이터 추가
+      // v3: feedback_branch + task_fulfillment
+      if (e.feedback_branch) {
+        line += `, branch=${e.feedback_branch}`;
+      }
+      if (e.task_fulfillment) {
+        const tf = e.task_fulfillment;
+        line += `\n  task: ${tf.status} (${((tf.completion_rate as number) * 100 || 0).toFixed(0)}%, req=${tf.required_pass}/${tf.required_total}, adv=${tf.advanced_pass}/${tf.advanced_total})`;
+        if (tf.reason) line += ` — ${tf.reason}`;
+      }
+
+      // v3: priority_prescription 요약
+      if (e.priority_prescription && e.priority_prescription.length > 0) {
+        const prescStr = e.priority_prescription.map((p) => p.action).join("; ");
+        line += `\n  prescription: ${prescStr}`;
+      }
+
+      // coaching_feedback 데이터
       if (e.coaching_feedback) {
         const cf = e.coaching_feedback as Record<string, unknown>;
         if (cf.one_line_insight) {
@@ -108,6 +131,40 @@ function generateQuestionSummaries(
       return line;
     })
     .join("\n");
+}
+
+// v3: feedback_branch 집계 (종합 리포트용)
+function aggregateFeedbackBranches(
+  evaluations: Array<{
+    feedback_branch: string | null;
+    skipped: boolean;
+    task_fulfillment: Record<string, unknown> | null;
+  }>,
+): { fulfilled: number; partial: number; failed: number; skipped: number; avgCompletionRate: number } {
+  let fulfilled = 0, partial = 0, failed = 0, skipped = 0;
+  let totalRate = 0, rateCount = 0;
+
+  for (const e of evaluations) {
+    if (e.skipped) { skipped++; continue; }
+    const branch = e.feedback_branch || "fulfilled";
+    if (branch === "fulfilled") fulfilled++;
+    else if (branch === "partial") partial++;
+    else failed++;
+
+    if (e.task_fulfillment) {
+      const rate = (e.task_fulfillment.completion_rate as number) || 0;
+      totalRate += rate;
+      rateCount++;
+    }
+  }
+
+  return {
+    fulfilled,
+    partial,
+    failed,
+    skipped,
+    avgCompletionRate: rateCount > 0 ? Math.round((totalRate / rateCount) * 100) : 0,
+  };
 }
 
 // GPT 종합 리포트 생성
@@ -174,27 +231,11 @@ Deno.serve(async (req) => {
     return new Response("ok", { headers: corsHeaders });
   }
 
-  // 내부 전용 함수: JWT role 클레임 검증 (--no-verify-jwt 배포)
-  // mock-test-eval에서만 호출됨, service_role 권한 필수
+  // 내부 전용 함수: 수동 인증 검증 (--no-verify-jwt 배포)
   const authHeader = req.headers.get("authorization");
-  if (!authHeader) {
+  if (!authHeader || authHeader !== `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`) {
     return new Response(
-      JSON.stringify({ error: "Authorization header 누락" }),
-      { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-    );
-  }
-  try {
-    const token = authHeader.replace("Bearer ", "");
-    const payload = JSON.parse(atob(token.split(".")[1]));
-    if (payload.role !== "service_role") {
-      return new Response(
-        JSON.stringify({ error: "service_role 권한 필요" }),
-        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
-    }
-  } catch {
-    return new Response(
-      JSON.stringify({ error: "유효하지 않은 토큰" }),
+      JSON.stringify({ error: "Unauthorized" }),
       { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }
@@ -237,7 +278,7 @@ Deno.serve(async (req) => {
         "question_number, question_type, checkbox_type, checkboxes, " +
         "pass_count, fail_count, pass_rate, transcript, wpm, " +
         "filler_count, long_pause_count, pronunciation_assessment, skipped, " +
-        "coaching_feedback",
+        "coaching_feedback, task_fulfillment, feedback_branch, priority_prescription",
       )
       .eq("session_id", session_id)
       .order("question_number");
@@ -371,21 +412,25 @@ Deno.serve(async (req) => {
 
       if (promptRow && promptRow.content !== "{{PLACEHOLDER}}") {
         // 변수 치환
-        const questionSummaries = generateQuestionSummaries(
-          evaluations.map((e) => ({
-            question_number: e.question_number,
-            question_type: e.question_type || "",
-            checkbox_type: e.checkbox_type || "",
-            pass_count: e.pass_count || 0,
-            fail_count: e.fail_count || 0,
-            pass_rate: Number(e.pass_rate) || 0,
-            transcript: e.transcript || "",
-            wpm: Number(e.wpm) || 0,
-            filler_count: e.filler_count || 0,
-            skipped: e.skipped || false,
-            coaching_feedback: (e.coaching_feedback as Record<string, unknown>) || null,
-          })),
-        );
+        const evalData = evaluations.map((e) => ({
+          question_number: e.question_number,
+          question_type: e.question_type || "",
+          checkbox_type: e.checkbox_type || "",
+          pass_count: e.pass_count || 0,
+          fail_count: e.fail_count || 0,
+          pass_rate: Number(e.pass_rate) || 0,
+          transcript: e.transcript || "",
+          wpm: Number(e.wpm) || 0,
+          filler_count: e.filler_count || 0,
+          skipped: e.skipped || false,
+          coaching_feedback: (e.coaching_feedback as Record<string, unknown>) || null,
+          task_fulfillment: (e.task_fulfillment as Record<string, unknown>) || null,
+          feedback_branch: (e.feedback_branch as string) || null,
+          priority_prescription: (e.priority_prescription as Array<Record<string, string>>) || null,
+        }));
+
+        const questionSummaries = generateQuestionSummaries(evalData);
+        const branchStats = aggregateFeedbackBranches(evalData);
 
         const intCheckboxStr = formatCheckboxesForPrompt(
           ruleResult.aggregated_int_checkboxes,
@@ -418,6 +463,12 @@ Deno.serve(async (req) => {
           score_c: ruleResult.fact_scores.score_c,
           score_t: ruleResult.fact_scores.score_t,
           total_score: ruleResult.fact_scores.total_score,
+          // v3 과제충족 집계
+          task_fulfilled_count: branchStats.fulfilled,
+          task_partial_count: branchStats.partial,
+          task_failed_count: branchStats.failed,
+          task_skipped_count: branchStats.skipped,
+          avg_completion_rate: branchStats.avgCompletionRate,
         };
 
         const fullPrompt = substituteVariables(promptRow.content, variables);

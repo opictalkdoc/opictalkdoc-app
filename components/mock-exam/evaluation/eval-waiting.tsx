@@ -148,9 +148,11 @@ export function EvalWaiting({
                           ? "0%"
                           : status === "completed" || status === "skipped" || status === "failed"
                             ? "100%"
-                            : status === "stt_completed" || status === "evaluating"
-                              ? "70%"
-                              : "35%",
+                            : status === "judge_completed"
+                              ? "85%"
+                              : status === "stt_completed" || status === "evaluating"
+                                ? "60%"
+                                : "30%", // processing
                     }}
                   />
                 </div>

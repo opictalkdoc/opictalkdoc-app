@@ -10,8 +10,8 @@ export type MockExamMode = (typeof MOCK_EXAM_MODES)[number];
 export const SESSION_STATUSES = ['active', 'completed', 'expired'] as const;
 export type SessionStatus = (typeof SESSION_STATUSES)[number];
 
-// 개별 답변 평가 상태
-export const EVAL_STATUSES = ['pending', 'processing', 'stt_completed', 'evaluating', 'completed', 'failed', 'skipped'] as const;
+// 개별 답변 평가 상태 (v3: judge_completed 추가)
+export const EVAL_STATUSES = ['pending', 'processing', 'stt_completed', 'evaluating', 'judge_completed', 'completed', 'failed', 'skipped'] as const;
 export type EvalStatus = (typeof EVAL_STATUSES)[number];
 
 // 종합 평가 상태
@@ -76,6 +76,7 @@ export const EVAL_STATUS_LABELS: Record<EvalStatus, string> = {
   processing: '음성 분석 중',
   stt_completed: '체크박스 평가 중',
   evaluating: '평가 진행 중',
+  judge_completed: '코칭 생성 중',
   completed: '평가 완료',
   failed: '평가 실패',
   skipped: '건너뜀',
@@ -215,6 +216,39 @@ export interface MockTestEvaluation {
   processing_time_ms: number | null;
   skipped: boolean;
   created_at: string;
+  // v3 필드 (DB 컬럼: task_fulfillment, feedback_branch, priority_prescription)
+  task_fulfillment: TaskFulfillment | null;
+  feedback_branch: "fulfilled" | "partial" | "failed" | null;
+  priority_prescription: PriorityPrescription[] | null;
+}
+
+// v3 과제충족
+export interface TaskFulfillment {
+  status: "fulfilled" | "partial" | "failed";
+  checklist: {
+    required: Array<{ item: string; pass: boolean; evidence: string }>;
+    advanced: Array<{ item: string; pass: boolean; evidence: string }>;
+  };
+  completion_rate: number;
+  required_pass: number;
+  required_total: number;
+  advanced_pass: number;
+  advanced_total: number;
+  reason: string;
+}
+
+// v3 최우선 처방
+export interface PriorityPrescription {
+  action: string;
+  why: string;
+  example: string;
+}
+
+// v3 rescue 메시지 (무응답)
+export interface RescueInfo {
+  start_template: string;
+  recovery_tip: string;
+  tone: string;
 }
 
 // 체크박스 개별 결과
@@ -246,75 +280,38 @@ export interface DeepAnalysis {
   recommendation: string;
 }
 
-// ── V2 코칭 타입 ──
+// ── V3 코칭 타입 ──
 
 // 개별 평가 코칭 피드백 (coaching_feedback JSONB)
 export interface CoachingFeedback {
   one_line_insight: string;
-  key_corrections: KeyCorrection[];
+  key_corrections: string[];
   answer_improvement: AnswerImprovement;
-  structure_evaluation: StructureEvaluation;
-  skill_summary: Record<string, SkillScore>;
+  structure_evaluation: Record<string, string>;   // { "대상 소개": "...", "세부 특징": "..." }
+  skill_summary: Record<string, number>;          // { "구조적 흐름": 3, "명확성": 2 }
   deep_analysis: CoachingDeepAnalysis;
-}
-
-export interface KeyCorrection {
-  sentence_index: number;
-  original: string;
-  corrected: string;
-  better: string;
-  why: string;
-  impact: 'high' | 'medium' | 'low';
+  // rescue (무응답)
+  rescue?: RescueInfo | null;
 }
 
 export interface AnswerImprovement {
-  student_summary: string;
   corrected_version: string;
   better_version: string;
-  what_changed: string[];
-}
-
-export interface StructureEvaluation {
-  has_intro: boolean;
-  has_body: boolean;
-  has_conclusion: boolean;
-  structure_score: number;        // 1-5
-  structure_label: string;
-  time_distribution: {
-    intro_pct: number;
-    body_pct: number;
-    conclusion_pct: number;
-  };
-  story_density: {
-    example_count: number;
-    detail_level: 'low' | 'medium' | 'high';
-  };
-  tip: string;
-}
-
-export interface SkillScore {
-  score: number;                  // 개별: 1-5, 종합: 1-10
-  label: string;
-  brief: string;
+  what_changed: string;
 }
 
 export interface CoachingDeepAnalysis {
-  strengths: string[];
-  weaknesses: Array<{
-    point: string;
-    l1_cause: string;
-    level_impact: string;
-  }>;
-  target_gap: {
-    target: string;
-    key_gap: string;
-    example_at_target: string;
-  };
-  practice_suggestion: {
-    focus: string;
-    method: string;
-    example_exercise: string;
-  };
+  strengths: string;
+  weaknesses: string;
+  target_gap: string;
+  practice_suggestion: string;
+}
+
+// 종합 리포트 스킬 점수 (1-10)
+export interface SkillScore {
+  score: number;
+  label: string;
+  brief: string;
 }
 
 // 종합 평가 코칭 리포트 (coaching_report JSONB)
