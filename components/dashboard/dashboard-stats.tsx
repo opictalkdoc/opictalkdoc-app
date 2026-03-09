@@ -51,20 +51,22 @@ function StatsPlaceholder() {
 /* ── 메인 컴포넌트 ── */
 
 export function DashboardStats({ userId }: { userId: string }) {
-  const { data: credits, isLoading } = useQuery({
+  const { data: credits, isLoading, isError } = useQuery({
     queryKey: ["user-credits", userId],
     queryFn: () => fetchUserCredits(userId),
     staleTime: 5 * 60 * 1000, // 5분
+    retry: 2,
   });
 
   if (isLoading && !credits) return <StatsPlaceholder />;
+  if (isError && !credits) return <StatsPlaceholder />;
 
   const plan = credits?.current_plan || "free";
   const totalMockExam =
-    (credits?.plan_mock_exam_credits || 0) +
-    (credits?.mock_exam_credits || 0);
+    Number(credits?.plan_mock_exam_credits || 0) +
+    Number(credits?.mock_exam_credits || 0);
   const totalScript =
-    (credits?.plan_script_credits || 0) + (credits?.script_credits || 0);
+    Number(credits?.plan_script_credits || 0) + Number(credits?.script_credits || 0);
 
   const stats = [
     {

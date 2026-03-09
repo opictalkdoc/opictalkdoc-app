@@ -281,7 +281,7 @@ function Section1Snapshot({
         {/* FACT 총점 */}
         {report.total_score != null && (
           <p className="mt-2 text-3xl font-bold text-foreground">
-            {report.total_score.toFixed(1)}
+            {(report.total_score ?? 0).toFixed(1)}
             <span className="text-base font-normal text-foreground-muted"> / 100</span>
           </p>
         )}
@@ -363,7 +363,7 @@ function Section2GradeExplanation({
       <div className="space-y-3">
         {(["F", "A", "C", "T"] as const).map((key) => {
           const field = `score_${key.toLowerCase()}` as keyof typeof report;
-          const value = report[field] as number | null;
+          const value = Number(report[field]) || 0;
           const interpretation = ge.fact_interpretation?.[key];
 
           return (
@@ -376,12 +376,12 @@ function Section2GradeExplanation({
                   <div className="h-2.5 rounded-full bg-surface-secondary">
                     <div
                       className="h-2.5 rounded-full bg-primary-500 transition-all"
-                      style={{ width: `${((value ?? 0) / 10) * 100}%` }}
+                      style={{ width: `${(value / 10) * 100}%` }}
                     />
                   </div>
                 </div>
                 <span className="w-10 text-right text-sm font-medium text-foreground">
-                  {(value ?? 0).toFixed(1)}
+                  {value.toFixed(1)}
                 </span>
               </div>
               {interpretation && (
@@ -398,8 +398,8 @@ function Section2GradeExplanation({
       {ge.difficulty_interpretation && (
         <div className="mt-4 rounded-lg bg-surface-secondary/50 p-3">
           <div className="flex gap-4 mb-1.5 text-xs text-foreground-secondary">
-            <span>기초 달성도: <strong className="text-foreground">{((report.int_pass_rate ?? 0) * 100).toFixed(0)}%</strong></span>
-            <span>심화 달성도: <strong className="text-foreground">{((report.adv_pass_rate ?? 0) * 100).toFixed(0)}%</strong></span>
+            <span>기초 달성도: <strong className="text-foreground">{((Number(report.int_pass_rate) || 0) * 100).toFixed(0)}%</strong></span>
+            <span>심화 달성도: <strong className="text-foreground">{((Number(report.adv_pass_rate) || 0) * 100).toFixed(0)}%</strong></span>
           </div>
           <p className="text-[11px] text-foreground-muted">{ge.difficulty_interpretation}</p>
         </div>
@@ -740,12 +740,12 @@ function Section7Delivery({
       </h4>
 
       {/* 발음 수치 */}
-      {report.avg_accuracy_score != null && report.avg_accuracy_score > 0 && (
+      {report.avg_accuracy_score != null && Number(report.avg_accuracy_score) > 0 && (
         <div className="flex flex-wrap gap-3 mb-3">
           {[
-            { label: "정확도", value: report.avg_accuracy_score },
-            { label: "운율", value: report.avg_prosody_score ?? 0 },
-            { label: "유창성", value: report.avg_fluency_score ?? 0 },
+            { label: "정확도", value: Number(report.avg_accuracy_score) || 0 },
+            { label: "운율", value: Number(report.avg_prosody_score) || 0 },
+            { label: "유창성", value: Number(report.avg_fluency_score) || 0 },
           ].map((item) => (
             <div key={item.label} className="flex items-center gap-2">
               <Mic2 size={12} className="text-primary-400" />

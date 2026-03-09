@@ -150,7 +150,7 @@ export function SubmissionDetail({ submissionId }: SubmissionDetailProps) {
                 </div>
                 <div className="mt-1.5 space-y-1">
                   {comboQuestions.map((q, idx) => (
-                    <div key={idx} className="flex items-baseline gap-2 text-xs">
+                    <div key={q.id || idx} className="flex items-baseline gap-2 text-xs">
                       <span className="shrink-0 font-medium text-foreground-muted">
                         {step.questionNumbers[idx]}번
                       </span>

@@ -290,12 +290,14 @@ function V3CoachingContent({
       {/* Step 1: 과제충족 + 한줄 인사이트 */}
       <div className="px-3 py-3 sm:px-4 space-y-2.5">
         {/* 한줄 인사이트 */}
-        <div className="flex items-start gap-2 rounded-lg bg-primary-50/50 p-3">
-          <Lightbulb size={14} className="mt-0.5 shrink-0 text-primary-500" />
-          <p className="text-sm leading-relaxed text-foreground">
-            {coaching.one_line_insight}
-          </p>
-        </div>
+        {coaching.one_line_insight && (
+          <div className="flex items-start gap-2 rounded-lg bg-primary-50/50 p-3">
+            <Lightbulb size={14} className="mt-0.5 shrink-0 text-primary-500" />
+            <p className="text-sm leading-relaxed text-foreground">
+              {coaching.one_line_insight}
+            </p>
+          </div>
+        )}
 
         {/* 과제충족 상태 (v3) */}
         {taskFulfillment && (
@@ -450,7 +452,7 @@ function TaskFulfillmentSection({
 
       {/* 체크리스트 */}
       <div className="space-y-1">
-        {fulfillment.checklist.required.map((item, i) => (
+        {fulfillment.checklist?.required?.map((item, i) => (
           <div key={`r-${i}`} className="flex items-start gap-1.5 text-[10px]">
             {item.pass ? (
               <CheckCircle2 size={10} className="mt-0.5 shrink-0 text-green-500" />
@@ -462,7 +464,7 @@ function TaskFulfillmentSection({
             </span>
           </div>
         ))}
-        {fulfillment.checklist.advanced.map((item, i) => (
+        {fulfillment.checklist?.advanced?.map((item, i) => (
           <div key={`a-${i}`} className="flex items-start gap-1.5 text-[10px]">
             {item.pass ? (
               <CheckCircle2 size={10} className="mt-0.5 shrink-0 text-green-500" />
@@ -554,7 +556,7 @@ function StructureSection({ structure }: { structure: Record<string, string> }) 
 // ── 발음 이해도 (V2 라벨 변환) ──
 
 function PronunciationSection({ assessment }: { assessment: PronunciationAssessment }) {
-  const accuracy = assessment.accuracy_score ?? 0;
+  const accuracy = Number(assessment.accuracy_score) || 0;
   const pronLabel = getPronunciationLabel(accuracy);
 
   return (
@@ -569,8 +571,8 @@ function PronunciationSection({ assessment }: { assessment: PronunciationAssessm
         </span>
         <div className="flex gap-3 text-[10px] text-foreground-muted">
           <span>정확도 {accuracy.toFixed(0)}</span>
-          <span>운율 {(assessment.prosody_score ?? 0).toFixed(0)}</span>
-          <span>유창성 {(assessment.fluency_score ?? 0).toFixed(0)}</span>
+          <span>운율 {(Number(assessment.prosody_score) || 0).toFixed(0)}</span>
+          <span>유창성 {(Number(assessment.fluency_score) || 0).toFixed(0)}</span>
         </div>
       </div>
     </div>

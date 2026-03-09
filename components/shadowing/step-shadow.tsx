@@ -50,7 +50,9 @@ export function StepShadow() {
     markShadowCompleted,
   } = useShadowingStore();
 
-  const currentSentence = sentences[shadowIndex];
+  const currentSentence = shadowIndex >= 0 && shadowIndex < sentences.length
+    ? sentences[shadowIndex]
+    : null;
   const isCompleted = shadowCompleted.includes(shadowIndex);
   const progress =
     sentences.length > 0
@@ -121,9 +123,9 @@ export function StepShadow() {
         }`}
       >
         <p className="text-lg font-medium leading-relaxed text-foreground">
-          {renderHintedText(currentSentence.english, shadowHintLevel)}
+          {currentSentence ? renderHintedText(currentSentence.english, shadowHintLevel) : "—"}
         </p>
-        {shadowHintLevel === "full" && (
+        {shadowHintLevel === "full" && currentSentence && (
           <p className="mt-2 text-sm text-foreground-muted">
             {currentSentence.korean}
           </p>

@@ -43,18 +43,31 @@ export function SubmitTab({ initialSubmissions }: SubmitTabProps) {
     staleTime: 5 * 60 * 1000, // 5분
   });
 
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
   const handleDeleteConfirm = async () => {
     if (confirmDeleteId === null) return;
     const id = confirmDeleteId;
     setConfirmDeleteId(null);
+    setDeleteError(null);
     const result = await deleteSubmission(id);
-    if (!result.error) {
+    if (result.error) {
+      setDeleteError(result.error);
+    } else {
       queryClient.invalidateQueries({ queryKey: ["my-submissions"] });
     }
   };
 
   return (
     <div className="space-y-4 sm:space-y-6">
+      {/* 삭제 실패 에러 메시지 */}
+      {deleteError && (
+        <div className="flex items-center justify-between rounded-lg border border-red-200 bg-red-50 px-4 py-3">
+          <p className="text-sm text-red-700">{deleteError}</p>
+          <button onClick={() => setDeleteError(null)} className="text-xs text-red-500 hover:text-red-700">닫기</button>
+        </div>
+      )}
+
       {/* 안내 배너 (접이식) */}
       <button
         onClick={() => setBannerOpen(!bannerOpen)}

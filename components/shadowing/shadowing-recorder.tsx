@@ -22,6 +22,7 @@ export function ShadowingRecorder({
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const durationRef = useRef(0);
+  const cancelledRef = useRef(false); // 레이스컨디션 방지: 녹음 취소 시 onstop 무시
   const [duration, setDuration] = useState(0);
   const [playbackUrl, setPlaybackUrl] = useState<string | null>(null);
   const [isPlayingBack, setIsPlayingBack] = useState(false);
@@ -42,6 +43,7 @@ export function ShadowingRecorder({
 
       chunksRef.current = [];
       durationRef.current = 0;
+      cancelledRef.current = false;
       setDuration(0);
       setPlaybackUrl(null);
 
@@ -50,12 +52,14 @@ export function ShadowingRecorder({
       };
 
       recorder.onstop = () => {
+        // 스트림 정리
+        stream.getTracks().forEach((t) => t.stop());
+        // 취소된 녹음이면 상태 업데이트 스킵 (레이스컨디션 방지)
+        if (cancelledRef.current) return;
         const blob = new Blob(chunksRef.current, { type: "audio/webm" });
         const url = URL.createObjectURL(blob);
         setPlaybackUrl(url);
         onRecordingCompleteRef.current(blob, durationRef.current);
-        // 스트림 정리
-        stream.getTracks().forEach((t) => t.stop());
       };
 
       recorder.start(100); // 100ms 간격 데이터
@@ -90,10 +94,15 @@ export function ShadowingRecorder({
     onRecordingChange(false);
   }, [onRecordingChange]);
 
-  // 정리
+  // 정리 (언마운트 시 진행 중 녹음 취소)
   useEffect(() => {
     return () => {
+      cancelledRef.current = true;
       if (timerRef.current) clearInterval(timerRef.current);
+      const recorder = mediaRecorderRef.current;
+      if (recorder && recorder.state !== "inactive") {
+        recorder.stop();
+      }
       if (playbackUrl) URL.revokeObjectURL(playbackUrl);
     };
   }, [playbackUrl]);

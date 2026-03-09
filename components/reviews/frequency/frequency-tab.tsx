@@ -81,6 +81,7 @@ export function FrequencyTab({ initialStats, initialFrequency }: FrequencyTabPro
     const existing = topicFreqMap.get(item.topic);
     if (existing) {
       existing.frequency += item.frequency;
+      // survey_type은 첫 번째 값 유지 (덮어쓰지 않음)
     } else {
       topicFreqMap.set(item.topic, { frequency: item.frequency, survey_type: item.survey_type });
     }
@@ -298,7 +299,7 @@ export function FrequencyTab({ initialStats, initialFrequency }: FrequencyTabPro
                               : 0;
                             return (
                               <div
-                                key={qIdx}
+                                key={q.question_english || qIdx}
                                 className="rounded-[var(--radius-md)] bg-surface-secondary/50 px-3 py-2"
                               >
                                 <div className="flex items-start justify-between gap-2">

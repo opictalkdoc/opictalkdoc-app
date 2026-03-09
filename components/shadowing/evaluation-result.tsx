@@ -38,7 +38,7 @@ export function EvaluationResult({ evaluation }: EvaluationResultProps) {
         <Trophy size={28} className="text-primary-500" />
         <p className="mt-2 text-xs font-medium text-primary-600">종합 점수</p>
         <p className="mt-1 text-4xl font-bold text-foreground">
-          {evaluation.overall_score ?? "--"}
+          {evaluation.overall_score != null ? Number(evaluation.overall_score) : "--"}
           <span className="text-lg text-foreground-muted">/100</span>
         </p>
         <p className="mt-2 rounded-full bg-primary-100 px-3 py-0.5 text-sm font-semibold text-primary-700">
@@ -54,7 +54,7 @@ export function EvaluationResult({ evaluation }: EvaluationResultProps) {
         </div>
         <div className="mt-4 space-y-3">
           {SCORE_LABELS.map(({ key, label, color }) => {
-            const score = evaluation[key] ?? 0;
+            const score = Number(evaluation[key]) || 0;
             return (
               <div key={key}>
                 <div className="flex items-center justify-between text-xs">
@@ -80,7 +80,7 @@ export function EvaluationResult({ evaluation }: EvaluationResultProps) {
             스크립트 활용도
           </span>
           <span className="text-sm font-bold text-primary-600">
-            {evaluation.script_utilization}%
+            {Number(evaluation.script_utilization) || 0}%
           </span>
         </div>
       )}

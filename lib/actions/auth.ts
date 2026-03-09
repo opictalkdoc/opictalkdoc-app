@@ -23,17 +23,24 @@ export async function login(formData: FormData): Promise<AuthResult> {
 
   const parsed = loginSchema.safeParse(raw);
   if (!parsed.success) {
-    return { error: parsed.error.issues[0].message };
+    return { error: parsed.error.issues[0]?.message || "입력값을 확인해주세요" };
   }
 
-  const supabase = await createServerSupabaseClient();
-  const { error } = await supabase.auth.signInWithPassword({
-    email: parsed.data.email,
-    password: parsed.data.password,
-  });
+  try {
+    const supabase = await createServerSupabaseClient();
+    const { error } = await supabase.auth.signInWithPassword({
+      email: parsed.data.email,
+      password: parsed.data.password,
+    });
 
-  if (error) {
-    return { error: "이메일 또는 비밀번호가 올바르지 않습니다" };
+    if (error) {
+      return { error: "이메일 또는 비밀번호가 올바르지 않습니다" };
+    }
+  } catch (err) {
+    // redirect()는 Next.js에서 throw하므로 재전파
+    if (err instanceof Error && err.message === "NEXT_REDIRECT") throw err;
+    console.error("login 오류:", err);
+    return { error: "로그인 처리 중 오류가 발생했습니다" };
   }
 
   redirect("/dashboard");
@@ -48,26 +55,32 @@ export async function signup(formData: FormData): Promise<AuthResult> {
 
   const parsed = signupSchema.safeParse(raw);
   if (!parsed.success) {
-    return { error: parsed.error.issues[0].message };
+    return { error: parsed.error.issues[0]?.message || "입력값을 확인해주세요" };
   }
 
-  const supabase = await createServerSupabaseClient();
-  const { error } = await supabase.auth.signUp({
-    email: parsed.data.email,
-    password: parsed.data.password,
-    options: {
-      data: {
-        display_name: parsed.data.name,
+  try {
+    const supabase = await createServerSupabaseClient();
+    const { error } = await supabase.auth.signUp({
+      email: parsed.data.email,
+      password: parsed.data.password,
+      options: {
+        data: {
+          display_name: parsed.data.name,
+        },
+        emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`,
       },
-      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`,
-    },
-  });
+    });
 
-  if (error) {
-    if (error.message.includes("already registered")) {
-      return { error: "이미 가입된 이메일입니다" };
+    if (error) {
+      if (error.message.includes("already registered")) {
+        return { error: "이미 가입된 이메일입니다" };
+      }
+      return { error: "회원가입에 실패했습니다. 다시 시도해주세요" };
     }
-    return { error: "회원가입에 실패했습니다. 다시 시도해주세요" };
+  } catch (err) {
+    if (err instanceof Error && err.message === "NEXT_REDIRECT") throw err;
+    console.error("signup 오류:", err);
+    return { error: "회원가입 처리 중 오류가 발생했습니다" };
   }
 
   redirect("/auth-success?type=signup");
@@ -80,19 +93,25 @@ export async function forgotPassword(formData: FormData): Promise<AuthResult> {
 
   const parsed = forgotPasswordSchema.safeParse(raw);
   if (!parsed.success) {
-    return { error: parsed.error.issues[0].message };
+    return { error: parsed.error.issues[0]?.message || "입력값을 확인해주세요" };
   }
 
-  const supabase = await createServerSupabaseClient();
-  const { error } = await supabase.auth.resetPasswordForEmail(
-    parsed.data.email,
-    {
-      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback?next=/reset-password`,
-    }
-  );
+  try {
+    const supabase = await createServerSupabaseClient();
+    const { error } = await supabase.auth.resetPasswordForEmail(
+      parsed.data.email,
+      {
+        redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback?next=/reset-password`,
+      }
+    );
 
-  if (error) {
-    return { error: "비밀번호 재설정 메일 발송에 실패했습니다" };
+    if (error) {
+      return { error: "비밀번호 재설정 메일 발송에 실패했습니다" };
+    }
+  } catch (err) {
+    if (err instanceof Error && err.message === "NEXT_REDIRECT") throw err;
+    console.error("forgotPassword 오류:", err);
+    return { error: "비밀번호 재설정 처리 중 오류가 발생했습니다" };
   }
 
   redirect("/auth-success?type=forgot-password");
@@ -106,16 +125,22 @@ export async function resetPassword(formData: FormData): Promise<AuthResult> {
 
   const parsed = resetPasswordSchema.safeParse(raw);
   if (!parsed.success) {
-    return { error: parsed.error.issues[0].message };
+    return { error: parsed.error.issues[0]?.message || "입력값을 확인해주세요" };
   }
 
-  const supabase = await createServerSupabaseClient();
-  const { error } = await supabase.auth.updateUser({
-    password: parsed.data.password,
-  });
+  try {
+    const supabase = await createServerSupabaseClient();
+    const { error } = await supabase.auth.updateUser({
+      password: parsed.data.password,
+    });
 
-  if (error) {
-    return { error: "비밀번호 변경에 실패했습니다. 다시 시도해주세요" };
+    if (error) {
+      return { error: "비밀번호 변경에 실패했습니다. 다시 시도해주세요" };
+    }
+  } catch (err) {
+    if (err instanceof Error && err.message === "NEXT_REDIRECT") throw err;
+    console.error("resetPassword 오류:", err);
+    return { error: "비밀번호 변경 처리 중 오류가 발생했습니다" };
   }
 
   redirect("/auth-success?type=reset-password");
@@ -143,13 +168,18 @@ export async function updateProfile(formData: FormData): Promise<AuthResult> {
     return { error: "이름을 입력해주세요" };
   }
 
-  const supabase = await createServerSupabaseClient();
-  const { error } = await supabase.auth.updateUser({
-    data: { display_name: name.trim() },
-  });
+  try {
+    const supabase = await createServerSupabaseClient();
+    const { error } = await supabase.auth.updateUser({
+      data: { display_name: name.trim() },
+    });
 
-  if (error) {
-    return { error: "프로필 업데이트에 실패했습니다" };
+    if (error) {
+      return { error: "프로필 업데이트에 실패했습니다" };
+    }
+  } catch (err) {
+    console.error("updateProfile 오류:", err);
+    return { error: "프로필 업데이트 처리 중 오류가 발생했습니다" };
   }
 
   revalidatePath("/mypage");
@@ -163,18 +193,23 @@ export async function updateGoals(formData: FormData): Promise<AuthResult> {
   const examDate = formData.get("examDate") as string;
   const weeklyGoal = formData.get("weeklyGoal") as string;
 
-  const supabase = await createServerSupabaseClient();
-  const { error } = await supabase.auth.updateUser({
-    data: {
-      current_grade: currentGrade || null,
-      target_grade: targetGrade || null,
-      exam_date: examDate || null,
-      weekly_goal: weeklyGoal || null,
-    },
-  });
+  try {
+    const supabase = await createServerSupabaseClient();
+    const { error } = await supabase.auth.updateUser({
+      data: {
+        current_grade: currentGrade || null,
+        target_grade: targetGrade || null,
+        exam_date: examDate || null,
+        weekly_goal: weeklyGoal || null,
+      },
+    });
 
-  if (error) {
-    return { error: "목표 설정 저장에 실패했습니다" };
+    if (error) {
+      return { error: "목표 설정 저장에 실패했습니다" };
+    }
+  } catch (err) {
+    console.error("updateGoals 오류:", err);
+    return { error: "목표 설정 처리 중 오류가 발생했습니다" };
   }
 
   revalidatePath("/mypage");
@@ -183,7 +218,13 @@ export async function updateGoals(formData: FormData): Promise<AuthResult> {
 }
 
 export async function logout() {
-  const supabase = await createServerSupabaseClient();
-  await supabase.auth.signOut();
+  try {
+    const supabase = await createServerSupabaseClient();
+    await supabase.auth.signOut();
+  } catch (err) {
+    if (err instanceof Error && err.message === "NEXT_REDIRECT") throw err;
+    console.error("logout 오류:", err);
+    // 로그아웃 실패해도 홈으로 리다이렉트
+  }
   redirect("/");
 }

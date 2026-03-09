@@ -206,7 +206,10 @@ export function StoreContent({ userId }: { userId: string }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ paymentId, productId }),
       })
-        .then((res) => res.json())
+        .then((res) => {
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          return res.json();
+        })
         .then((data) => {
           if (data.success) {
             setMessage({ type: "success", text: "결제가 완료되었습니다!" });

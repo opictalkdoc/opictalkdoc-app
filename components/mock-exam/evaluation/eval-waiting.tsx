@@ -27,8 +27,10 @@ export function EvalWaiting({
     evalStatuses,
     holisticStatus,
     completedCount,
+    failedCount,
     isAllCompleted,
     isReportReady,
+    isReportFailed,
   } = useEvalPolling({
     sessionId,
     enabled: true,
@@ -168,11 +170,25 @@ export function EvalWaiting({
         })}
       </div>
 
+      {/* 실패 문항 안내 */}
+      {failedCount > 0 && (
+        <div className="mt-4 w-full rounded-xl border border-red-200 bg-red-50 p-3 sm:mt-6 sm:p-4">
+          <div className="flex items-center gap-2">
+            <AlertTriangle size={16} className="shrink-0 text-red-500" />
+            <p className="text-xs text-red-700">
+              {failedCount}개 문항의 평가에 실패했습니다. 해당 문항은 결과에서 제외됩니다.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* 종합 분석 상태 */}
       <div className="mt-4 w-full rounded-xl border border-border bg-surface p-3 sm:mt-6 sm:p-4">
         <div className="flex items-center gap-2">
           {holisticStatus === "completed" ? (
             <CheckCircle2 size={16} className="text-green-500" />
+          ) : isReportFailed ? (
+            <AlertTriangle size={16} className="text-red-500" />
           ) : holisticStatus === "processing" ? (
             <Loader2 size={16} className="animate-spin text-primary-500" />
           ) : (
@@ -182,11 +198,13 @@ export function EvalWaiting({
           <span className="text-xs text-foreground-muted">
             {holisticStatus === "completed"
               ? "완료"
-              : holisticStatus === "processing"
-                ? "진행 중..."
-                : isAllCompleted
-                  ? "곧 시작됩니다"
-                  : "개별 평가 완료 후 시작"}
+              : isReportFailed
+                ? "분석 실패 — 잠시 후 자동 재시도됩니다"
+                : holisticStatus === "processing"
+                  ? "진행 중..."
+                  : isAllCompleted
+                    ? "곧 시작됩니다"
+                    : "개별 평가 완료 후 시작"}
           </span>
         </div>
       </div>

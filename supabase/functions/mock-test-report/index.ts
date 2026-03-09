@@ -421,9 +421,9 @@ Deno.serve(async (req) => {
       if (e.skipped || !e.pronunciation_assessment) continue;
       const pa = e.pronunciation_assessment as Record<string, number>;
       if (pa.accuracy_score != null) {
-        totalAccuracy += pa.accuracy_score;
-        totalProsody += pa.prosody_score || 0;
-        totalFluency += pa.fluency_score || 0;
+        totalAccuracy += Number(pa.accuracy_score);
+        totalProsody += Number(pa.prosody_score) || 0;
+        totalFluency += Number(pa.fluency_score) || 0;
         pronCount++;
       }
     }

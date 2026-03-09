@@ -61,8 +61,8 @@ function buildHighlightedSegments(
 
   // 활성 아이템만 필터 → 길이 내림차순 정렬 (긴 것 우선 매칭)
   const items = Array.from(activeItems)
-    .map((text) => ({ text, category: itemCategoryMap.get(text)! }))
-    .filter((item) => item.category)
+    .map((text) => ({ text, category: itemCategoryMap.get(text) }))
+    .filter((item): item is { text: string; category: HighlightCategory } => !!item.category)
     .sort((a, b) => b.text.length - a.text.length);
 
   // 매칭 위치 탐색 (대소문자 무시)

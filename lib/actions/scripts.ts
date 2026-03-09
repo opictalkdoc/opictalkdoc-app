@@ -148,9 +148,25 @@ export async function createScript(
 
     if (error || !data) {
       // 크레딧 환불
-      await supabase.rpc("refund_script_credit", { p_user_id: userId });
+      const { error: refundError } = await supabase.rpc("refund_script_credit", { p_user_id: userId });
+      if (refundError) console.error("크레딧 환불 실패:", refundError);
       return { error: "스크립트 생성에 실패했습니다" };
     }
+
+    // EF 호출: AI 생성 실행 (fire-and-forget — 클라이언트는 폴링으로 결과 확인)
+    fetch(
+      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/scripts/generate`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+        },
+        body: JSON.stringify({ script_id: data.id }),
+      }
+    ).catch((err) => {
+      console.error("scripts/generate EF 호출 실패:", err?.message || err);
+    });
 
     revalidatePath("/scripts");
     return { data: { id: data.id } };
@@ -229,9 +245,25 @@ export async function createCorrectScript(
       .single();
 
     if (error || !data) {
-      await supabase.rpc("refund_script_credit", { p_user_id: userId });
+      const { error: refundError } = await supabase.rpc("refund_script_credit", { p_user_id: userId });
+      if (refundError) console.error("크레딧 환불 실패:", refundError);
       return { error: "스크립트 교정에 실패했습니다" };
     }
+
+    // EF 호출: AI 교정 실행 (fire-and-forget — 클라이언트는 폴링으로 결과 확인)
+    fetch(
+      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/scripts/correct`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+        },
+        body: JSON.stringify({ script_id: data.id }),
+      }
+    ).catch((err) => {
+      console.error("scripts/correct EF 호출 실패:", err?.message || err);
+    });
 
     revalidatePath("/scripts");
     return { data: { id: data.id } };
@@ -293,6 +325,24 @@ export async function refineScript(
     if (updateError) {
       return { error: "수정 요청에 실패했습니다" };
     }
+
+    // EF 호출: AI 수정 실행 (fire-and-forget — 클라이언트는 폴링으로 결과 확인)
+    fetch(
+      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/scripts/refine`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+        },
+        body: JSON.stringify({
+          script_id: parsed.data.script_id,
+          user_prompt: parsed.data.user_prompt || "",
+        }),
+      }
+    ).catch((err) => {
+      console.error("scripts/refine EF 호출 실패:", err?.message || err);
+    });
 
     revalidatePath("/scripts");
     return { data: { id: parsed.data.script_id } };
@@ -618,7 +668,8 @@ export async function createPackage(
     const phase1Data = await phase1Res.json();
     const packageId = phase1Data.package_id;
 
-    // EF Phase 2: 타임스탬프 생성 (실패해도 partial로 유지)
+    // EF Phase 2: 타임스탬프 생성 (실패해도 partial로 유지 — 음성은 사용 가능)
+    let phase2Failed = false;
     try {
       const phase2Res = await fetch(
         `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/scripts-package/generate-shadowing`,
@@ -636,10 +687,17 @@ export async function createPackage(
       );
 
       if (!phase2Res.ok) {
-        console.error("Phase 2 실패 (partial 상태 유지)");
+        const errBody = await phase2Res.text().catch(() => "");
+        console.error("Phase 2 실패 (partial 상태 유지):", errBody);
+        phase2Failed = true;
       }
-    } catch {
-      console.error("Phase 2 예외 (partial 상태 유지)");
+    } catch (phase2Err) {
+      console.error("Phase 2 예외 (partial 상태 유지):", (phase2Err as Error).message);
+      phase2Failed = true;
+    }
+
+    if (phase2Failed) {
+      console.warn(`패키지 ${packageId}: Phase 2 실패 — partial 상태로 제공`);
     }
 
     revalidatePath("/scripts");

@@ -361,8 +361,8 @@ export async function submitAnswer(
           audio_url: parsed.data.audio_url,
           audio_duration: parsed.data.audio_duration,
         }),
-      }).catch(() => {
-        // fire-and-forget: EF 호출 실패는 폴링으로 감지 → 재시도
+      }).catch((err) => {
+        console.error("fire-and-forget mock-test-process 호출 실패:", err?.message || err);
       });
     }
 

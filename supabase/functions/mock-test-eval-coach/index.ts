@@ -107,6 +107,16 @@ function substituteVariables(
   return result;
 }
 
+// 사용자 입력 새니타이징 (프롬프트 인젝션 방어)
+function sanitizeUserInput(text: string): string {
+  return text
+    .replace(/---USER---|---SYSTEM---|---ASSISTANT---/gi, "[FILTERED]")
+    .replace(/ignore\s+(all\s+)?previous\s+instructions/gi, "[FILTERED]")
+    .replace(/you\s+are\s+now\s+a/gi, "[FILTERED]")
+    .replace(/forget\s+(all\s+)?your\s+(previous\s+)?instructions/gi, "[FILTERED]")
+    .slice(0, 10000);
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -192,8 +202,9 @@ Deno.serve(async (req) => {
 
         const typeConfig = TYPE_CHECKLISTS[question_type];
 
+        const safeTranscript = sanitizeUserInput(transcript || "");
         const variables: Record<string, string | number> = {
-          transcript,
+          transcript: safeTranscript,
           question_english: question_english || "",
           question_number,
           question_type: question_type || "",
@@ -232,7 +243,7 @@ Deno.serve(async (req) => {
           userPrompt = fullPrompt.substring(separatorIdx + 12).trim();
         } else {
           systemPrompt = fullPrompt;
-          userPrompt = `Student's response:\n${transcript}`;
+          userPrompt = `Student's response:\n${safeTranscript}`;
         }
 
         // GPT-4.1 코칭 호출
@@ -303,8 +314,8 @@ Deno.serve(async (req) => {
             Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
           },
           body: JSON.stringify({ session_id }),
-        }).catch(() => {
-          // fire-and-forget
+        }).catch((err) => {
+          console.error("fire-and-forget mock-test-report 호출 실패:", err?.message || err);
         });
       }
     }

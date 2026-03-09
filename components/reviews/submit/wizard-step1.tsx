@@ -108,8 +108,10 @@ export function WizardStep1({ onComplete, submissionId }: WizardStep1Props) {
     // Self-Assessment 파싱 ("6-5" → diffStart=6, diffAdj=5)
     if (draftData.exam_difficulty) {
       const parts = draftData.exam_difficulty.split("-");
-      setDiffStart(Number(parts[0]));
-      setDiffAdj(Number(parts[1]));
+      const start = Number(parts[0]);
+      const adj = Number(parts[1]);
+      if (!Number.isNaN(start)) setDiffStart(start);
+      if (!Number.isNaN(adj)) setDiffAdj(adj);
     }
 
     reset({
@@ -238,7 +240,7 @@ export function WizardStep1({ onComplete, submissionId }: WizardStep1Props) {
                   const val = Number(e.target.value);
                   setDiffStart(val);
                   setDiffAdj(null);
-                  // 재조정 초기화 시 폼 값도 클리어
+                  // 재조정 초기화: 빈 문자열로 Zod enum 유효성 검사 실패 유도 (의도적)
                   setValue("exam_difficulty", "" as unknown as ExamDifficulty);
                 }}
               >

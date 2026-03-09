@@ -94,13 +94,22 @@ export function StepSpeak() {
         return;
       }
 
-      const sessionId = sessionResult.data!.sessionId;
+      const sessionId = sessionResult.data?.sessionId;
+      if (!sessionId) {
+        setSubmitError("세션 생성에 실패했습니다");
+        setIsSubmitting(false);
+        return;
+      }
 
-      // 2. 녹음 파일을 Base64로 변환 → EF 호출
+      // 2. 녹음 파일을 Base64로 변환 → EF 호출 (청크 분할로 stack overflow 방지)
       const arrayBuffer = await recordingBlob.arrayBuffer();
-      const base64 = btoa(
-        String.fromCharCode(...new Uint8Array(arrayBuffer))
-      );
+      const bytes = new Uint8Array(arrayBuffer);
+      let binary = "";
+      const chunkSize = 8192;
+      for (let i = 0; i < bytes.length; i += chunkSize) {
+        binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+      }
+      const base64 = btoa(binary);
 
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/scripts/evaluate`,

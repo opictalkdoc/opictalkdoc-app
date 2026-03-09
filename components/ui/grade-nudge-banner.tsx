@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Target, X } from "lucide-react";
 import { GradeSettingModal } from "./grade-setting-modal";
 
@@ -10,6 +11,7 @@ type Props = {
 };
 
 export function GradeNudgeBanner({ currentGrade, targetGrade }: Props) {
+  const router = useRouter();
   const [dismissed, setDismissed] = useState(false);
   const [showModal, setShowModal] = useState(false);
 
@@ -56,8 +58,8 @@ export function GradeNudgeBanner({ currentGrade, targetGrade }: Props) {
           onClose={() => setShowModal(false)}
           onSaved={() => {
             setShowModal(false);
-            // 페이지 새로고침으로 서버 데이터 반영
-            window.location.reload();
+            // 서버 컴포넌트 재렌더링으로 JWT 클레임 반영 (캐시 유지)
+            router.refresh();
           }}
         />
       )}

@@ -175,6 +175,7 @@ export function WizardStep2({ submissionId, comboResults, setComboResults, onCom
         return;
       }
       result.questions.forEach((q, idx) => {
+        if (idx >= step.questionNumbers.length) return;
         allQuestions.push({
           question_number: step.questionNumbers[idx],
           combo_type: step.comboType,
@@ -252,7 +253,7 @@ export function WizardStep2({ submissionId, comboResults, setComboResults, onCom
         {isCurrentComplete && (
           <div className="mt-2.5 space-y-1 border-t border-border pt-2.5 sm:mt-3 sm:space-y-1.5 sm:pt-3">
             {currentResult.questions.map((q, idx) => (
-              <div key={idx} className="flex items-baseline gap-1.5 text-[11px] sm:gap-2 sm:text-xs">
+              <div key={q.question_id || `custom-${idx}`} className="flex items-baseline gap-1.5 text-[11px] sm:gap-2 sm:text-xs">
                 <span className="shrink-0 font-medium text-foreground-muted">
                   {currentCombo.questionNumbers[idx]}번
                 </span>

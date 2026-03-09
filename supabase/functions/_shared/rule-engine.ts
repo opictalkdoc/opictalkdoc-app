@@ -198,10 +198,7 @@ function applyCumulative(
       for (const lowId of lowerIds) {
         if (checkboxes[lowId] && !checkboxes[lowId].final_pass) {
           checkboxes[lowId].final_pass = true;
-          // pass_rate도 threshold 이상으로 보정
-          if (checkboxes[lowId].pass_rate < threshold) {
-            checkboxes[lowId].pass_rate = threshold;
-          }
+          // pass_rate는 원본 데이터 보존 (final_pass만 보정)
         }
       }
     }
@@ -279,8 +276,8 @@ function determineSympathetic(
     avgPronScore * weight + adv5PassRate * 100 * (1 - weight);
 
   if (compositeScore < params.sympathetic_low) return "Required";
-  if (compositeScore < params.sympathetic_mid) return "Required";
-  if (compositeScore < params.sympathetic_at_times) return "Required_at_times";
+  if (compositeScore < params.sympathetic_mid) return "Required_at_times";
+  if (compositeScore < params.sympathetic_at_times) return "Not_required_but_close";
   return "Not_required";
 }
 
@@ -337,10 +334,11 @@ function judgeAL(
   if (skippedQuestions.includes(14) || skippedQuestions.includes(15))
     return "AL_FAILED_SKIP";
 
-  // AL 게이트키퍼: 필수 체크박스 모두 pass
-  const gatekeeperPassed = AL_GATEKEEPER_IDS.every(
-    (id) => alCheckboxes[id]?.final_pass === true,
-  );
+  // AL 게이트키퍼: 필수 체크박스 모두 pass (빈 배열이면 통과 불가)
+  const gatekeeperPassed = AL_GATEKEEPER_IDS.length > 0 &&
+    AL_GATEKEEPER_IDS.every(
+      (id) => alCheckboxes[id]?.final_pass === true,
+    );
   if (!gatekeeperPassed) return "AL_FAILED_GATEKEEPER";
 
   if (alPassRate >= params.al_pass_threshold) return "AL_CONFIRMED";
@@ -403,7 +401,7 @@ function determineFinalLevel(
     }
     if (
       intPassRate >= 0.90 &&
-      (sympathetic === "Required_at_times" || sympathetic === "Not_required")
+      (sympathetic === "Required_at_times" || sympathetic === "Not_required_but_close" || sympathetic === "Not_required")
     ) {
       return "IH";
     }
@@ -421,7 +419,7 @@ function determineFinalLevel(
     }
     if (
       intPassRate >= 0.90 &&
-      (sympathetic === "Required_at_times" || sympathetic === "Not_required")
+      (sympathetic === "Required_at_times" || sympathetic === "Not_required_but_close" || sympathetic === "Not_required")
     ) {
       return "IH";
     }
@@ -522,9 +520,11 @@ export function computeFACTScores(
   // T — Text Type
   const score_t = computeTextTypeScore(allCheckboxes);
 
-  // 총점: (F+A+C+T) × 2.5 = 100점 만점
-  const total_score =
-    Math.round((score_f + score_a + score_c + score_t) * 2.5 * 10) / 10;
+  // 총점: (F+A+C+T) × 2.5 = 100점 만점 (상한 클램프)
+  const total_score = Math.min(
+    100,
+    Math.round((score_f + score_a + score_c + score_t) * 2.5 * 10) / 10,
+  );
 
   return { score_f, score_a, score_c, score_t, total_score };
 }
@@ -570,9 +570,9 @@ export function runRuleEngine(
     if (eval_.skipped || !eval_.pronunciation_assessment) continue;
     const pa = eval_.pronunciation_assessment;
     if (pa.accuracy_score != null) {
-      totalAccuracy += pa.accuracy_score;
-      totalProsody += pa.prosody_score || 0;
-      totalFluency += pa.fluency_score || 0;
+      totalAccuracy += Number(pa.accuracy_score);
+      totalProsody += Number(pa.prosody_score) || 0;
+      totalFluency += Number(pa.fluency_score) || 0;
       pronCount++;
     }
   }

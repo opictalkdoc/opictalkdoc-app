@@ -68,34 +68,6 @@ import {
   TTS_VOICE_LABELS,
 } from "@/lib/types/scripts";
 
-/* ── Edge Function 호출 헬퍼 ── */
-
-async function callEdgeFunction(
-  route: "generate" | "correct" | "refine",
-  body: Record<string, unknown>
-) {
-  const res = await fetch(
-    `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/scripts/${route}`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
-      },
-      body: JSON.stringify(body),
-    }
-  );
-
-  if (!res.ok) {
-    const err = await res
-      .json()
-      .catch(() => ({ error: "AI 생성에 실패했습니다" }));
-    throw new Error(err.error || "AI 생성에 실패했습니다");
-  }
-
-  return res.json();
-}
-
 /* ── 타입 ── */
 
 interface QuestionOption {
@@ -287,16 +259,7 @@ export function ScriptWizard({
       if (result.data?.id) {
         setGeneratedScriptId(result.data.id);
         setStep(3);
-
-        // EF fire-and-forget — 폴링(refetchInterval 3s)이 결과 감지
-        callEdgeFunction("generate", { script_id: result.data.id }).catch(
-          (efErr) => {
-            console.error("EF generate 호출 실패:", efErr);
-            setError(
-              "스크립트 생성에 실패했습니다. 새로고침 후 다시 시도해주세요."
-            );
-          }
-        );
+        // EF는 SA에서 fire-and-forget으로 호출됨 — 폴링(refetchInterval 3s)이 결과 감지
       }
     } catch (err) {
       setError((err as Error).message);
@@ -333,17 +296,7 @@ export function ScriptWizard({
 
       // Step 3 (생성 중)으로 이동 — 학습 콘텐츠 표시
       setStep(3);
-
-      // EF fire-and-forget
-      callEdgeFunction("refine", {
-        script_id: generatedScriptId,
-        user_prompt: refinePrompt,
-      }).catch((efErr) => {
-        console.error("EF refine 호출 실패:", efErr);
-        setError(
-          "스크립트 수정에 실패했습니다. 새로고침 후 다시 시도해주세요."
-        );
-      });
+      // EF는 SA에서 fire-and-forget으로 호출됨 — 폴링(refetchInterval 3s)이 결과 감지
 
       setRefinePrompt("");
     } catch (err) {
@@ -416,15 +369,7 @@ export function ScriptWizard({
         queryClient.invalidateQueries({ queryKey: ["script-credit"] });
 
         setStep(3);
-
-        callEdgeFunction("generate", { script_id: result.data.id }).catch(
-          (efErr) => {
-            console.error("EF generate 호출 실패:", efErr);
-            setError(
-              "스크립트 생성에 실패했습니다. 새로고침 후 다시 시도해주세요."
-            );
-          }
-        );
+        // EF는 SA에서 fire-and-forget으로 호출됨 — 폴링(refetchInterval 3s)이 결과 감지
       }
     } catch (err) {
       setError((err as Error).message);

@@ -57,7 +57,7 @@ export function EvaluationHistory({ initialData }: EvaluationHistoryProps) {
 
       <div className="space-y-2">
         {completedItems.map((item) => {
-          const eval_ = item.evaluation!;
+          const eval_ = item.evaluation ?? {} as NonNullable<typeof item.evaluation>;
           const levelLabel = eval_.estimated_level
             ? TARGET_LEVEL_SHORT_LABELS[eval_.estimated_level as TargetLevel] ||
               eval_.estimated_level
@@ -73,7 +73,7 @@ export function EvaluationHistory({ initialData }: EvaluationHistoryProps) {
               {/* 점수 */}
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-50">
                 <span className="text-sm font-bold text-primary-600">
-                  {eval_.overall_score ?? "--"}
+                  {eval_.overall_score != null ? Number(eval_.overall_score) : "--"}
                 </span>
               </div>
 
@@ -90,8 +90,8 @@ export function EvaluationHistory({ initialData }: EvaluationHistoryProps) {
                   <span className="flex items-center gap-0.5">
                     <Clock size={10} />
                     {item.audio_duration
-                      ? `${Math.floor(item.audio_duration / 60)}:${(
-                          item.audio_duration % 60
+                      ? `${Math.floor(Number(item.audio_duration) / 60)}:${(
+                          Number(item.audio_duration) % 60
                         )
                           .toString()
                           .padStart(2, "0")}`
@@ -111,7 +111,7 @@ export function EvaluationHistory({ initialData }: EvaluationHistoryProps) {
                     <div className="h-1 overflow-hidden rounded-full bg-surface-secondary">
                       <div
                         className={`h-1 rounded-full ${color}`}
-                        style={{ width: `${score ?? 0}%` }}
+                        style={{ width: `${Number(score) || 0}%` }}
                       />
                     </div>
                   </div>

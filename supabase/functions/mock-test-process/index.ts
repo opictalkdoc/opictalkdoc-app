@@ -125,8 +125,8 @@ function fireAndForgetJudge(payload: Record<string, unknown>) {
       Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
     },
     body: JSON.stringify(payload),
-  }).catch(() => {
-    // fire-and-forget: 실패 시 폴링에서 stuck 감지 → 재시도
+  }).catch((err) => {
+    console.error("fire-and-forget eval-judge 호출 실패:", err?.message || err);
   });
 }
 
@@ -156,6 +156,15 @@ Deno.serve(async (req) => {
   // CORS preflight
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
+  }
+
+  // 내부 전용 함수: 수동 인증 검증 (--no-verify-jwt 배포)
+  const authHeader = req.headers.get("authorization");
+  if (!authHeader || authHeader !== `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`) {
+    return new Response(
+      JSON.stringify({ error: "Unauthorized" }),
+      { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    );
   }
 
   const startTime = Date.now();

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { createBrowserClient } from "@supabase/ssr";
+import { createClient } from "@/lib/supabase";
 import type { EvalStatus, HolisticStatus } from "@/lib/types/mock-exam";
 
 // ── 5초 폴링으로 eval_status 실시간 업데이트 (F-8) ──
@@ -21,9 +21,11 @@ interface UseEvalPollingReturn {
   evalStatuses: EvalStatusMap;
   holisticStatus: HolisticStatus;
   completedCount: number;    // 평가 완료 문항 수
+  failedCount: number;       // 평가 실패 문항 수
   totalCount: number;        // 전체 평가 대상 문항 수 (Q1 제외)
   isAllCompleted: boolean;   // 모든 개별 평가 완료 여부
   isReportReady: boolean;    // 종합 리포트 완료 여부
+  isReportFailed: boolean;   // 종합 리포트 실패 여부
 }
 
 export function useEvalPolling(
@@ -34,14 +36,10 @@ export function useEvalPolling(
   const [evalStatuses, setEvalStatuses] = useState<EvalStatusMap>({});
   const [holisticStatus, setHolisticStatus] = useState<HolisticStatus>("pending");
   const consecutiveErrorsRef = useRef(0);
+  const shouldStopRef = useRef(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const supabaseRef = useRef(
-    createBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    )
-  );
+  const supabaseRef = useRef(createClient());
 
   // 폴링 실행
   const poll = useCallback(async () => {
@@ -81,7 +79,12 @@ export function useEvalPolling(
 
       // holistic_status 업데이트
       if (session) {
-        setHolisticStatus(session.holistic_status as HolisticStatus);
+        const hs = session.holistic_status as HolisticStatus;
+        setHolisticStatus(hs);
+        // 완료/실패 시 폴링 자동 정지
+        if (hs === "completed" || hs === "failed") {
+          shouldStopRef.current = true;
+        }
       }
     } catch {
       consecutiveErrorsRef.current += 1;
@@ -101,6 +104,8 @@ export function useEvalPolling(
 
       timerRef.current = setTimeout(async () => {
         await poll();
+        // 리포트 완료/실패 시 폴링 정지
+        if (shouldStopRef.current) return;
         schedule();
       }, backoff);
     };
@@ -130,13 +135,16 @@ export function useEvalPolling(
   // completed + skipped + failed = 모두 최종 상태
   const isAllCompleted = totalCount > 0 && completedCount + skippedCount + failedCount >= totalCount;
   const isReportReady = holisticStatus === "completed";
+  const isReportFailed = holisticStatus === "failed";
 
   return {
     evalStatuses,
     holisticStatus,
     completedCount,
+    failedCount,
     totalCount,
     isAllCompleted,
     isReportReady,
+    isReportFailed,
   };
 }

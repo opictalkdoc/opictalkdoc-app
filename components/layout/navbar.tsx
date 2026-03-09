@@ -54,6 +54,9 @@ export function Navbar() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setIsLoggedIn(!!session);
       setUserName(session?.user?.user_metadata?.display_name || session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.name || "");
+    }).catch(() => {
+      // 세션 확인 실패 시 비로그인으로 처리 (영구 null 방지)
+      setIsLoggedIn(false);
     });
 
     // 인증 상태 변경 구독 (로그인/로그아웃 시 즉시 반영)

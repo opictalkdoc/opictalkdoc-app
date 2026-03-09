@@ -448,8 +448,8 @@ Deno.serve(async (req) => {
             Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
           },
           body: JSON.stringify({ session_id }),
-        }).catch(() => {
-          // fire-and-forget: 실패 시 폴링에서 stuck 감지
+        }).catch((err) => {
+          console.error("fire-and-forget mock-test-report 호출 실패:", err?.message || err);
         });
       }
     }

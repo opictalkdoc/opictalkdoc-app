@@ -209,12 +209,18 @@ Deno.serve(async (req: Request) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
+    // 내부 전용 핸들러 (Service Role Key 인증)
+    const isServiceCall = authHeader === `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`;
+
     switch (path) {
       case "generate":
+        if (!isServiceCall) return jsonResponse({ error: "Unauthorized" }, 401);
         return await handleGenerate(supabase, body);
       case "correct":
+        if (!isServiceCall) return jsonResponse({ error: "Unauthorized" }, 401);
         return await handleCorrect(supabase, body);
       case "refine":
+        if (!isServiceCall) return jsonResponse({ error: "Unauthorized" }, 401);
         return await handleRefine(supabase, body);
       case "evaluate":
         return await handleEvaluate(supabase, body, authHeader);
@@ -697,7 +703,12 @@ async function callGPT(
     throw new Error("GPT 응답이 비어있습니다");
   }
 
-  return JSON.parse(content);
+  try {
+    return JSON.parse(content);
+  } catch (parseErr) {
+    console.error("GPT 응답 JSON 파싱 실패:", content.slice(0, 200));
+    throw new Error("GPT 응답 JSON 파싱 실패");
+  }
 }
 
 // ── 쉐도잉 평가 (evaluate) ──
@@ -814,18 +825,23 @@ async function handleEvaluate(supabase: any, body: any, authHeader: string) {
     );
 
     if (!whisperRes.ok) {
-      // 환불
-      await supabase.rpc("refund_script_credit", { p_user_id: userId });
+      // 환불 (세션 상태로 이중 환불 방지)
+      const { error: refundErr } = await supabase.rpc("refund_script_credit", { p_user_id: userId });
+      if (refundErr) console.error("환불 실패:", refundErr);
       return jsonResponse({ error: "음성 인식에 실패했습니다" }, 500);
     }
 
     const whisperResult = await whisperRes.json();
     const transcript = whisperResult.text || "";
+    if (!whisperResult.text) {
+      console.warn("Whisper 응답에 text 필드 없음:", JSON.stringify(whisperResult).slice(0, 200));
+    }
 
     // 발화 길이 검증 (5단어 미만 → 환불)
     const wordCount = transcript.split(/\s+/).filter(Boolean).length;
     if (wordCount < 5) {
-      await supabase.rpc("refund_script_credit", { p_user_id: userId });
+      const { error: refundErr } = await supabase.rpc("refund_script_credit", { p_user_id: userId });
+      if (refundErr) console.error("환불 실패:", refundErr);
       return jsonResponse(
         { error: "발화가 너무 짧습니다 (5단어 이상 필요). 크레딧이 환불되었습니다." },
         400
@@ -925,7 +941,8 @@ ${wordCount}단어, ${audio_duration || 0}초
     return jsonResponse(evalData || evalResult);
   } catch (err) {
     // API 오류 → 환불
-    await supabase.rpc("refund_script_credit", { p_user_id: userId });
+    const { error: refundErr } = await supabase.rpc("refund_script_credit", { p_user_id: userId });
+    if (refundErr) console.error("환불 실패:", refundErr);
     console.error("평가 처리 실패:", err);
     return jsonResponse(
       { error: "평가 처리 중 오류가 발생했습니다. 크레딧이 환불되었습니다." },

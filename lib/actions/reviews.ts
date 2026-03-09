@@ -202,6 +202,7 @@ export async function saveQuestions(
         .from("questions")
         .select("id")
         .eq("topic", "자기소개")
+        .order("id", { ascending: true })
         .limit(1)
         .maybeSingle(),
     ]);
@@ -331,8 +332,8 @@ export async function completeSubmission(
           );
         }
       }
-    } catch {
-      // 콤보 추출 실패해도 후기 자체는 저장됨
+    } catch (comboErr) {
+      console.error("콤보 추출 실패 (후기는 저장됨):", comboErr);
     }
 
     // 크레딧 보상 (25일 룰: 최초 2회 무조건 지급, 3회차부터 마지막 지급일로부터 25일 경과 필요)
@@ -373,17 +374,24 @@ export async function completeSubmission(
       }
 
       if (creditGranted) {
-        await supabase.rpc("increment_script_credits", {
+        const { error: rpcError } = await supabase.rpc("increment_script_credits", {
           p_user_id: userId,
           p_amount: 2,
         });
-        // 크레딧 지급 여부 기록
-        await supabase
-          .from("submissions")
-          .update({ credit_granted: true })
-          .eq("id", submission_id);
+        if (rpcError) {
+          console.error("크레딧 지급 RPC 실패:", rpcError);
+          // RPC 실패 시 credit_granted를 true로 기록하지 않음 (재시도 가능하도록)
+          creditGranted = false;
+        } else {
+          // 크레딧 지급 성공 시에만 기록
+          await supabase
+            .from("submissions")
+            .update({ credit_granted: true })
+            .eq("id", submission_id);
+        }
       }
-    } catch {
+    } catch (creditErr) {
+      console.error("크레딧 지급 처리 실패:", creditErr);
       // 크레딧 지급 실패해도 후기 자체는 유지
     }
 
@@ -416,7 +424,11 @@ export async function getSubmissionWithQuestions(
       .single();
 
     if (error || !data) return { error: "후기를 찾을 수 없습니다" };
-    return { data: data as SubmissionWithQuestions };
+    const item = data as SubmissionWithQuestions;
+    if (!Array.isArray(item.submission_questions)) {
+      item.submission_questions = [];
+    }
+    return { data: item };
   } catch (e) {
     if (e instanceof Error && e.message === "로그인이 필요합니다") {
       return { error: e.message };
@@ -448,7 +460,11 @@ export async function getSubmissionsWithQuestionsBatch(
 
     const result: Record<number, SubmissionWithQuestions> = {};
     for (const row of data) {
-      result[row.id] = row as SubmissionWithQuestions;
+      const item = row as SubmissionWithQuestions;
+      if (!Array.isArray(item.submission_questions)) {
+        item.submission_questions = [];
+      }
+      result[row.id] = item;
     }
     return result;
   } catch {
@@ -637,7 +653,12 @@ export async function getSubmissionDetail(
     .single();
 
   if (error || !data) return { error: "후기를 찾을 수 없습니다" };
-  return { data: data as unknown as SubmissionWithQuestions };
+  // submission_questions가 없으면 빈 배열로 보정
+  const result = data as unknown as SubmissionWithQuestions;
+  if (!Array.isArray(result.submission_questions)) {
+    result.submission_questions = [];
+  }
+  return { data: result };
 }
 
 // ── 내부 헬퍼: 콤보 + survey_type 조회 (getFrequency, getStatsAndFrequency 공유) ──

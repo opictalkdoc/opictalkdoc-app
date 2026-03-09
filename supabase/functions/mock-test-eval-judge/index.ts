@@ -112,6 +112,17 @@ function substituteVariables(
   return result;
 }
 
+// 사용자 입력 새니타이징 (프롬프트 인젝션 방어)
+function sanitizeUserInput(text: string): string {
+  // 프롬프트 인젝션 패턴 무력화: 시스템 지시 탈출 시도 차단
+  return text
+    .replace(/---USER---|---SYSTEM---|---ASSISTANT---/gi, "[FILTERED]")
+    .replace(/ignore\s+(all\s+)?previous\s+instructions/gi, "[FILTERED]")
+    .replace(/you\s+are\s+now\s+a/gi, "[FILTERED]")
+    .replace(/forget\s+(all\s+)?your\s+(previous\s+)?instructions/gi, "[FILTERED]")
+    .slice(0, 10000); // 최대 10K 문자
+}
+
 // B-1 → B-2 fire-and-forget
 function fireAndForgetCoach(payload: Record<string, unknown>) {
   fetch(`${SUPABASE_URL}/functions/v1/mock-test-eval-coach`, {
@@ -121,8 +132,8 @@ function fireAndForgetCoach(payload: Record<string, unknown>) {
       Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
     },
     body: JSON.stringify(payload),
-  }).catch(() => {
-    // fire-and-forget
+  }).catch((err) => {
+    console.error("fire-and-forget eval-coach 호출 실패:", err?.message || err);
   });
 }
 
@@ -254,8 +265,9 @@ Deno.serve(async (req) => {
 
     const typeConfig = TYPE_CHECKLISTS[questionType];
 
+    const safeTranscript = sanitizeUserInput(transcript);
     const variables: Record<string, string | number> = {
-      transcript,
+      transcript: safeTranscript,
       question_english: questionEnglish,
       question_id: question_id || "",
       question_number,
@@ -288,7 +300,7 @@ Deno.serve(async (req) => {
       userPrompt = fullPrompt.substring(separatorIdx + 12).trim();
     } else {
       systemPrompt = fullPrompt;
-      userPrompt = `Student's response:\n${transcript}`;
+      userPrompt = `Student's response:\n${safeTranscript}`;
     }
 
     // ── GPT-4.1-mini 판정 호출 ──
