@@ -95,6 +95,13 @@ export function MockExamSession({
     evalBannerTimerRef.current = setTimeout(() => setEvalBanner(null), 4000);
   }, []);
 
+  // evalBanner 타이머 cleanup (언마운트 시)
+  useEffect(() => {
+    return () => {
+      if (evalBannerTimerRef.current) clearTimeout(evalBannerTimerRef.current);
+    };
+  }, []);
+
   // ── 세션 상태 ──
   const [phase, setPhase] = useState<SessionPhase>(
     session.status === "completed" ? "waiting" : "exam"

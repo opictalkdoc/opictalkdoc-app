@@ -1,18 +1,32 @@
 import { Suspense } from "react";
 import { MockExamContent } from "@/components/mock-exam/mock-exam-content";
-import { getHistory } from "@/lib/actions/mock-exam";
+import {
+  getHistory,
+  getActiveSession,
+  getExamPool,
+  checkMockExamCredit,
+} from "@/lib/actions/mock-exam";
 
 export const metadata = {
   title: "모의고사 | 오픽톡닥",
 };
 
-// 서버에서 이력 데이터 사전 조회
+// 서버에서 4개 쿼리 병렬 사전 조회 (클라이언트 RTT 제거)
 async function MockExamLoader() {
-  const historyResult = await getHistory().catch(() => ({ data: undefined }));
+  const [historyResult, activeResult, poolResult, creditResult] =
+    await Promise.all([
+      getHistory().catch(() => ({ data: undefined })),
+      getActiveSession().catch(() => ({ data: undefined })),
+      getExamPool().catch(() => ({ data: undefined })),
+      checkMockExamCredit().catch(() => ({ data: undefined })),
+    ]);
 
   return (
     <MockExamContent
       initialHistory={historyResult?.data ?? undefined}
+      initialActive={activeResult}
+      initialPool={poolResult}
+      initialCredit={creditResult}
     />
   );
 }

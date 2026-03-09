@@ -626,7 +626,7 @@ function TranscriptSection({ transcript, evaluation }: { transcript: string; eva
       <div className="mt-1 flex gap-3 text-[10px] text-foreground-muted">
         {evaluation.wpm != null && <span>WPM: {evaluation.wpm}</span>}
         {evaluation.audio_duration != null && (
-          <span>{evaluation.audio_duration.toFixed(0)}초</span>
+          <span>{Number(evaluation.audio_duration).toFixed(0)}초</span>
         )}
         {evaluation.filler_count != null && evaluation.filler_count > 0 && (
           <span>필러: {evaluation.filler_count}개</span>

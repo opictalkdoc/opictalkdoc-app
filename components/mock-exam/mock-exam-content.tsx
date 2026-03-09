@@ -17,10 +17,10 @@ import {
   ChevronDown,
   AlertTriangle,
 } from "lucide-react";
+import dynamic from "next/dynamic";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { ExamPoolSelector } from "./start/exam-pool-selector";
 import { ModeSelector, TestModeConfirm } from "./start/mode-selector";
-import { ResultSummary } from "./result/result-summary";
 import {
   getExamPool,
   getActiveSession,
@@ -38,9 +38,23 @@ import type {
 import {
   MOCK_EXAM_MODE_LABELS,
   SESSION_STATUS_LABELS,
-  OPIC_LEVEL_LABELS,
   OPIC_LEVEL_ORDER,
 } from "@/lib/types/mock-exam";
+
+// 결과 탭 ResultSummary — 동적 로드 (초기 번들 감소)
+const ResultSummary = dynamic(
+  () =>
+    import("./result/result-summary").then((mod) => ({
+      default: mod.ResultSummary,
+    })),
+  {
+    loading: () => (
+      <div className="flex justify-center py-12">
+        <Loader2 size={24} className="animate-spin text-primary-500" />
+      </div>
+    ),
+  }
+);
 
 /* ── 상수 ── */
 
@@ -56,11 +70,19 @@ type TabId = (typeof tabs)[number]["id"];
 
 interface MockExamContentProps {
   initialHistory?: MockExamHistoryItem[];
+  initialActive?: Awaited<ReturnType<typeof getActiveSession>>;
+  initialPool?: Awaited<ReturnType<typeof getExamPool>>;
+  initialCredit?: Awaited<ReturnType<typeof checkMockExamCredit>>;
 }
 
 /* ── 메인 컴포넌트 ── */
 
-export function MockExamContent({ initialHistory }: MockExamContentProps) {
+export function MockExamContent({
+  initialHistory,
+  initialActive,
+  initialPool,
+  initialCredit,
+}: MockExamContentProps) {
   const [activeTab, setActiveTab] = useState<TabId>("start");
   // 이력에서 결과 탭으로 이동 시 사용할 session_id
   const [viewSessionId, setViewSessionId] = useState<string | null>(null);
@@ -97,7 +119,13 @@ export function MockExamContent({ initialHistory }: MockExamContentProps) {
       </div>
 
       {/* 탭 콘텐츠 */}
-      {activeTab === "start" && <StartTab />}
+      {activeTab === "start" && (
+        <StartTab
+          initialActive={initialActive}
+          initialPool={initialPool}
+          initialCredit={initialCredit}
+        />
+      )}
       {activeTab === "results" && (
         <ResultsTab
           targetSessionId={viewSessionId}
@@ -116,7 +144,15 @@ export function MockExamContent({ initialHistory }: MockExamContentProps) {
 
 /* ── 응시 탭 ── */
 
-function StartTab() {
+function StartTab({
+  initialActive,
+  initialPool,
+  initialCredit,
+}: {
+  initialActive?: Awaited<ReturnType<typeof getActiveSession>>;
+  initialPool?: Awaited<ReturnType<typeof getExamPool>>;
+  initialCredit?: Awaited<ReturnType<typeof checkMockExamCredit>>;
+}) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [selectedPoolId, setSelectedPoolId] = useState<number | null>(null);
@@ -128,11 +164,12 @@ function StartTab() {
   const [bannerOpen, setBannerOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // 활성 세션 확인
+  // 활성 세션 확인 (서버 사전 조회 initialData 활용)
   const { data: activeResult } = useQuery({
     queryKey: ["mock-active-session"],
     queryFn: () => getActiveSession(),
     staleTime: 30 * 1000, // 30초
+    initialData: initialActive,
   });
 
   // 기출 풀 조회
@@ -144,6 +181,7 @@ function StartTab() {
     queryKey: ["mock-exam-pool"],
     queryFn: () => getExamPool(),
     staleTime: 60 * 1000, // 1분
+    initialData: initialPool,
   });
 
   // 크레딧 확인
@@ -151,6 +189,7 @@ function StartTab() {
     queryKey: ["mock-exam-credit"],
     queryFn: () => checkMockExamCredit(),
     staleTime: 60 * 1000,
+    initialData: initialCredit,
   });
 
   const activeSession = activeResult?.data;
@@ -395,9 +434,13 @@ function StartTab() {
         onConfirm={async () => {
           setShowAbandonConfirm(false);
           setIsAbandoning(true);
-          await expireSession({ session_id: activeSession!.session_id });
-          queryClient.invalidateQueries({ queryKey: ["mock-active-session"] });
-          queryClient.invalidateQueries({ queryKey: ["mock-exam-history"] });
+          const result = await expireSession({ session_id: activeSession!.session_id });
+          if (result.error) {
+            setError(result.error);
+          } else {
+            queryClient.invalidateQueries({ queryKey: ["mock-active-session"] });
+            queryClient.invalidateQueries({ queryKey: ["mock-exam-history"] });
+          }
           setIsAbandoning(false);
         }}
         onCancel={() => setShowAbandonConfirm(false)}

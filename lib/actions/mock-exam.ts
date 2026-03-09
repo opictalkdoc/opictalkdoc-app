@@ -228,7 +228,8 @@ export async function createSession(
 
     if (sqErr || !subQuestions || subQuestions.length === 0) {
       // 크레딧 환불
-      await supabase.rpc("refund_mock_exam_credit", { p_user_id: userId });
+      const { error: refundErr } = await supabase.rpc("refund_mock_exam_credit", { p_user_id: userId });
+      if (refundErr) console.error("크레딧 환불 실패:", refundErr);
       return { error: "기출 문제를 조회할 수 없습니다" };
     }
 
@@ -260,7 +261,8 @@ export async function createSession(
 
     if (insertErr) {
       // 크레딧 환불
-      await supabase.rpc("refund_mock_exam_credit", { p_user_id: userId });
+      const { error: refundErr } = await supabase.rpc("refund_mock_exam_credit", { p_user_id: userId });
+      if (refundErr) console.error("크레딧 환불 실패:", refundErr);
       return { error: "세션 생성 실패" };
     }
 
@@ -402,7 +404,7 @@ export async function skipQuestion(
     }
 
     // 스킵 답변 UPSERT
-    await supabase
+    const { error: ansError } = await supabase
       .from("mock_test_answers")
       .upsert(
         {
@@ -414,6 +416,10 @@ export async function skipQuestion(
         },
         { onConflict: "session_id,question_number" }
       );
+
+    if (ansError) {
+      return { error: "답변 저장에 실패했습니다" };
+    }
 
     // 현재 문항 업데이트
     await supabase
@@ -696,11 +702,11 @@ export async function getHistory(): Promise<
         started_at: s.started_at,
         completed_at: s.completed_at,
         final_level: report?.final_level ?? null,
-        total_score: report?.total_score ?? null,
-        score_f: report?.score_f ?? null,
-        score_a: report?.score_a ?? null,
-        score_c: report?.score_c ?? null,
-        score_t: report?.score_t ?? null,
+        total_score: report?.total_score == null ? null : Number(report.total_score),
+        score_f: report?.score_f == null ? null : Number(report.score_f),
+        score_a: report?.score_a == null ? null : Number(report.score_a),
+        score_c: report?.score_c == null ? null : Number(report.score_c),
+        score_t: report?.score_t == null ? null : Number(report.score_t),
         topic_summary: uniqueTopics.slice(0, 5).join(", "),
       };
     });
@@ -828,8 +834,8 @@ export async function checkMockExamCredit(): Promise<
       return { error: "크레딧 정보를 조회할 수 없습니다" };
     }
 
-    const planCredits = data.plan_mock_exam_credits ?? 0;
-    const credits = data.mock_exam_credits ?? 0;
+    const planCredits = Number(data.plan_mock_exam_credits ?? 0);
+    const credits = Number(data.mock_exam_credits ?? 0);
 
     return {
       data: {

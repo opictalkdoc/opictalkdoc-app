@@ -262,6 +262,8 @@ export function useRecorder(options: UseRecorderOptions = {}): UseRecorderReturn
     }
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
+    audioCtxRef.current?.close();
+    audioCtxRef.current = null;
     setVolume(0);
     setWarning("none");
   }, []);
@@ -288,6 +290,7 @@ export function useRecorder(options: UseRecorderOptions = {}): UseRecorderReturn
       if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
       if (durationTimerRef.current) clearInterval(durationTimerRef.current);
       streamRef.current?.getTracks().forEach((t) => t.stop());
+      audioCtxRef.current?.close();
     };
   }, []);
 

@@ -281,7 +281,7 @@ function Section1Snapshot({
         {/* FACT 총점 */}
         {report.total_score != null && (
           <p className="mt-2 text-3xl font-bold text-foreground">
-            {(report.total_score ?? 0).toFixed(1)}
+            {Number(report.total_score ?? 0).toFixed(1)}
             <span className="text-base font-normal text-foreground-muted"> / 100</span>
           </p>
         )}

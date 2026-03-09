@@ -49,11 +49,20 @@ import {
   createPackage,
 } from "@/lib/actions/scripts";
 import { GradeSettingModal } from "@/components/ui/grade-setting-modal";
-import {
-  ScriptRenderer,
-  ScriptFlatText,
-  ScriptSummaryView,
-} from "./script-renderer";
+import dynamic from "next/dynamic";
+
+// Step 4에서만 사용 — 초기 번들에서 815줄 분리
+const ScriptRenderer = dynamic(
+  () => import("./script-renderer").then((mod) => ({ default: mod.ScriptRenderer })),
+  { loading: () => <div className="animate-pulse h-40 rounded-xl bg-surface-secondary" /> }
+);
+const ScriptFlatText = dynamic(
+  () => import("./script-renderer").then((mod) => ({ default: mod.ScriptFlatText })),
+);
+const ScriptSummaryView = dynamic(
+  () => import("./script-renderer").then((mod) => ({ default: mod.ScriptSummaryView })),
+  { loading: () => <div className="animate-pulse h-20 rounded-xl bg-surface-secondary" /> }
+);
 import { QUESTION_TYPE_LABELS } from "@/lib/types/reviews";
 import { TARGET_LEVELS } from "@/lib/types/scripts";
 import type {
