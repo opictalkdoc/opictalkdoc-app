@@ -15,6 +15,11 @@ import {
   ArrowRight,
   AlertTriangle,
   Lightbulb,
+  Headphones,
+  Shuffle,
+  Volume2,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import {
   createTrainingSession,
@@ -25,7 +30,7 @@ import { createClient } from "@/lib/supabase";
 
 // ── 타입 ──
 
-type ScreenId = 0 | 2 | 4 | 5 | 6;
+type ScreenId = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 
 interface SessionBrief {
   session_goal: string;
@@ -33,6 +38,46 @@ interface SessionBrief {
   forbidden_habit: string;
   success_criteria: Array<{ criteria: string; met: boolean }>;
   estimated_minutes: number;
+}
+
+interface WarmupData {
+  question: { id: string; english: string; korean: string };
+  model_answer: string;
+  sentences: Array<{
+    english: string;
+    korean: string;
+    keywords: string[];
+  }>;
+  rhythm_tips: string[];
+  key_expressions: string[];
+}
+
+interface VariationCard {
+  question: { id: string; english: string; korean: string };
+  variation_type: string;
+  instruction: string;
+  forced_mission: {
+    connector: string;
+    detail_prompt: string;
+  };
+  time_limit_seconds: number;
+  example_starter: string;
+}
+
+interface TransformationCard {
+  original: string;
+  transform_type: string;
+  instruction: string;
+  expected_pattern: string;
+  time_limit_seconds: number;
+}
+
+interface VariationData {
+  variation_cards: VariationCard[];
+}
+
+interface TransformationData {
+  transformation_cards: TransformationCard[];
 }
 
 interface EPPData {
@@ -71,7 +116,9 @@ interface SessionRecap {
 
 const SCREENS: { id: ScreenId; label: string; icon: React.ComponentType<{ size: number; className?: string }> }[] = [
   { id: 0, label: "브리프", icon: Target },
+  { id: 1, label: "워밍업", icon: Headphones },
   { id: 2, label: "EPP 패턴", icon: BookOpen },
+  { id: 3, label: "변형 훈련", icon: Shuffle },
   { id: 4, label: "타임드 실전", icon: Timer },
   { id: 5, label: "Self-repair", icon: Wrench },
   { id: 6, label: "리캡", icon: Trophy },
@@ -121,7 +168,10 @@ export function TrainingSession({
 
   // Screen 데이터
   const [brief, setBrief] = useState<SessionBrief | null>(null);
+  const [warmupData, setWarmupData] = useState<WarmupData | null>(null);
   const [eppData, setEppData] = useState<EPPData | null>(null);
+  const [variationData, setVariationData] = useState<VariationData | null>(null);
+  const [transformationData, setTransformationData] = useState<TransformationData | null>(null);
   const [timedEval, setTimedEval] = useState<TimedEvaluation | null>(null);
   const [recap, setRecap] = useState<SessionRecap | null>(null);
 
@@ -282,12 +332,32 @@ export function TrainingSession({
           {currentScreen === 0 && (
             <Screen0Brief brief={brief} onStart={nextScreen} />
           )}
+          {currentScreen === 1 && trainingSessionId && prescriptionInfo && (
+            <Screen1Warmup
+              trainingSessionId={trainingSessionId}
+              prescriptionInfo={prescriptionInfo}
+              warmupData={warmupData}
+              setWarmupData={setWarmupData}
+              onNext={nextScreen}
+            />
+          )}
           {currentScreen === 2 && trainingSessionId && prescriptionInfo && (
             <Screen2EPP
               trainingSessionId={trainingSessionId}
               prescriptionInfo={prescriptionInfo}
               eppData={eppData}
               setEppData={setEppData}
+              onNext={nextScreen}
+            />
+          )}
+          {currentScreen === 3 && trainingSessionId && prescriptionInfo && (
+            <Screen3Variation
+              trainingSessionId={trainingSessionId}
+              prescriptionInfo={prescriptionInfo}
+              variationData={variationData}
+              setVariationData={setVariationData}
+              transformationData={transformationData}
+              setTransformationData={setTransformationData}
               onNext={nextScreen}
             />
           )}
@@ -404,6 +474,279 @@ function Screen0Brief({
         훈련 시작하기
         <ArrowRight size={16} />
       </button>
+    </div>
+  );
+}
+
+// ============================================================
+// Screen 1: 워밍업 (쉐도잉 + 등급별 텍스트 정책)
+// ============================================================
+
+function Screen1Warmup({
+  trainingSessionId,
+  prescriptionInfo,
+  warmupData,
+  setWarmupData,
+  onNext,
+}: {
+  trainingSessionId: string;
+  prescriptionInfo: { question_type: string; target_level: string; weakness_tags: string[]; timerConfig: { prep: number; main: number; wrap: number } };
+  warmupData: WarmupData | null;
+  setWarmupData: (d: WarmupData) => void;
+  onNext: () => void;
+}) {
+  const [loading, setLoading] = useState(!warmupData);
+  const [warmupError, setWarmupError] = useState<string | null>(null);
+  const [shadowingRound, setShadowingRound] = useState(0); // 0: 듣기, 1: 1회차, 2: 2회차
+  const [currentSentence, setCurrentSentence] = useState(0);
+  const [showText, setShowText] = useState(true);
+
+  // 등급별 텍스트 정책 결정
+  const textPolicy = (() => {
+    const level = prescriptionInfo.target_level;
+    if (["IL", "NL", "NM", "NH", "IM1"].includes(level)) return "full";
+    if (["IM2", "IM3", "IH"].includes(level)) return "keywords";
+    return "off"; // AL
+  })();
+
+  // 워밍업 데이터 생성
+  useEffect(() => {
+    if (warmupData) return;
+    async function loadWarmup() {
+      setLoading(true);
+      setWarmupError(null);
+      try {
+        const res = await callTutoringEF("generate-warmup", {
+          training_session_id: trainingSessionId,
+          question_type: prescriptionInfo.question_type,
+          target_level: prescriptionInfo.target_level,
+          text_policy: textPolicy,
+        });
+        setWarmupData(res.warmup);
+      } catch (err) {
+        setWarmupError(err instanceof Error ? err.message : "워밍업 생성에 실패했습니다");
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadWarmup();
+  }, [warmupData, trainingSessionId, prescriptionInfo, textPolicy, setWarmupData]);
+
+  const sentences = warmupData?.sentences || [];
+  const totalSentences = sentences.length;
+
+  const handleNextSentence = () => {
+    if (currentSentence < totalSentences - 1) {
+      setCurrentSentence((c) => c + 1);
+    } else {
+      // 현재 라운드 종료
+      if (shadowingRound < 2) {
+        setShadowingRound((r) => r + 1);
+        setCurrentSentence(0);
+      }
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-3 py-12">
+        <Loader2 size={24} className="animate-spin text-primary-500" />
+        <p className="text-sm text-foreground-secondary">모범 답변을 생성하고 있습니다...</p>
+      </div>
+    );
+  }
+
+  if (warmupError) {
+    return (
+      <div className="space-y-4 py-8 text-center">
+        <AlertTriangle size={28} className="mx-auto text-amber-400" />
+        <p className="text-sm text-foreground-secondary">{warmupError}</p>
+        <button
+          onClick={onNext}
+          className="mx-auto flex items-center gap-2 rounded-[var(--radius-lg)] border border-border px-4 py-2 text-sm text-foreground-secondary hover:bg-surface-secondary"
+        >
+          건너뛰고 다음으로 <ArrowRight size={14} />
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-5">
+      <div>
+        <h2 className="text-lg font-bold text-foreground">워밍업</h2>
+        <p className="mt-1 text-sm text-foreground-secondary">
+          {shadowingRound === 0
+            ? "모범 답변을 먼저 확인하세요"
+            : `따라 말하기 ${shadowingRound}/2회`}
+        </p>
+      </div>
+
+      {/* 질문 */}
+      {warmupData?.question && (
+        <div className="rounded-[var(--radius-xl)] border border-primary-200 bg-primary-50/50 p-4">
+          <p className="text-xs font-medium text-primary-600">오늘의 질문</p>
+          <p className="mt-1 text-sm font-medium text-foreground">
+            {warmupData.question.english}
+          </p>
+          <p className="mt-0.5 text-xs text-foreground-secondary">
+            {warmupData.question.korean}
+          </p>
+        </div>
+      )}
+
+      {/* 텍스트 정책 토글 (keywords/off 모드에서만) */}
+      {textPolicy !== "full" && (
+        <button
+          onClick={() => setShowText(!showText)}
+          className="flex items-center gap-2 rounded-lg border border-border px-3 py-1.5 text-xs text-foreground-secondary hover:bg-surface-secondary"
+        >
+          {showText ? <EyeOff size={12} /> : <Eye size={12} />}
+          {showText ? "텍스트 숨기기" : "텍스트 보기"}
+          {textPolicy === "keywords" && (
+            <span className="text-foreground-muted">(키워드만 표시)</span>
+          )}
+        </button>
+      )}
+
+      {/* 모범 답변 (라운드 0: 전체 확인) */}
+      {shadowingRound === 0 && (
+        <div className="space-y-3">
+          <div className="rounded-[var(--radius-xl)] border border-border bg-surface p-4">
+            <h3 className="text-sm font-semibold text-foreground">모범 답변</h3>
+            {textPolicy === "full" || showText ? (
+              <p className="mt-2 text-sm leading-relaxed text-foreground-secondary">
+                {warmupData?.model_answer}
+              </p>
+            ) : textPolicy === "off" ? (
+              <div className="mt-2 flex items-center gap-2 rounded-lg bg-surface-secondary p-3">
+                <Volume2 size={16} className="text-foreground-muted" />
+                <span className="text-xs text-foreground-muted">
+                  AL 레벨: 음성으로만 확인하세요
+                </span>
+              </div>
+            ) : null}
+          </div>
+
+          {/* 핵심 표현 */}
+          {warmupData?.key_expressions && warmupData.key_expressions.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {warmupData.key_expressions.map((expr) => (
+                <span
+                  key={expr}
+                  className="rounded-full bg-primary-50 px-3 py-1 text-xs font-medium text-primary-600"
+                >
+                  {expr}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* 리듬 팁 */}
+          {warmupData?.rhythm_tips && warmupData.rhythm_tips.length > 0 && (
+            <div className="flex items-start gap-2 rounded-lg bg-amber-50 p-3">
+              <Lightbulb size={14} className="mt-0.5 shrink-0 text-amber-500" />
+              <div className="space-y-0.5">
+                {warmupData.rhythm_tips.map((tip, i) => (
+                  <p key={i} className="text-xs text-amber-700">{tip}</p>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <button
+            onClick={() => {
+              setShadowingRound(1);
+              setCurrentSentence(0);
+            }}
+            className="flex w-full items-center justify-center gap-2 rounded-[var(--radius-lg)] bg-primary-500 py-3.5 text-sm font-medium text-white transition-colors hover:bg-primary-600"
+          >
+            <Headphones size={16} />
+            따라 말하기 시작
+          </button>
+        </div>
+      )}
+
+      {/* 쉐도잉 라운드 (1, 2) */}
+      {shadowingRound > 0 && (
+        <div className="space-y-4">
+          {/* 진행률 */}
+          <div className="flex items-center gap-2">
+            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-surface-secondary">
+              <div
+                className="h-full rounded-full bg-primary-500 transition-all"
+                style={{ width: `${((currentSentence + 1) / totalSentences) * 100}%` }}
+              />
+            </div>
+            <span className="text-xs text-foreground-muted">
+              {currentSentence + 1}/{totalSentences}
+            </span>
+          </div>
+
+          {/* 현재 문장 */}
+          {sentences[currentSentence] && (
+            <div className="rounded-[var(--radius-xl)] border border-border bg-surface p-5">
+              {/* 영어 문장 (텍스트 정책 적용) */}
+              {textPolicy === "full" || showText ? (
+                <p className="text-base font-medium leading-relaxed text-foreground">
+                  {textPolicy === "keywords"
+                    ? sentences[currentSentence].english
+                        .split(" ")
+                        .map((word, wi) =>
+                          sentences[currentSentence].keywords.some(
+                            (kw) => word.toLowerCase().includes(kw.toLowerCase())
+                          ) ? (
+                            <span key={wi} className="font-bold text-primary-600">{word} </span>
+                          ) : (
+                            <span key={wi} className="text-foreground-muted/40">{word} </span>
+                          )
+                        )
+                    : sentences[currentSentence].english}
+                </p>
+              ) : (
+                <div className="flex items-center gap-2 py-2">
+                  <Volume2 size={18} className="text-foreground-muted" />
+                  <span className="text-sm text-foreground-muted">소리를 듣고 따라 말하세요</span>
+                </div>
+              )}
+
+              {/* 한국어 번역 (full 모드에서만 항상 표시) */}
+              {textPolicy === "full" && (
+                <p className="mt-2 text-xs text-foreground-muted">
+                  {sentences[currentSentence].korean}
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* 다음 문장 / 라운드 완료 */}
+          {currentSentence < totalSentences - 1 ? (
+            <button
+              onClick={handleNextSentence}
+              className="flex w-full items-center justify-center gap-2 rounded-[var(--radius-lg)] bg-primary-500 py-3 text-sm font-medium text-white"
+            >
+              다음 문장 <ChevronRight size={14} />
+            </button>
+          ) : shadowingRound < 2 ? (
+            <button
+              onClick={() => {
+                setShadowingRound(2);
+                setCurrentSentence(0);
+              }}
+              className="flex w-full items-center justify-center gap-2 rounded-[var(--radius-lg)] bg-primary-500 py-3 text-sm font-medium text-white"
+            >
+              2회차 시작 <ArrowRight size={14} />
+            </button>
+          ) : (
+            <button
+              onClick={onNext}
+              className="flex w-full items-center justify-center gap-2 rounded-[var(--radius-lg)] border-2 border-primary-500 py-3 text-sm font-medium text-primary-600 transition-colors hover:bg-primary-50"
+            >
+              EPP 패턴으로 <ArrowRight size={14} />
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -619,8 +962,479 @@ function Screen2EPP({
           onClick={onNext}
           className="flex w-full items-center justify-center gap-2 rounded-[var(--radius-lg)] border-2 border-primary-500 py-3 text-sm font-medium text-primary-600 transition-colors hover:bg-primary-50"
         >
-          타임드 실전으로
+          변형 훈련으로
           <ArrowRight size={14} />
+        </button>
+      )}
+    </div>
+  );
+}
+
+// ============================================================
+// Screen 3: 변형 훈련 (Forced Variation + Oral Transformation)
+// ============================================================
+
+function Screen3Variation({
+  trainingSessionId,
+  prescriptionInfo,
+  variationData,
+  setVariationData,
+  transformationData,
+  setTransformationData,
+  onNext,
+}: {
+  trainingSessionId: string;
+  prescriptionInfo: { question_type: string; target_level: string; weakness_tags: string[]; timerConfig: { prep: number; main: number; wrap: number } };
+  variationData: VariationData | null;
+  setVariationData: (d: VariationData) => void;
+  transformationData: TransformationData | null;
+  setTransformationData: (d: TransformationData) => void;
+  onNext: () => void;
+}) {
+  type Phase = "variation" | "transformation" | "done";
+  const [phase, setPhase] = useState<Phase>("variation");
+  const [loading, setLoading] = useState(!variationData);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  // Variation 상태
+  const [currentCard, setCurrentCard] = useState(0);
+  const [varUserText, setVarUserText] = useState("");
+  const [varSaving, setVarSaving] = useState(false);
+  const [varCompleted, setVarCompleted] = useState<number[]>([]);
+
+  // Transformation 상태
+  const [transLoading, setTransLoading] = useState(false);
+  const [currentTransCard, setCurrentTransCard] = useState(0);
+  const [transUserText, setTransUserText] = useState("");
+  const [transSaving, setTransSaving] = useState(false);
+  const [transCompleted, setTransCompleted] = useState<number[]>([]);
+  const [showExpected, setShowExpected] = useState(false);
+
+  // 등급별 변경 요소 수 결정
+  const variationChanges = (() => {
+    const level = prescriptionInfo.target_level;
+    if (["IL", "NL", "NM", "NH", "IM1"].includes(level)) return 1;
+    if (["IM2", "IM3", "IH"].includes(level)) return 2;
+    return 3; // AL
+  })();
+
+  // Variation 데이터 로드
+  useEffect(() => {
+    if (variationData) return;
+    async function loadVariation() {
+      setLoading(true);
+      setLoadError(null);
+      try {
+        const res = await callTutoringEF("generate-variation", {
+          training_session_id: trainingSessionId,
+          question_type: prescriptionInfo.question_type,
+          target_level: prescriptionInfo.target_level,
+          weakness_tags: prescriptionInfo.weakness_tags,
+          variation_changes: variationChanges,
+        });
+        setVariationData(res.variation);
+      } catch (err) {
+        setLoadError(err instanceof Error ? err.message : "변형 카드 생성에 실패했습니다");
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadVariation();
+  }, [variationData, trainingSessionId, prescriptionInfo, variationChanges, setVariationData]);
+
+  // Transformation 데이터 로드 (phase 전환 시)
+  useEffect(() => {
+    if (phase !== "transformation" || transformationData) return;
+    async function loadTransformation() {
+      setTransLoading(true);
+      try {
+        const res = await callTutoringEF("generate-transformation", {
+          training_session_id: trainingSessionId,
+          question_type: prescriptionInfo.question_type,
+          target_level: prescriptionInfo.target_level,
+        });
+        setTransformationData(res.transformation);
+      } catch {
+        // 실패 시 바로 done으로
+        setPhase("done");
+      } finally {
+        setTransLoading(false);
+      }
+    }
+    loadTransformation();
+  }, [phase, transformationData, trainingSessionId, prescriptionInfo, setTransformationData]);
+
+  const variationCards = variationData?.variation_cards || [];
+  const transCards = transformationData?.transformation_cards || [];
+
+  // Variation 카드 제출
+  const handleVarSubmit = async () => {
+    if (!varUserText.trim()) return;
+    setVarSaving(true);
+    try {
+      await saveAttempt({
+        training_session_id: trainingSessionId,
+        screen_number: 3,
+        protocol: "variation",
+        question_id: variationCards[currentCard]?.question?.id,
+        attempt_number: currentCard + 1,
+        user_answer: varUserText,
+        passed: true,
+      });
+      setVarCompleted((c) => [...c, currentCard]);
+      setVarUserText("");
+    } catch {
+      // 에러 무시
+    } finally {
+      setVarSaving(false);
+    }
+  };
+
+  // Transformation 카드 제출
+  const handleTransSubmit = async () => {
+    if (!transUserText.trim()) return;
+    setTransSaving(true);
+    try {
+      await saveAttempt({
+        training_session_id: trainingSessionId,
+        screen_number: 3,
+        protocol: "transformation",
+        attempt_number: currentTransCard + 1,
+        user_answer: transUserText,
+        passed: true,
+      });
+      setTransCompleted((c) => [...c, currentTransCard]);
+      setTransUserText("");
+      setShowExpected(false);
+    } catch {
+      // 에러 무시
+    } finally {
+      setTransSaving(false);
+    }
+  };
+
+  // 변형 타입 한국어 라벨
+  const variationTypeLabel = (type: string) => {
+    const labels: Record<string, string> = {
+      time_change: "시간 변화",
+      condition_change: "조건 변화",
+      comparison: "비교",
+      reason_reversal: "이유 반전",
+    };
+    return labels[type] || type;
+  };
+
+  const transformTypeLabel = (type: string) => {
+    const labels: Record<string, string> = {
+      tense_change: "시제 변환",
+      add_reason: "이유 추가",
+      comparison: "비교",
+      subjunctive: "가정법",
+      expansion: "확장",
+    };
+    return labels[type] || type;
+  };
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-3 py-12">
+        <Loader2 size={24} className="animate-spin text-primary-500" />
+        <p className="text-sm text-foreground-secondary">변형 카드를 생성하고 있습니다...</p>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="space-y-4 py-8 text-center">
+        <AlertTriangle size={28} className="mx-auto text-amber-400" />
+        <p className="text-sm text-foreground-secondary">{loadError}</p>
+        <button
+          onClick={onNext}
+          className="mx-auto flex items-center gap-2 rounded-[var(--radius-lg)] border border-border px-4 py-2 text-sm text-foreground-secondary hover:bg-surface-secondary"
+        >
+          건너뛰고 다음으로 <ArrowRight size={14} />
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-5">
+      <div>
+        <h2 className="text-lg font-bold text-foreground">변형 훈련</h2>
+        <p className="mt-1 text-sm text-foreground-secondary">
+          {phase === "variation"
+            ? "같은 유형, 다른 조건으로 변형해서 말해보세요"
+            : phase === "transformation"
+              ? "짧은 문장을 즉석에서 변환해 보세요"
+              : "변형 훈련 완료!"}
+        </p>
+      </div>
+
+      {/* Phase 탭 */}
+      <div className="flex gap-2">
+        <button
+          onClick={() => setPhase("variation")}
+          className={`flex-1 rounded-lg py-2 text-xs font-medium transition-colors ${
+            phase === "variation"
+              ? "bg-primary-500 text-white"
+              : "bg-surface-secondary text-foreground-muted"
+          }`}
+        >
+          강제 변주 ({varCompleted.length}/{variationCards.length})
+        </button>
+        <button
+          onClick={() => setPhase("transformation")}
+          className={`flex-1 rounded-lg py-2 text-xs font-medium transition-colors ${
+            phase === "transformation"
+              ? "bg-primary-500 text-white"
+              : "bg-surface-secondary text-foreground-muted"
+          }`}
+        >
+          구두 변환 ({transCompleted.length}/{transCards.length})
+        </button>
+      </div>
+
+      {/* ── Forced Variation ── */}
+      {phase === "variation" && variationCards.length > 0 && (
+        <div className="space-y-4">
+          {/* 카드 선택 */}
+          <div className="flex gap-2">
+            {variationCards.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => {
+                  setCurrentCard(i);
+                  setVarUserText("");
+                }}
+                className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold transition-colors ${
+                  varCompleted.includes(i)
+                    ? "bg-green-500 text-white"
+                    : currentCard === i
+                      ? "bg-primary-500 text-white"
+                      : "bg-surface-secondary text-foreground-muted"
+                }`}
+              >
+                {varCompleted.includes(i) ? <CheckCircle2 size={12} /> : i + 1}
+              </button>
+            ))}
+          </div>
+
+          {/* 현재 변형 카드 */}
+          {variationCards[currentCard] && (
+            <>
+              {/* 질문 */}
+              <div className="rounded-[var(--radius-xl)] border border-primary-200 bg-primary-50/50 p-4">
+                <div className="flex items-center gap-2">
+                  <span className="rounded bg-primary-100 px-2 py-0.5 text-[10px] font-bold text-primary-700">
+                    {variationTypeLabel(variationCards[currentCard].variation_type)}
+                  </span>
+                </div>
+                <p className="mt-2 text-sm font-medium text-foreground">
+                  {variationCards[currentCard].question.english}
+                </p>
+                <p className="mt-0.5 text-xs text-foreground-secondary">
+                  {variationCards[currentCard].question.korean}
+                </p>
+              </div>
+
+              {/* 변형 지시 */}
+              <div className="rounded-[var(--radius-xl)] border border-amber-200 bg-amber-50 p-4">
+                <p className="text-sm font-medium text-amber-800">
+                  {variationCards[currentCard].instruction}
+                </p>
+                <div className="mt-2 flex gap-3">
+                  <div className="flex-1">
+                    <p className="text-[10px] font-bold text-green-700">필수 연결어</p>
+                    <p className="mt-0.5 text-xs text-green-600">
+                      {variationCards[currentCard].forced_mission.connector}
+                    </p>
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-[10px] font-bold text-blue-700">디테일 미션</p>
+                    <p className="mt-0.5 text-xs text-blue-600">
+                      {variationCards[currentCard].forced_mission.detail_prompt}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* 시작 문장 힌트 */}
+              {variationCards[currentCard].example_starter && (
+                <div className="rounded-lg bg-surface-secondary p-3">
+                  <p className="text-xs text-foreground-muted">시작 예시:</p>
+                  <p className="mt-0.5 text-sm italic text-foreground-secondary">
+                    &quot;{variationCards[currentCard].example_starter}&quot;
+                  </p>
+                </div>
+              )}
+
+              {/* 답변 입력 */}
+              {!varCompleted.includes(currentCard) && (
+                <div className="space-y-2">
+                  <textarea
+                    value={varUserText}
+                    onChange={(e) => setVarUserText(e.target.value)}
+                    placeholder="변형된 답변을 영어로 입력하세요..."
+                    className="h-24 w-full resize-none rounded-[var(--radius-lg)] border border-border bg-background p-3 text-sm focus:border-primary-500 focus:outline-none"
+                  />
+                  <button
+                    onClick={handleVarSubmit}
+                    disabled={!varUserText.trim() || varSaving}
+                    className="flex w-full items-center justify-center gap-2 rounded-[var(--radius-lg)] bg-primary-500 py-2.5 text-sm font-medium text-white disabled:opacity-50"
+                  >
+                    {varSaving ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
+                    제출
+                  </button>
+                </div>
+              )}
+
+              {/* 완료 표시 */}
+              {varCompleted.includes(currentCard) && (
+                <div className="rounded-lg bg-green-50 p-3 text-center">
+                  <CheckCircle2 size={16} className="mx-auto text-green-500" />
+                  <p className="mt-1 text-xs text-green-600">완료!</p>
+                </div>
+              )}
+            </>
+          )}
+
+          {/* 모든 변형 카드 완료 → Transformation으로 이동 */}
+          {varCompleted.length >= variationCards.length && (
+            <button
+              onClick={() => setPhase("transformation")}
+              className="flex w-full items-center justify-center gap-2 rounded-[var(--radius-lg)] border-2 border-primary-500 py-3 text-sm font-medium text-primary-600"
+            >
+              구두 변환으로 <ArrowRight size={14} />
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* ── Oral Transformation ── */}
+      {phase === "transformation" && (
+        <div className="space-y-4">
+          {transLoading ? (
+            <div className="flex flex-col items-center gap-3 py-8">
+              <Loader2 size={24} className="animate-spin text-primary-500" />
+              <p className="text-sm text-foreground-secondary">변환 카드를 생성하고 있습니다...</p>
+            </div>
+          ) : transCards.length > 0 ? (
+            <>
+              {/* 진행률 */}
+              <div className="flex items-center gap-2">
+                <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-surface-secondary">
+                  <div
+                    className="h-full rounded-full bg-primary-500 transition-all"
+                    style={{ width: `${(transCompleted.length / transCards.length) * 100}%` }}
+                  />
+                </div>
+                <span className="text-xs text-foreground-muted">
+                  {transCompleted.length}/{transCards.length}
+                </span>
+              </div>
+
+              {/* 현재 변환 카드 */}
+              {currentTransCard < transCards.length && transCards[currentTransCard] && (
+                <>
+                  <div className="rounded-[var(--radius-xl)] border border-border bg-surface p-5">
+                    <div className="flex items-center gap-2">
+                      <span className="rounded bg-blue-100 px-2 py-0.5 text-[10px] font-bold text-blue-700">
+                        {transformTypeLabel(transCards[currentTransCard].transform_type)}
+                      </span>
+                    </div>
+                    <p className="mt-3 text-base font-medium text-foreground">
+                      &quot;{transCards[currentTransCard].original}&quot;
+                    </p>
+                    <p className="mt-2 text-sm font-medium text-primary-600">
+                      → {transCards[currentTransCard].instruction}
+                    </p>
+                  </div>
+
+                  {/* 정답 패턴 힌트 (토글) */}
+                  <button
+                    onClick={() => setShowExpected(!showExpected)}
+                    className="flex items-center gap-1.5 text-xs text-foreground-muted hover:text-foreground-secondary"
+                  >
+                    <Lightbulb size={12} />
+                    {showExpected ? "힌트 숨기기" : "힌트 보기"}
+                  </button>
+                  {showExpected && (
+                    <div className="rounded-lg bg-amber-50 p-3">
+                      <p className="text-xs text-amber-700">
+                        예상 패턴: {transCards[currentTransCard].expected_pattern}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* 답변 입력 */}
+                  {!transCompleted.includes(currentTransCard) && (
+                    <div className="space-y-2">
+                      <textarea
+                        value={transUserText}
+                        onChange={(e) => setTransUserText(e.target.value)}
+                        placeholder="변환된 문장을 영어로 입력하세요..."
+                        className="h-16 w-full resize-none rounded-[var(--radius-lg)] border border-border bg-background p-3 text-sm focus:border-primary-500 focus:outline-none"
+                      />
+                      <button
+                        onClick={handleTransSubmit}
+                        disabled={!transUserText.trim() || transSaving}
+                        className="flex w-full items-center justify-center gap-2 rounded-[var(--radius-lg)] bg-primary-500 py-2.5 text-sm font-medium text-white disabled:opacity-50"
+                      >
+                        {transSaving ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
+                        제출
+                      </button>
+                    </div>
+                  )}
+
+                  {/* 완료 → 다음 카드 */}
+                  {transCompleted.includes(currentTransCard) && currentTransCard < transCards.length - 1 && (
+                    <button
+                      onClick={() => {
+                        setCurrentTransCard((c) => c + 1);
+                        setTransUserText("");
+                        setShowExpected(false);
+                      }}
+                      className="flex w-full items-center justify-center gap-2 rounded-[var(--radius-lg)] bg-surface-secondary py-2.5 text-sm font-medium text-foreground-secondary"
+                    >
+                      다음 문장 <ChevronRight size={14} />
+                    </button>
+                  )}
+                </>
+              )}
+
+              {/* 모든 변환 완료 */}
+              {transCompleted.length >= transCards.length && (
+                <button
+                  onClick={onNext}
+                  className="flex w-full items-center justify-center gap-2 rounded-[var(--radius-lg)] border-2 border-primary-500 py-3 text-sm font-medium text-primary-600 transition-colors hover:bg-primary-50"
+                >
+                  타임드 실전으로 <ArrowRight size={14} />
+                </button>
+              )}
+            </>
+          ) : (
+            <div className="space-y-4 py-4 text-center">
+              <p className="text-sm text-foreground-secondary">변환 카드가 없습니다</p>
+              <button
+                onClick={onNext}
+                className="mx-auto flex items-center gap-2 rounded-[var(--radius-lg)] border border-border px-4 py-2 text-sm text-foreground-secondary"
+              >
+                다음으로 <ArrowRight size={14} />
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Done phase */}
+      {phase === "done" && (
+        <button
+          onClick={onNext}
+          className="flex w-full items-center justify-center gap-2 rounded-[var(--radius-lg)] border-2 border-primary-500 py-3 text-sm font-medium text-primary-600"
+        >
+          타임드 실전으로 <ArrowRight size={14} />
         </button>
       )}
     </div>

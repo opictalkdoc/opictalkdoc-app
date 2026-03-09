@@ -113,8 +113,14 @@ Deno.serve(async (req) => {
     switch (action) {
       case "session-brief":
         return await handleSessionBrief(params, userId);
+      case "generate-warmup":
+        return await handleGenerateWarmup(params);
       case "generate-epp":
         return await handleGenerateEPP(params);
+      case "generate-variation":
+        return await handleGenerateVariation(params);
+      case "generate-transformation":
+        return await handleGenerateTransformation(params);
       case "evaluate-timed":
         return await handleEvaluateTimed(params);
       case "evaluate-repair":
@@ -204,6 +210,72 @@ Return this JSON:
 }
 
 // ============================================================
+// B-1: generate-warmup — Screen 1 워밍업 모범 답변 생성
+// ============================================================
+
+async function handleGenerateWarmup(params: {
+  training_session_id: string;
+  question_type: string;
+  target_level: string;
+  text_policy: "full" | "keywords" | "off";
+}) {
+  const supabase = getSupabase();
+
+  // 해당 유형의 질문 1개 랜덤 선택
+  const { data: questions } = await supabase
+    .from("questions")
+    .select("id, question_english, question_korean, question_type_eng, topic")
+    .eq("question_type_eng", params.question_type)
+    .eq("category", "일반")
+    .limit(10);
+
+  const question =
+    questions && questions.length > 0
+      ? questions[Math.floor(Math.random() * questions.length)]
+      : null;
+
+  const questionData = question
+    ? { id: question.id, english: question.question_english, korean: question.question_korean }
+    : { id: "", english: "Tell me about something you do regularly.", korean: "" };
+
+  const levelGuide = params.target_level.startsWith("I")
+    ? "IM level (3-5 sentences, simple connectors)"
+    : params.target_level.startsWith("A")
+      ? "AL level (5-7 sentences, complex structures)"
+      : "IL level (2-3 sentences, basic vocabulary)";
+
+  const systemPrompt = `You are an OPIc speaking coach for Korean learners.
+Generate a model answer for shadowing warmup practice.
+The answer should be natural, conversational English at ${levelGuide}.
+All Korean text in 한국어. Return JSON only.`;
+
+  const userPrompt = `Generate a model answer for warmup shadowing:
+- Question: ${questionData.english}
+- Question type: ${params.question_type}
+- Target level: ${params.target_level}
+
+Return this JSON:
+{
+  "question": ${JSON.stringify(questionData)},
+  "model_answer": "Full model answer in English (natural, conversational)",
+  "sentences": [
+    {
+      "english": "English sentence 1",
+      "korean": "한국어 번역 1",
+      "keywords": ["key", "words"]
+    }
+  ],
+  "rhythm_tips": ["한국어 리듬 팁 1", "한국어 리듬 팁 2"],
+  "key_expressions": ["expression 1", "expression 2"]
+}`;
+
+  const raw = await callGPT(systemPrompt, userPrompt, "gpt-4.1-mini", 0.6, 1000);
+  const warmup = parseGPTJson<Record<string, unknown>>(raw);
+
+  return jsonResponse({ warmup });
+}
+
+// ============================================================
 // A-6: generate-epp — Screen 2 EPP 패턴 생성
 // ============================================================
 
@@ -263,6 +335,122 @@ Return this JSON:
   const epp = parseGPTJson<Record<string, unknown>>(raw);
 
   return jsonResponse({ epp });
+}
+
+// ============================================================
+// B-2: generate-variation — Screen 3 변형 카드 생성
+// ============================================================
+
+async function handleGenerateVariation(params: {
+  training_session_id: string;
+  question_type: string;
+  target_level: string;
+  weakness_tags: string[];
+  variation_changes: number;
+}) {
+  const supabase = getSupabase();
+
+  // 같은 유형의 질문 여러 개 선택 (변형 카드용)
+  const { data: questions } = await supabase
+    .from("questions")
+    .select("id, question_english, question_korean, question_type_eng, topic")
+    .eq("question_type_eng", params.question_type)
+    .eq("category", "일반")
+    .limit(20);
+
+  const shuffled = (questions || []).sort(() => Math.random() - 0.5);
+  const selectedQs = shuffled.slice(0, 3);
+
+  const systemPrompt = `You are an OPIc speaking coach for Korean learners.
+Generate Forced Variation cards for speaking practice. Each card forces the learner to adapt their answer to a different condition.
+All Korean text in 한국어. Return JSON only.`;
+
+  const userPrompt = `Generate ${Math.min(3, params.variation_changes + 1)} Forced Variation cards:
+- Question type: ${params.question_type}
+- Target level: ${params.target_level}
+- Weakness tags: ${params.weakness_tags.join(", ")}
+- Changes per card: ${params.variation_changes}
+- Available questions: ${JSON.stringify(selectedQs.map(q => ({
+    id: q.id,
+    english: q.question_english,
+    korean: q.question_korean,
+  })))}
+
+Each card should force ONE type of variation:
+1. Time change: "now" vs "used to" / "past" vs "present"
+2. Condition change: "alone" vs "with friends" / "weekday" vs "weekend"
+3. Comparison: A vs B
+4. Reason reversal: "like but 1 downside" / "dislike but 1 upside"
+
+Return this JSON:
+{
+  "variation_cards": [
+    {
+      "question": {"id": "...", "english": "...", "korean": "..."},
+      "variation_type": "time_change | condition_change | comparison | reason_reversal",
+      "instruction": "한국어 지시 (예: '과거형으로 바꿔서 말해보세요')",
+      "forced_mission": {
+        "connector": "Required connector (e.g. 'However', 'On the other hand')",
+        "detail_prompt": "한국어 디테일 요구 (예: '구체적인 장소 1개를 포함하세요')"
+      },
+      "time_limit_seconds": 40,
+      "example_starter": "English starter sentence"
+    }
+  ]
+}`;
+
+  const raw = await callGPT(systemPrompt, userPrompt, "gpt-4.1-mini", 0.7, 1200);
+  const variation = parseGPTJson<Record<string, unknown>>(raw);
+
+  return jsonResponse({ variation });
+}
+
+// ============================================================
+// B-3: generate-transformation — Screen 3 구두 변환 카드 생성
+// ============================================================
+
+async function handleGenerateTransformation(params: {
+  training_session_id: string;
+  question_type: string;
+  target_level: string;
+}) {
+  const systemPrompt = `You are an OPIc speaking coach for Korean learners.
+Generate Oral Transformation cards for rapid speaking drill.
+Each card shows a simple sentence and asks the learner to transform it instantly.
+All Korean text in 한국어. Return JSON only.`;
+
+  const cardCount = params.target_level.startsWith("A") ? 10
+    : params.target_level.startsWith("IH") ? 8
+    : 6;
+
+  const userPrompt = `Generate ${cardCount} Oral Transformation cards:
+- Question type: ${params.question_type}
+- Target level: ${params.target_level}
+
+Transformation types to include (mix them):
+- Tense change: present → past / past → present perfect
+- Add reason: statement → statement + because...
+- Comparison: statement → compared to X, ...
+- Subjunctive: statement → If I had/could...
+- Expansion: short → add detail/example
+
+Return this JSON:
+{
+  "transformation_cards": [
+    {
+      "original": "Simple English sentence",
+      "transform_type": "tense_change | add_reason | comparison | subjunctive | expansion",
+      "instruction": "한국어 변환 지시 (예: '과거형으로 바꾸세요')",
+      "expected_pattern": "Expected answer pattern (e.g. 'I used to...')",
+      "time_limit_seconds": 4
+    }
+  ]
+}`;
+
+  const raw = await callGPT(systemPrompt, userPrompt, "gpt-4.1-mini", 0.7, 1200);
+  const transformation = parseGPTJson<Record<string, unknown>>(raw);
+
+  return jsonResponse({ transformation });
 }
 
 // ============================================================
