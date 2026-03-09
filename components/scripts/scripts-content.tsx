@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -70,7 +71,20 @@ export function ScriptsContent({
   initialShadowingHistory,
   initialShadowableScripts,
 }: ScriptsContentProps) {
-  const [activeTab, setActiveTab] = useState<TabId>("create");
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  // URL ?tab= 파라미터로 탭 상태 유지 (새로고침 시 복원)
+  const tabParam = searchParams.get("tab") as TabId | null;
+  const resolvedTab = tabParam && tabs.some((t) => t.id === tabParam) ? tabParam : "create";
+  const [activeTab, setActiveTabState] = useState<TabId>(resolvedTab);
+
+  const setActiveTab = useCallback((id: TabId) => {
+    setActiveTabState(id);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("tab", id);
+    router.replace(`?${params.toString()}`, { scroll: false });
+  }, [searchParams, router]);
 
   return (
     <div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Play,
@@ -88,7 +88,21 @@ export function MockExamContent({
   initialLatestSession,
   latestSessionId,
 }: MockExamContentProps) {
-  const [activeTab, setActiveTab] = useState<TabId>("start");
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  // URL ?tab= 파라미터로 탭 상태 유지 (새로고침 시 복원)
+  const tabParam = searchParams.get("tab") as TabId | null;
+  const resolvedTab = tabParam && tabs.some((t) => t.id === tabParam) ? tabParam : "start";
+  const [activeTab, setActiveTabState] = useState<TabId>(resolvedTab);
+
+  const setActiveTab = useCallback((id: TabId) => {
+    setActiveTabState(id);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("tab", id);
+    router.replace(`?${params.toString()}`, { scroll: false });
+  }, [searchParams, router]);
+
   // 이력에서 결과 탭으로 이동 시 사용할 session_id
   const [viewSessionId, setViewSessionId] = useState<string | null>(null);
 
@@ -96,7 +110,7 @@ export function MockExamContent({
   const handleViewResult = useCallback((sessionId: string) => {
     setViewSessionId(sessionId);
     setActiveTab("results");
-  }, []);
+  }, [setActiveTab]);
 
   return (
     <div>
