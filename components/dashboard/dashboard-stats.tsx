@@ -50,10 +50,17 @@ function StatsPlaceholder() {
 
 /* ── 메인 컴포넌트 ── */
 
-export function DashboardStats({ userId }: { userId: string }) {
+export function DashboardStats({
+  userId,
+  initialCredits,
+}: {
+  userId: string;
+  initialCredits?: Record<string, unknown>;
+}) {
   const { data: credits, isLoading, isError } = useQuery({
     queryKey: ["user-credits", userId],
     queryFn: () => fetchUserCredits(userId),
+    initialData: initialCredits,
     staleTime: 5 * 60 * 1000, // 5분
     retry: 2,
   });

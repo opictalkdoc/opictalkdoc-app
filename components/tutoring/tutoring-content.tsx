@@ -66,7 +66,13 @@ const PRIORITY_BADGE: Record<number, { label: string; color: string }> = {
 
 /* ── 메인 컴포넌트 ── */
 
-export function TutoringContent() {
+type DiagnosisData = Awaited<ReturnType<typeof getDiagnosis>>["data"];
+
+export function TutoringContent({
+  initialDiagnosis,
+}: {
+  initialDiagnosis?: DiagnosisData;
+} = {}) {
   const [activeTab, setActiveTab] = useState<TabId>("diagnosis");
 
   const { data: diagData, isLoading, isError, error } = useQuery({
@@ -76,6 +82,7 @@ export function TutoringContent() {
       if (result.error || !result.data) throw new Error(result.error || "진단 데이터 조회 실패");
       return result.data;
     },
+    initialData: initialDiagnosis ?? undefined,
     staleTime: 5 * 60 * 1000,
   });
 

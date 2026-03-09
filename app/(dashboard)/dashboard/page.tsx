@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import {
   BarChart3,
@@ -9,6 +10,7 @@ import {
   Target,
 } from "lucide-react";
 import { getAuthClaims } from "@/lib/auth";
+import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { DashboardStats } from "@/components/dashboard/dashboard-stats";
 
 export const metadata = {
@@ -207,6 +209,19 @@ function SidePanel({ claims }: { claims: { user_metadata?: ClaimsMetadata } | nu
   );
 }
 
+/* ── 서버 사전 조회 ── */
+
+async function DashboardStatsLoader({ userId }: { userId: string }) {
+  const supabase = await createServerSupabaseClient();
+  const { data: credits } = await supabase
+    .from("user_credits")
+    .select("*")
+    .eq("user_id", userId)
+    .single();
+
+  return <DashboardStats userId={userId} initialCredits={credits ?? undefined} />;
+}
+
 /* ── 페이지 ── */
 
 export default async function DashboardPage() {
@@ -223,9 +238,22 @@ export default async function DashboardPage() {
         </p>
       </div>
 
-      {/* 통계 카드 — 클라이언트 캐시 (useQuery, staleTime: 5분) */}
+      {/* 통계 카드 — 서버 사전 조회 + Suspense */}
       {userId ? (
-        <DashboardStats userId={userId} />
+        <Suspense
+          fallback={
+            <div className="grid gap-3 grid-cols-2 sm:gap-4 lg:grid-cols-4">
+              {[1, 2, 3, 4].map((i) => (
+                <div
+                  key={i}
+                  className="h-[100px] animate-pulse rounded-[var(--radius-xl)] border border-border bg-surface p-3.5 sm:h-[118px] sm:p-5"
+                />
+              ))}
+            </div>
+          }
+        >
+          <DashboardStatsLoader userId={userId} />
+        </Suspense>
       ) : (
         <div className="grid gap-3 grid-cols-2 sm:gap-4 lg:grid-cols-4">
           {[1, 2, 3, 4].map((i) => (
