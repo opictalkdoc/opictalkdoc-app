@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useCallback } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useState, useEffect, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { BarChart3, Send, MessageSquare } from "lucide-react";
 import { FrequencyTab } from "./frequency/frequency-tab";
@@ -32,19 +32,20 @@ interface ReviewsContentProps {
 export function ReviewsContent({ initialStats, initialFrequency, initialSubmissions, initialPublicReviews, initialSubmissionDetails }: ReviewsContentProps) {
   const queryClient = useQueryClient();
   const searchParams = useSearchParams();
-  const router = useRouter();
 
-  // URL ?tab= 파라미터가 single source of truth (useState 없이 URL에서 직접 읽기)
+  // useState로 즉시 탭 전환 + history.replaceState로 URL만 동기화 (Next.js 네비게이션 미발생)
   const tabParam = searchParams.get("tab") as TabId | null;
   const fromCompleted = searchParams.get("completed") === "true";
-  const activeTab: TabId = tabParam && tabs.some((t) => t.id === tabParam) ? tabParam : fromCompleted ? "submit" : "frequency";
+  const initialTab: TabId = tabParam && tabs.some((t) => t.id === tabParam) ? tabParam : fromCompleted ? "submit" : "frequency";
+  const [activeTab, setActiveTabState] = useState<TabId>(initialTab);
 
   const setActiveTab = useCallback((id: TabId) => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("tab", id);
-    params.delete("completed");
-    router.replace(`?${params.toString()}`, { scroll: false });
-  }, [searchParams, router]);
+    setActiveTabState(id);
+    const url = new URL(window.location.href);
+    url.searchParams.set("tab", id);
+    url.searchParams.delete("completed");
+    window.history.replaceState(null, "", url.toString());
+  }, []);
 
   // 서버에서 조회한 완료 후기 상세를 캐시에 즉시 세팅 (클라이언트 RTT 0회)
   useEffect(() => {

@@ -91,15 +91,17 @@ export function MockExamContent({
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  // URL ?tab= 파라미터가 single source of truth (useState 없이 URL에서 직접 읽기)
+  // useState로 즉시 탭 전환 + history.replaceState로 URL만 동기화 (Next.js 네비게이션 미발생)
   const tabParam = searchParams.get("tab") as TabId | null;
-  const activeTab: TabId = tabParam && tabs.some((t) => t.id === tabParam) ? tabParam : "start";
+  const initialTab: TabId = tabParam && tabs.some((t) => t.id === tabParam) ? tabParam : "start";
+  const [activeTab, setActiveTabState] = useState<TabId>(initialTab);
 
   const setActiveTab = useCallback((id: TabId) => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("tab", id);
-    router.replace(`?${params.toString()}`, { scroll: false });
-  }, [searchParams, router]);
+    setActiveTabState(id);
+    const url = new URL(window.location.href);
+    url.searchParams.set("tab", id);
+    window.history.replaceState(null, "", url.toString());
+  }, []);
 
   // 이력에서 결과 탭으로 이동 시 사용할 session_id
   const [viewSessionId, setViewSessionId] = useState<string | null>(null);
