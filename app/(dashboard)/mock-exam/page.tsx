@@ -3,7 +3,6 @@ import { MockExamContent } from "@/components/mock-exam/mock-exam-content";
 import {
   getHistory,
   getActiveSession,
-  getExamPool,
   checkMockExamCredit,
   getSession,
 } from "@/lib/actions/mock-exam";
@@ -12,13 +11,12 @@ export const metadata = {
   title: "모의고사 | 오픽톡닥",
 };
 
-// 서버에서 5개 쿼리 병렬 사전 조회 (클라이언트 RTT 제거)
+// 서버에서 사전 조회 — getExamPool은 무거워(5~6쿼리) 클라이언트 백그라운드 로드
 async function MockExamLoader() {
-  const [historyResult, activeResult, poolResult, creditResult] =
+  const [historyResult, activeResult, creditResult] =
     await Promise.all([
       getHistory().catch(() => ({ data: undefined })),
       getActiveSession().catch(() => ({ data: undefined })),
-      getExamPool().catch(() => ({ data: undefined })),
       checkMockExamCredit().catch(() => ({ data: undefined })),
     ]);
 
@@ -35,7 +33,6 @@ async function MockExamLoader() {
     <MockExamContent
       initialHistory={historyResult?.data ?? undefined}
       initialActive={activeResult}
-      initialPool={poolResult}
       initialCredit={creditResult}
       initialLatestSession={latestSessionResult}
       latestSessionId={latestSessionId}

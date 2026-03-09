@@ -72,7 +72,6 @@ type TabId = (typeof tabs)[number]["id"];
 interface MockExamContentProps {
   initialHistory?: MockExamHistoryItem[];
   initialActive?: Awaited<ReturnType<typeof getActiveSession>>;
-  initialPool?: Awaited<ReturnType<typeof getExamPool>>;
   initialCredit?: Awaited<ReturnType<typeof checkMockExamCredit>>;
   initialLatestSession?: Awaited<ReturnType<typeof getSession>>;
   latestSessionId?: string;
@@ -83,7 +82,6 @@ interface MockExamContentProps {
 export function MockExamContent({
   initialHistory,
   initialActive,
-  initialPool,
   initialCredit,
   initialLatestSession,
   latestSessionId,
@@ -141,7 +139,6 @@ export function MockExamContent({
       {activeTab === "start" && (
         <StartTab
           initialActive={initialActive}
-          initialPool={initialPool}
           initialCredit={initialCredit}
         />
       )}
@@ -168,11 +165,9 @@ export function MockExamContent({
 
 function StartTab({
   initialActive,
-  initialPool,
   initialCredit,
 }: {
   initialActive?: Awaited<ReturnType<typeof getActiveSession>>;
-  initialPool?: Awaited<ReturnType<typeof getExamPool>>;
   initialCredit?: Awaited<ReturnType<typeof checkMockExamCredit>>;
 }) {
   const router = useRouter();
@@ -203,7 +198,6 @@ function StartTab({
     queryKey: ["mock-exam-pool"],
     queryFn: () => getExamPool(),
     staleTime: 60 * 1000, // 1분
-    initialData: initialPool,
   });
 
   // 크레딧 확인
