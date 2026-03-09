@@ -271,6 +271,7 @@ export function StoreContent({ userId }: { userId: string }) {
           email: user.email ?? "buyer@opictalkdoc.com",
           phoneNumber: "01000000000",
         },
+        // customData는 포트원 대시보드 조회용 (서버는 세션에서 userId 추출, customData를 신뢰하지 않음)
         customData: { userId: user.id, productId },
       });
 

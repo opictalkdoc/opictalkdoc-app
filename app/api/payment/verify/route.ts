@@ -1,5 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { createServerSupabaseClient } from "@/lib/supabase-server";
+import { z } from "zod";
+
+// Zod 입력 검증 — 허용된 상품 ID만 수신
+const VerifySchema = z.object({
+  paymentId: z.string().min(1).max(200),
+  productId: z.enum([
+    "basic_plan",
+    "premium_plan",
+    "mock_exam_credit",
+    "script_credit",
+  ]),
+});
 
 // 상품 가격 맵 (서버 전용, 위변조 방지)
 const PRODUCTS: Record<
@@ -57,17 +70,32 @@ function getServiceClient() {
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { paymentId, productId } = body;
-
-    if (!paymentId || !productId) {
+    // 1. 입력 검증 (Zod)
+    const rawBody = await request.json();
+    const parseResult = VerifySchema.safeParse(rawBody);
+    if (!parseResult.success) {
       return NextResponse.json(
-        { error: "paymentId와 productId가 필요합니다." },
+        { error: "잘못된 요청 형식입니다." },
         { status: 400 }
       );
     }
+    const { paymentId, productId } = parseResult.data;
 
-    // 상품 존재 확인
+    // 2. 서버 세션에서 userId 추출 (M-4: customData 대신 서버 인증)
+    const userSupabase = await createServerSupabaseClient();
+    const {
+      data: { user },
+    } = await userSupabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json(
+        { error: "인증이 필요합니다." },
+        { status: 401 }
+      );
+    }
+    const userId = user.id;
+
+    // 3. 상품 존재 확인
     const product = PRODUCTS[productId];
     if (!product) {
       return NextResponse.json(
@@ -76,7 +104,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 포트원 API로 결제 검증
+    // 4. 포트원 API로 결제 검증
     const portoneRes = await fetch(
       `https://api.portone.io/payments/${encodeURIComponent(paymentId)}`,
       {
@@ -97,7 +125,7 @@ export async function POST(request: NextRequest) {
 
     const payment = await portoneRes.json();
 
-    // 결제 상태 확인
+    // 5. 결제 상태 확인
     if (payment.status !== "PAID") {
       return NextResponse.json(
         { error: `결제가 완료되지 않았습니다. (상태: ${payment.status})` },
@@ -105,7 +133,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 금액 위변조 검증
+    // 6. 금액 위변조 검증
     if (payment.amount.total !== product.price) {
       console.error(
         "금액 불일치:",
@@ -119,135 +147,59 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // customData에서 userId 추출
-    let userId: string | null = null;
+    // 7. customData.userId와 세션 userId 교차 검증 (방어적 로깅)
     if (payment.customData) {
       const custom =
         typeof payment.customData === "string"
           ? JSON.parse(payment.customData)
           : payment.customData;
-      userId = custom.userId ?? null;
-    }
-
-    if (!userId) {
-      return NextResponse.json(
-        { error: "사용자 정보를 확인할 수 없습니다." },
-        { status: 400 }
-      );
-    }
-
-    const supabase = getServiceClient();
-
-    // 중복 결제 처리 방지 — 이미 처리된 paymentId인지 확인
-    const { data: existingOrder } = await supabase
-      .from("orders")
-      .select("id, status")
-      .eq("payment_id", paymentId)
-      .single();
-
-    if (existingOrder) {
-      // 이미 처리된 결제
-      if (existingOrder.status === "paid") {
-        return NextResponse.json({
-          success: true,
-          message: "이미 처리된 결제입니다.",
-          orderId: paymentId,
-        });
+      if (custom.userId && custom.userId !== userId) {
+        console.error(
+          "보안 경고: customData.userId와 세션 userId 불일치",
+          { customData: custom.userId, session: userId, paymentId }
+        );
       }
     }
 
-    // orders 기록
-    const { error: orderError } = await supabase.from("orders").insert({
-      user_id: userId,
-      product_id: productId,
-      order_name: product.name,
-      amount: product.price,
-      status: "paid",
-      payment_id: paymentId,
-      pg_provider: payment.channel?.pgProvider ?? null,
-      pg_tx_id: payment.pgTxId ?? null,
-      pay_method: payment.method?.type ?? null,
-      paid_at: payment.paidAt ?? new Date().toISOString(),
-      receipt_url: payment.receiptUrl ?? null,
-    });
+    // 8. 원자적 결제 처리 (process_payment RPC — 주문 기록 + 크레딧 지급 단일 트랜잭션)
+    const supabase = getServiceClient();
 
-    if (orderError) {
-      console.error("주문 기록 오류:", orderError);
+    const { data: rpcResult, error: rpcError } = await supabase.rpc(
+      "process_payment",
+      {
+        p_user_id: userId,
+        p_payment_id: paymentId,
+        p_product_id: productId,
+        p_order_name: product.name,
+        p_amount: product.price,
+        p_pg_provider: payment.channel?.pgProvider ?? null,
+        p_pg_tx_id: payment.pgTxId ?? null,
+        p_pay_method: payment.method?.type ?? null,
+        p_paid_at: payment.paidAt ?? new Date().toISOString(),
+        p_receipt_url: payment.receiptUrl ?? null,
+        p_is_plan: product.months > 0,
+        p_plan: product.plan,
+        p_plan_months: product.months,
+        p_mock_exam_credits: product.mockExam,
+        p_script_credits: product.script,
+      }
+    );
+
+    if (rpcError) {
+      console.error("결제 처리 RPC 오류:", rpcError);
       return NextResponse.json(
-        { error: "주문 기록에 실패했습니다." },
+        { error: "결제 처리에 실패했습니다." },
         { status: 500 }
       );
     }
 
-    // user_credits 갱신
-    // 기존 크레딧 조회
-    const { data: existingCredits } = await supabase
-      .from("user_credits")
-      .select("*")
-      .eq("user_id", userId)
-      .single();
-
-    if (existingCredits) {
-      // 기존 사용자 — 크레딧 추가
-      const updates: Record<string, unknown> = {
-        updated_at: new Date().toISOString(),
-      };
-
-      if (product.months > 0) {
-        // 플랜 상품 → 플랜 크레딧에 추가 (만료 있음)
-        updates.current_plan = product.plan;
-        updates.plan_mock_exam_credits = product.mockExam;
-        updates.plan_script_credits = product.script;
-        const expiresAt = new Date();
-        expiresAt.setMonth(expiresAt.getMonth() + product.months);
-        updates.plan_expires_at = expiresAt.toISOString();
-      } else {
-        // 횟수권 → 영구 크레딧에 추가
-        updates.mock_exam_credits =
-          existingCredits.mock_exam_credits + product.mockExam;
-        updates.script_credits =
-          existingCredits.script_credits + product.script;
-      }
-
-      const { error: updateError } = await supabase
-        .from("user_credits")
-        .update(updates)
-        .eq("user_id", userId);
-
-      if (updateError) {
-        console.error("크레딧 갱신 오류:", updateError);
-        return NextResponse.json(
-          { error: "크레딧 갱신에 실패했습니다." },
-          { status: 500 }
-        );
-      }
-    } else {
-      // 신규 사용자 (트리거가 안 돌았을 경우 안전망)
-      const insertData: Record<string, unknown> = {
-        user_id: userId,
-        current_plan: product.months > 0 ? product.plan : "free",
-        mock_exam_credits: product.months > 0 ? 1 : 1 + product.mockExam,
-        script_credits: product.months > 0 ? 0 : product.script,
-        plan_mock_exam_credits: product.months > 0 ? product.mockExam : 0,
-        plan_script_credits: product.months > 0 ? product.script : 0,
-        plan_expires_at:
-          product.months > 0
-            ? new Date(
-                Date.now() + product.months * 30 * 24 * 60 * 60 * 1000
-              ).toISOString()
-            : null,
-      };
-      const { error: insertError } = await supabase
-        .from("user_credits")
-        .insert(insertData);
-
-      if (insertError) {
-        console.error("크레딧 생성 오류:", insertError);
-        return NextResponse.json(
-          { error: "크레딧 생성에 실패했습니다." },
-          { status: 500 }
-        );
-      }
+    // 중복 결제도 success 리턴 (멱등성)
+    if (rpcResult?.duplicate) {
+      return NextResponse.json({
+        success: true,
+        message: "이미 처리된 결제입니다.",
+        orderId: paymentId,
+      });
     }
 
     return NextResponse.json({
