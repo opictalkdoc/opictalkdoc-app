@@ -170,17 +170,21 @@ export function MockExamSessionWrapper({
   // 서베이
   if (phase === "survey") {
     return (
-      <SurveyIntro onComplete={handleSurveyComplete} />
+      <div className="h-0 flex-grow overflow-y-auto max-md:[scrollbar-width:none] max-md:[&::-webkit-scrollbar]:hidden">
+        <SurveyIntro onComplete={handleSurveyComplete} />
+      </div>
     );
   }
 
   // 디바이스 테스트
   if (phase === "device-test") {
     return (
-      <DeviceTest
-        onComplete={handleDeviceTestComplete}
-        onBack={handleDeviceTestBack}
-      />
+      <div className="h-0 flex-grow overflow-y-auto max-md:[scrollbar-width:none] max-md:[&::-webkit-scrollbar]:hidden">
+        <DeviceTest
+          onComplete={handleDeviceTestComplete}
+          onBack={handleDeviceTestBack}
+        />
+      </div>
     );
   }
 
