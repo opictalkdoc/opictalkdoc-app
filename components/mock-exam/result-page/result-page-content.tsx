@@ -43,7 +43,7 @@ interface ResultPageContentProps {
     session: MockTestSession;
     answers: MockTestAnswer[];
     evaluations: MockTestEvaluation[];
-    report: MockTestReport;
+    report: MockTestReport | null;
     questions: Array<{
       id: string;
       question_english: string;
@@ -51,6 +51,7 @@ interface ResultPageContentProps {
       question_type_eng: string;
       topic: string;
       category: string;
+      audio_url: string | null;
     }>;
   };
   previousResult?: MockExamHistoryItem | null;
