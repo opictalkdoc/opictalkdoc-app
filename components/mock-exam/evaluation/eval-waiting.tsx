@@ -209,10 +209,10 @@ export function EvalWaiting({
         </div>
       </div>
 
-      {/* CTA 버튼 */}
+      {/* CTA 버튼 — 별도 결과 페이지로 이동 */}
       {isReportReady && (
         <button
-          onClick={() => router.push("/mock-exam")}
+          onClick={() => router.push(`/mock-exam/result/${sessionId}`)}
           className="mt-6 inline-flex items-center gap-2 rounded-xl bg-primary-500 px-6 py-3 text-sm font-semibold text-white hover:bg-primary-600"
         >
           결과 확인하기

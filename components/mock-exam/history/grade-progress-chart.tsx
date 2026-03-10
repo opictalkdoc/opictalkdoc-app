@@ -10,31 +10,12 @@ import {
   CartesianGrid,
   Tooltip,
 } from "recharts";
-import { TrendingUp, TrendingDown, Minus, AlertTriangle } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus } from "lucide-react";
 import type { MockExamHistoryItem, OpicLevel } from "@/lib/types/mock-exam";
 import {
   OPIC_LEVEL_ORDER,
   MOCK_EXAM_MODE_LABELS,
 } from "@/lib/types/mock-exam";
-
-/* ── 등급 경계값 (total_score 기준, 규칙엔진 근사치) ── */
-
-const GRADE_RANGES: Record<OpicLevel, { min: number; max: number }> = {
-  NH: { min: 0, max: 15 },
-  IL: { min: 15, max: 30 },
-  IM1: { min: 30, max: 45 },
-  IM2: { min: 45, max: 60 },
-  IM3: { min: 60, max: 75 },
-  IH: { min: 75, max: 90 },
-  AL: { min: 90, max: 100 },
-};
-
-const FACT_LABELS: Record<string, string> = {
-  F: "말하기흐름",
-  A: "문법정확성",
-  C: "내용풍부도",
-  T: "질문수행력",
-};
 
 const FACT_COLORS: Record<string, string> = {
   F: "#3B82F6", // 파랑
@@ -62,6 +43,19 @@ function movingAverage(values: number[], window: number): (number | null)[] {
     const slice = values.slice(i - window + 1, i + 1);
     return slice.reduce((a, b) => a + b, 0) / slice.length;
   });
+}
+
+/* ── Y축 커스텀 틱 (등급 라벨 왼쪽 정렬) ── */
+
+const LEVEL_LABELS: Record<number, string> = { 1: "NH", 2: "IL", 3: "IM1", 4: "IM2", 5: "IM3", 6: "IH", 7: "AL" };
+
+function YAxisTick({ x, y, payload }: { x?: number; y?: number; payload?: { value: number } }) {
+  const label = LEVEL_LABELS[payload?.value ?? 0] || "";
+  return (
+    <text x={14} y={y} dy={4} fontSize={11} fill="var(--color-foreground-secondary, #8B7E72)" textAnchor="middle">
+      {label}
+    </text>
+  );
 }
 
 /* ── 커스텀 툴팁 ── */
@@ -141,55 +135,18 @@ export function GradeProgressChart({ data }: GradeProgressChartProps) {
   if (!latest) return null;
 
   const currentLevel = latest.final_level as OpicLevel;
-  const currentScore = latest.total_score ?? 0;
-  const range = GRADE_RANGES[currentLevel];
-
-  // 준비도 계산 (현재 등급 구간 내 위치 %)
-  const readiness = range
-    ? Math.min(100, Math.max(0, ((currentScore - range.min) / (range.max - range.min)) * 100))
-    : 0;
-
-  // 다음 등급
-  const levelOrder = Object.entries(OPIC_LEVEL_ORDER).sort((a, b) => a[1] - b[1]);
-  const currentIdx = levelOrder.findIndex(([l]) => l === currentLevel);
-  const nextLevel = currentIdx < levelOrder.length - 1 ? levelOrder[currentIdx + 1][0] as OpicLevel : null;
 
   // 등급 변화
   const levelChange = previous
     ? (OPIC_LEVEL_ORDER[currentLevel] ?? 0) - (OPIC_LEVEL_ORDER[previous.final_level as OpicLevel] ?? 0)
     : 0;
-  const scoreChange = previous ? currentScore - (previous.total_score ?? 0) : 0;
-
-  // 병목 분석 (FACT 최저)
-  const factScores = {
-    F: latest.score_f ?? 0,
-    A: latest.score_a ?? 0,
-    C: latest.score_c ?? 0,
-    T: latest.score_t ?? 0,
-  };
-  const bottleneck = Object.entries(factScores).reduce((min, [k, v]) =>
-    v < min[1] ? [k, v] : min
-  );
-  const strongest = Object.entries(factScores).reduce((max, [k, v]) =>
-    v > max[1] ? [k, v] : max
-  );
-
-  // FACT 변화량 (이전 대비)
-  const factChanges = previous
-    ? {
-        F: (latest.score_f ?? 0) - (previous.score_f ?? 0),
-        A: (latest.score_a ?? 0) - (previous.score_a ?? 0),
-        C: (latest.score_c ?? 0) - (previous.score_c ?? 0),
-        T: (latest.score_t ?? 0) - (previous.score_t ?? 0),
-      }
-    : null;
 
   return (
-    <div className="space-y-3">
+    <div className="flex flex-col">
       {/* A. 등급 추이 계단 그래프 */}
-      <div className="rounded-xl border border-border bg-surface p-3 sm:p-4">
-        <div className="mb-2 flex items-center justify-between sm:mb-3">
-          <h4 className="text-xs font-semibold text-foreground sm:text-sm">등급 추이</h4>
+      <div className="flex flex-1 flex-col rounded-xl border border-border bg-surface p-3 sm:p-6">
+        <div className="mb-3 flex items-center justify-between sm:mb-4">
+          <h3 className="font-semibold text-foreground">나의 등급 추이</h3>
           <div className="flex items-center gap-1.5">
             {levelChange > 0 && (
               <span className="flex items-center gap-0.5 text-[11px] font-medium text-green-600">
@@ -209,26 +166,24 @@ export function GradeProgressChart({ data }: GradeProgressChartProps) {
           </div>
         </div>
 
-        <div style={{ width: "100%", height: 160 }}>
+        <div className="min-h-0 flex-1" style={{ width: "100%", minHeight: 200 }}>
           <ResponsiveContainer>
-            <ComposedChart data={chartDataWithMA} margin={{ top: 5, right: 10, bottom: 0, left: -20 }}>
+            <ComposedChart data={chartDataWithMA} margin={{ top: 5, right: 15, bottom: 0, left: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border, #EAE0D5)" vertical={false} />
               <XAxis
                 dataKey="label"
-                tick={{ fontSize: 10, fill: "var(--color-foreground-muted, #B5A99D)" }}
+                tick={{ fontSize: 11, fill: "var(--color-foreground-muted, #B5A99D)" }}
                 axisLine={false}
                 tickLine={false}
               />
               <YAxis
                 domain={[0, 8]}
                 ticks={[1, 2, 3, 4, 5, 6, 7]}
-                tickFormatter={(v: number) => {
-                  const labels: Record<number, string> = { 1: "NH", 2: "IL", 3: "IM1", 4: "IM2", 5: "IM3", 6: "IH", 7: "AL" };
-                  return labels[v] || "";
-                }}
-                tick={{ fontSize: 9, fill: "var(--color-foreground-muted, #B5A99D)" }}
+                tick={<YAxisTick />}
+                interval={0}
                 axisLine={false}
                 tickLine={false}
+                width={40}
               />
               <Tooltip content={<ChartTooltip />} />
 
@@ -260,106 +215,6 @@ export function GradeProgressChart({ data }: GradeProgressChartProps) {
         </div>
       </div>
 
-      {/* B. 준비도 바 */}
-      <div className="rounded-xl border border-border bg-surface p-3 sm:p-4">
-        <div className="mb-2 flex items-center justify-between">
-          <h4 className="text-xs font-semibold text-foreground sm:text-sm">등급 내 위치</h4>
-          <span className="text-xs font-bold text-primary-600">{currentLevel}</span>
-        </div>
-
-        {/* 프로그레스 바 */}
-        <div className="relative">
-          <div className="flex items-center justify-between text-[10px] text-foreground-muted mb-1">
-            <span>{currentLevel}</span>
-            {nextLevel ? <span>{nextLevel}</span> : <span>최고 등급</span>}
-          </div>
-          <div className="h-3 w-full overflow-hidden rounded-full bg-surface-secondary">
-            <div
-              className="h-full rounded-full bg-gradient-to-r from-primary-400 to-primary-500 transition-all duration-500"
-              style={{ width: `${readiness}%` }}
-            />
-          </div>
-          <div className="mt-1.5 flex items-center justify-between">
-            <p className="text-[11px] text-foreground-secondary">
-              {readiness >= 80
-                ? nextLevel
-                  ? `${nextLevel} 진입 가능성이 높아졌어요`
-                  : "최고 등급을 유지하고 있어요"
-                : readiness >= 50
-                  ? `현재 ${currentLevel} 중상권 수준이에요`
-                  : `${currentLevel} 안정화가 필요해요`}
-            </p>
-            {previous && (
-              <span className={`text-[11px] font-medium ${scoreChange > 0 ? "text-green-600" : scoreChange < 0 ? "text-red-500" : "text-foreground-muted"}`}>
-                {scoreChange > 0 ? "+" : ""}{scoreChange.toFixed(1)}
-              </span>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* C. FACT 4영역 추이 */}
-      <div className="rounded-xl border border-border bg-surface p-3 sm:p-4">
-        <div className="mb-2 flex items-center justify-between sm:mb-3">
-          <h4 className="text-xs font-semibold text-foreground sm:text-sm">FACT 영역별 추이</h4>
-          <div className="flex gap-2">
-            {Object.entries(FACT_COLORS).map(([key, color]) => (
-              <span key={key} className="flex items-center gap-0.5 text-[10px] text-foreground-muted">
-                <span className="inline-block h-1.5 w-1.5 rounded-full" style={{ backgroundColor: color }} />
-                {key}
-              </span>
-            ))}
-          </div>
-        </div>
-
-        <div style={{ width: "100%", height: 120 }}>
-          <ResponsiveContainer>
-            <ComposedChart data={chartData} margin={{ top: 5, right: 10, bottom: 0, left: -20 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border, #EAE0D5)" vertical={false} />
-              <XAxis
-                dataKey="label"
-                tick={{ fontSize: 10, fill: "var(--color-foreground-muted, #B5A99D)" }}
-                axisLine={false}
-                tickLine={false}
-              />
-              <YAxis
-                domain={[0, 10]}
-                ticks={[2, 4, 6, 8, 10]}
-                tick={{ fontSize: 9, fill: "var(--color-foreground-muted, #B5A99D)" }}
-                axisLine={false}
-                tickLine={false}
-              />
-              <Tooltip content={<ChartTooltip />} />
-
-              <Line type="monotone" dataKey="f" stroke={FACT_COLORS.F} strokeWidth={1.5} dot={{ r: 2.5 }} />
-              <Line type="monotone" dataKey="a" stroke={FACT_COLORS.A} strokeWidth={1.5} dot={{ r: 2.5 }} />
-              <Line type="monotone" dataKey="c" stroke={FACT_COLORS.C} strokeWidth={1.5} dot={{ r: 2.5 }} />
-              <Line type="monotone" dataKey="t" stroke={FACT_COLORS.T} strokeWidth={1.5} dot={{ r: 2.5 }} />
-            </ComposedChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* 병목 + 변화량 태그 */}
-        <div className="mt-2 flex flex-wrap items-center gap-2 sm:mt-3">
-          <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-medium text-red-600 sm:text-[11px]">
-            <AlertTriangle size={10} />
-            병목: {bottleneck[0]} ({FACT_LABELS[bottleneck[0]]})
-          </span>
-          <span className="inline-flex items-center gap-1 rounded-full bg-green-50 px-2 py-0.5 text-[10px] font-medium text-green-600 sm:text-[11px]">
-            <TrendingUp size={10} />
-            강점: {strongest[0]} ({FACT_LABELS[strongest[0]]})
-          </span>
-          {factChanges && (
-            <div className="flex gap-1.5 text-[10px] text-foreground-muted sm:text-[11px]">
-              {Object.entries(factChanges).map(([key, val]) => (
-                <span key={key} style={{ color: FACT_COLORS[key] }}>
-                  {key} {val > 0 ? "+" : ""}{val.toFixed(1)}
-                </span>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
     </div>
   );
 }

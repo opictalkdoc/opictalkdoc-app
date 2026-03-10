@@ -78,7 +78,7 @@ export function GrowthReport({ report }: GrowthReportProps) {
         <div className="flex items-center gap-2">
           <TrendingUp size={18} className="text-primary-500" />
           <h3 className="font-semibold text-foreground">성장 리포트</h3>
-          <span className="rounded-full bg-primary-50 px-2 py-0.5 text-[10px] font-medium text-primary-600">
+          <span className="rounded-full bg-primary-50 px-2 py-0.5 text-xs font-medium text-primary-600">
             {comparison.session_count}회차
           </span>
         </div>
@@ -127,15 +127,15 @@ export function GrowthReport({ report }: GrowthReportProps) {
                   const diff = comparison[`score_${key.toLowerCase()}_diff` as keyof GrowthComparison] as number;
                   return (
                     <div key={key} className="flex items-start gap-2">
-                      <span className={`shrink-0 text-[11px] font-bold mt-0.5 w-16 ${FACT_COLORS[key]}`}>
+                      <span className={`shrink-0 text-xs font-bold mt-0.5 w-16 ${FACT_COLORS[key]}`}>
                         {FACT_LABELS[key]}
                         {diff != null && (
-                          <span className={`ml-1 text-[9px] ${diff > 0 ? "text-green-500" : diff < 0 ? "text-red-400" : "text-foreground-muted"}`}>
+                          <span className={`ml-1 text-[11px] ${diff > 0 ? "text-green-500" : diff < 0 ? "text-red-400" : "text-foreground-muted"}`}>
                             {diff > 0 ? "+" : ""}{diff.toFixed(1)}
                           </span>
                         )}
                       </span>
-                      <p className="text-[11px] text-foreground-secondary leading-relaxed">{comment}</p>
+                      <p className="text-xs text-foreground-secondary leading-relaxed">{comment}</p>
                     </div>
                   );
                 })}
@@ -155,14 +155,14 @@ export function GrowthReport({ report }: GrowthReportProps) {
               title="현재 병목"
             >
               <div className="flex items-center gap-2 mb-1.5">
-                <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${FACT_COLORS[analysis.bottleneck.primary]} bg-surface-secondary`}>
+                <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${FACT_COLORS[analysis.bottleneck.primary]} bg-surface-secondary`}>
                   {FACT_LABELS[analysis.bottleneck.primary] || analysis.bottleneck.primary}
                 </span>
-                <span className="text-[10px] text-foreground-muted">
+                <span className="text-xs text-foreground-muted">
                   다음 등급 진입의 가장 큰 장벽
                 </span>
               </div>
-              <p className="text-[11px] text-foreground-secondary leading-relaxed">
+              <p className="text-xs text-foreground-secondary leading-relaxed">
                 {analysis.bottleneck.reason}
               </p>
             </Section>
@@ -176,10 +176,10 @@ export function GrowthReport({ report }: GrowthReportProps) {
           {/* 성장 패턴 안내 (Phase D: 3회차+) */}
           {hasAnalysis && analysis.growth_pattern && analysis.pattern_message && (
             <div className="rounded-lg border border-primary-100 bg-primary-50/30 p-3">
-              <p className="text-[10px] font-medium text-primary-600 mb-1">
+              <p className="text-xs font-medium text-primary-600 mb-1">
                 성장 패턴 감지
               </p>
-              <p className="text-[11px] text-foreground-secondary leading-relaxed">
+              <p className="text-xs text-foreground-secondary leading-relaxed">
                 {analysis.pattern_message}
               </p>
             </div>
@@ -268,7 +268,7 @@ function ComparisonTable({
 
   return (
     <div className="rounded-lg border border-border overflow-hidden mt-3">
-      <table className="w-full text-[11px]">
+      <table className="w-full text-xs">
         <thead>
           <tr className="bg-surface-secondary/50">
             <th className="py-2 px-3 text-left font-medium text-foreground-muted">항목</th>
@@ -337,7 +337,7 @@ function TypeComparisonSection({
       <div className="space-y-1.5">
         {displayItems.map((item) => (
           <div key={item.type} className="flex items-center gap-2">
-            <span className="w-16 text-[10px] text-foreground-secondary shrink-0">
+            <span className="w-16 text-xs text-foreground-secondary shrink-0">
               {QT_KO[item.type] || item.type}
             </span>
             {/* 프로그레스 바 */}
@@ -359,11 +359,11 @@ function TypeComparisonSection({
                 style={{ width: `${Math.min(item.current_pass_rate * 100, 100)}%` }}
               />
             </div>
-            <span className="w-10 text-right text-[10px] font-medium text-foreground">
+            <span className="w-10 text-right text-xs font-medium text-foreground">
               {(item.current_pass_rate * 100).toFixed(0)}%
             </span>
             {/* 변화 */}
-            <span className={`w-10 text-right text-[9px] font-medium ${
+            <span className={`w-10 text-right text-[11px] font-medium ${
               item.change == null ? "text-foreground-muted" :
               item.change > 0 ? "text-green-600" :
               item.change < 0 ? "text-red-500" : "text-foreground-muted"
@@ -382,7 +382,7 @@ function TypeComparisonSection({
       {items.length > 5 && (
         <button
           onClick={() => setShowAll(!showAll)}
-          className="mt-2 text-[10px] text-primary-500 hover:text-primary-600"
+          className="mt-2 text-xs text-primary-500 hover:text-primary-600"
         >
           {showAll ? "접기" : `+${items.length - 5}개 더보기`}
         </button>
@@ -409,20 +409,20 @@ function RecommendedActions({
       <div className="space-y-2.5">
         {actions.map((action, i) => (
           <div key={action.priority} className="flex items-start gap-2.5">
-            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary-100 text-[10px] font-bold text-primary-600">
+            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary-100 text-xs font-bold text-primary-600">
               {action.priority}
             </span>
             <div className="flex-1 min-w-0">
-              <p className="text-[10px] text-primary-600 font-medium mb-0.5">
+              <p className="text-xs text-primary-600 font-medium mb-0.5">
                 {labels[i] || `우선순위 ${action.priority}`}
               </p>
-              <p className="text-[11px] text-foreground-secondary leading-relaxed">
+              <p className="text-xs text-foreground-secondary leading-relaxed">
                 {action.action}
               </p>
               {action.training_type && TRAINING_KO[action.training_type] && (
                 <a
                   href={`/tutoring?tab=prescription&focus=${action.training_type}`}
-                  className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-primary-100 px-2.5 py-1 text-[9px] font-medium text-primary-700 hover:bg-primary-200 transition-colors"
+                  className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-primary-100 px-2.5 py-1 text-[11px] font-medium text-primary-700 hover:bg-primary-200 transition-colors"
                 >
                   <Zap size={10} />
                   {TRAINING_KO[action.training_type]} 시작

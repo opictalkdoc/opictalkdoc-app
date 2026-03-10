@@ -665,7 +665,7 @@ export async function getHistory(): Promise<
     const sessionIds = sessions.map((s) => s.session_id);
     const { data: reports } = await supabase
       .from("mock_test_reports")
-      .select("session_id, final_level, total_score, score_f, score_a, score_c, score_t")
+      .select("session_id, final_level, total_score, score_f, score_a, score_c, score_t, coaching_report")
       .in("session_id", sessionIds);
 
     const reportMap = new Map(
@@ -687,13 +687,26 @@ export async function getHistory(): Promise<
       (questionTopics || []).map((q) => [q.id, q.topic])
     );
 
+    // 완료된 세션 수 (회차 계산용, 오래된 순)
+    const completedCount = sessions.filter((s) => s.status === "completed").length;
+    let completedIdx = completedCount; // 최신→오래된 역순이므로 카운트다운
+
     // 이력 아이템 구성
     const history: MockExamHistoryItem[] = sessions.map((s) => {
       const report = reportMap.get(s.session_id);
-      const topics = (s.question_ids || [])
+      // Q1(자기소개) 제외하고 토픽 추출
+      const topics = (s.question_ids || []).slice(1)
         .map((id: string) => topicMap.get(id))
         .filter(Boolean);
       const uniqueTopics = [...new Set(topics)];
+
+      // 코칭 헤드라인 추출
+      const coaching = report?.coaching_report as Record<string, unknown> | null;
+      const snapshot = coaching?.snapshot as Record<string, unknown> | null;
+      const headline = (snapshot?.headline as string) || null;
+
+      // 회차 번호 (완료된 세션만 번호 부여)
+      const attemptNumber = s.status === "completed" ? completedIdx-- : 0;
 
       return {
         session_id: s.session_id,
@@ -708,6 +721,8 @@ export async function getHistory(): Promise<
         score_c: report?.score_c == null ? null : Number(report.score_c),
         score_t: report?.score_t == null ? null : Number(report.score_t),
         topic_summary: uniqueTopics.slice(0, 5).join(", "),
+        coaching_headline: headline,
+        attempt_number: attemptNumber,
       };
     });
 

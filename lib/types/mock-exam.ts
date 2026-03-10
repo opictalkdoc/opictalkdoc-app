@@ -61,8 +61,8 @@ export const QUESTION_TYPE_TO_CHECKBOX: Record<string, CheckboxType> = {
 // ── 한글 레이블 매핑 ──
 
 export const MOCK_EXAM_MODE_LABELS: Record<MockExamMode, string> = {
-  training: '훈련 모드',
-  test: '실전 모드',
+  training: '훈련',
+  test: '실전',
 };
 
 export const SESSION_STATUS_LABELS: Record<SessionStatus, string> = {
@@ -668,6 +668,8 @@ export interface MockExamHistoryItem {
   score_c: number | null;
   score_t: number | null;
   topic_summary: string;            // "집, 음악, 재활용, 은행, 기술"
+  coaching_headline: string | null; // 코칭 한줄평 (snapshot.headline)
+  attempt_number: number;           // N회차
 }
 
 // 등급 추이 데이터 (UX 5-3)

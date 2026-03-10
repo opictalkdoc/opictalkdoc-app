@@ -13,14 +13,11 @@ import {
   ArrowRight,
   Trophy,
   Calendar,
-  Filter,
   ChevronDown,
   AlertTriangle,
 } from "lucide-react";
-import dynamic from "next/dynamic";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { GradeProgressChart, CurrentStateCard } from "./history/grade-progress-chart";
-import { GrowthReport } from "./result/growth-report";
 import { ExamPoolSelector } from "./start/exam-pool-selector";
 import { ModeSelector, TestModeConfirm } from "./start/mode-selector";
 import {
@@ -29,7 +26,6 @@ import {
   createSession,
   checkMockExamCredit,
   getHistory,
-  getSession,
   expireSession,
 } from "@/lib/actions/mock-exam";
 import type {
@@ -41,28 +37,13 @@ import {
   SESSION_STATUS_LABELS,
 } from "@/lib/types/mock-exam";
 
-// 결과 탭 ResultSummary — 동적 로드 (초기 번들 감소 + 에러 핸들링)
-const ResultSummary = dynamic(
-  () =>
-    import("./result/result-summary").then((mod) => ({
-      default: mod.ResultSummary,
-    })),
-  {
-    loading: () => (
-      <div className="flex justify-center py-12">
-        <Loader2 size={24} className="animate-spin text-primary-500" />
-      </div>
-    ),
-    ssr: false,
-  }
-);
+// 결과 탭은 이제 별도 immersive 페이지로 이동 (/mock-exam/result/[sessionId])
 
 /* ── 상수 ── */
 
 const tabs = [
-  { id: "start", label: "응시", icon: Play },
-  { id: "results", label: "결과", icon: BarChart3 },
-  { id: "history", label: "나의 이력", icon: History },
+  { id: "start", label: "모의고사 응시", icon: Play },
+  { id: "history", label: "나의 모의고사", icon: BarChart3 },
 ] as const;
 
 type TabId = (typeof tabs)[number]["id"];
@@ -73,8 +54,6 @@ interface MockExamContentProps {
   initialHistory?: MockExamHistoryItem[];
   initialActive?: Awaited<ReturnType<typeof getActiveSession>>;
   initialCredit?: Awaited<ReturnType<typeof checkMockExamCredit>>;
-  initialLatestSession?: Awaited<ReturnType<typeof getSession>>;
-  latestSessionId?: string;
 }
 
 /* ── 메인 컴포넌트 ── */
@@ -83,8 +62,6 @@ export function MockExamContent({
   initialHistory,
   initialActive,
   initialCredit,
-  initialLatestSession,
-  latestSessionId,
 }: MockExamContentProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -101,14 +78,10 @@ export function MockExamContent({
     window.history.replaceState(null, "", url.toString());
   }, []);
 
-  // 이력에서 결과 탭으로 이동 시 사용할 session_id
-  const [viewSessionId, setViewSessionId] = useState<string | null>(null);
-
-  // 이력 → 결과 탭 이동
+  // 이력 → 결과 페이지 이동
   const handleViewResult = useCallback((sessionId: string) => {
-    setViewSessionId(sessionId);
-    setActiveTab("results");
-  }, [setActiveTab]);
+    router.push(`/mock-exam/result/${sessionId}`);
+  }, [router]);
 
   return (
     <div>
@@ -140,15 +113,6 @@ export function MockExamContent({
         <StartTab
           initialActive={initialActive}
           initialCredit={initialCredit}
-        />
-      )}
-      {activeTab === "results" && (
-        <ResultsTab
-          targetSessionId={viewSessionId}
-          onClearTarget={() => setViewSessionId(null)}
-          initialHistory={initialHistory}
-          initialLatestSession={initialLatestSession}
-          latestSessionId={latestSessionId}
         />
       )}
       {activeTab === "history" && (
@@ -472,65 +436,38 @@ function StartTab({
   );
 }
 
-/* ── 결과 탭 (전체 결과 뷰) ── */
+/* ── 결과 탭 (최신 결과 요약 + 추이 그래프 + 전체 이력) ── */
 
-function ResultsTab({
-  targetSessionId,
-  onClearTarget,
-  initialHistory,
-  initialLatestSession,
-  latestSessionId,
+function HistoryTab({
+  initialData,
+  onViewResult,
 }: {
-  targetSessionId: string | null;
-  onClearTarget: () => void;
-  initialHistory?: MockExamHistoryItem[];
-  initialLatestSession?: Awaited<ReturnType<typeof getSession>>;
-  latestSessionId?: string;
+  initialData?: MockExamHistoryItem[];
+  onViewResult: (sessionId: string) => void;
 }) {
-  // 이력 조회 (서버 사전 조회 initialData 활용)
-  const { data: historyResult, isLoading: historyLoading } = useQuery({
+  const [modeFilter, setModeFilter] = useState<"all" | MockExamMode>("all");
+  const [showExpired, setShowExpired] = useState(false);
+
+  const { data: historyResult, isLoading } = useQuery({
     queryKey: ["mock-exam-history"],
     queryFn: () => getHistory(),
     staleTime: 5 * 60 * 1000,
-    initialData: initialHistory ? { data: initialHistory } : undefined,
+    initialData: initialData ? { data: initialData } : undefined,
   });
 
-  const completed = (historyResult?.data || []).filter(
-    (h) => h.status === "completed" && h.final_level
-  );
-
-  // 표시할 session_id 결정: 지정된 것 또는 최근
-  const sessionId = targetSessionId || completed[0]?.session_id || null;
-
-  // 서버 사전 조회 데이터 활용 (최근 세션과 일치할 때만)
-  const sessionInitialData =
-    !targetSessionId && sessionId === latestSessionId && initialLatestSession
-      ? initialLatestSession
-      : undefined;
-
-  // 전체 세션 데이터 조회 (서버 사전 조회 initialData 활용)
-  const { data: sessionResult, isLoading: sessionLoading } = useQuery({
-    queryKey: ["mock-exam-session-detail", sessionId],
-    queryFn: () => getSession({ session_id: sessionId! }),
-    enabled: !!sessionId,
-    staleTime: 10 * 60 * 1000, // 10분 (결과는 변경 안 됨)
-    initialData: sessionInitialData,
-    // report 미완료 시 10초마다 자동 재조회 (평가 완료 감지)
-    refetchInterval: (query) => {
-      const data = query.state.data;
-      if (data?.data && !data.data.report) return 10_000;
-      return false;
-    },
+  const items = historyResult?.data || [];
+  const filtered = items.filter((h) => {
+    if (!showExpired && h.status === "expired") return false;
+    if (modeFilter !== "all" && h.mode !== modeFilter) return false;
+    return true;
   });
 
-  // 이전 결과 (비교용)
-  const previousResult = completed.length > 1
-    ? targetSessionId
-      ? completed.find((h) => h.session_id !== targetSessionId) || null
-      : completed[1] || null
-    : null;
+  // 등급 추이 데이터 (완료된 것만, 시간순)
+  const trendData = items
+    .filter((h) => h.status === "completed" && h.final_level)
+    .reverse(); // 오래된 것부터
 
-  if (historyLoading || sessionLoading) {
+  if (isLoading) {
     return (
       <div className="flex justify-center py-12">
         <Loader2 size={24} className="animate-spin text-primary-500" />
@@ -538,12 +475,15 @@ function ResultsTab({
     );
   }
 
-  if (!sessionId || completed.length === 0) {
+  // 최신 완료 세션
+  const latest = trendData.length > 0 ? trendData[trendData.length - 1] : null;
+
+  if (items.length === 0) {
     return (
       <div className="space-y-6">
         <CollapsibleBanner
           title="모의고사 결과란?"
-          description="모의고사 응시 후 FACT 영역별 점수, 예상 등급, 문항별 상세 피드백을 확인할 수 있습니다."
+          description="모의고사 응시 후 예상 등급, FACT 영역별 점수, 문항별 피드백을 확인하고, 응시 이력과 등급 변화 추이를 한눈에 볼 수 있습니다."
         />
         <div className="rounded-xl border border-border bg-surface p-4 sm:p-6">
           <h3 className="font-semibold text-foreground">모의고사 결과</h3>
@@ -563,158 +503,109 @@ function ResultsTab({
     );
   }
 
-  const sessionData = sessionResult?.data;
-  if (!sessionData?.report) {
-    return (
-      <div className="space-y-6">
-        <div className="rounded-xl border border-border bg-surface p-4 sm:p-6">
-          <h3 className="font-semibold text-foreground">결과 처리 중</h3>
-          <div className="mt-4 flex flex-col items-center py-6 text-center sm:mt-6 sm:py-8">
-            <Loader2 size={32} className="animate-spin text-primary-400" />
-            <p className="mt-3 text-sm text-foreground-secondary">
-              답변을 분석하고 있습니다. 잠시만 기다려주세요.
-            </p>
-            <p className="mt-1 text-xs text-foreground-muted">
-              보통 2~5분 정도 소요됩니다. 완료되면 자동으로 표시됩니다.
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-4">
+    <div className="space-y-3 sm:space-y-4">
       <CollapsibleBanner
         title="모의고사 결과란?"
-        description="모의고사 응시 후 FACT 영역별 점수, 예상 등급, 문항별 상세 피드백을 확인할 수 있습니다."
+        description="모의고사 응시 후 예상 등급, FACT 영역별 점수, 문항별 피드백을 확인하고, 응시 이력과 등급 변화 추이를 한눈에 볼 수 있습니다."
       />
 
-      {/* 다른 세션 보기 중 표시 */}
-      {targetSessionId && targetSessionId !== completed[0]?.session_id && (
-        <button
-          onClick={onClearTarget}
-          className="mb-4 inline-flex items-center gap-1 text-sm text-primary-500 hover:text-primary-600"
-        >
-          ← 최근 결과로 돌아가기
-        </button>
+      {/* PC: 최신 결과 + 등급 추이 나란히 / 모바일: 세로 */}
+      {latest && (
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 sm:gap-4">
+          {/* 최신 결과 요약 카드 */}
+          <div className="flex flex-col rounded-xl border border-border bg-surface p-3 sm:p-6">
+            <h3 className="font-semibold text-foreground mb-3 sm:mb-4">
+              최근 모의고사{latest.attempt_number > 0 && ` (${latest.attempt_number}회차)`}
+            </h3>
+
+            {/* 등급 | 점수 — 가운데 기준 양쪽 균등 */}
+            <div className="grid grid-cols-2">
+              <div className="flex flex-col items-center border-r border-border py-2">
+                <span className="text-[10px] text-foreground-muted">등급</span>
+                <span className="mt-1 text-2xl font-bold text-primary-600 sm:text-3xl">
+                  {latest.final_level || "—"}
+                </span>
+              </div>
+              <div className="flex flex-col items-center py-2">
+                <span className="text-[10px] text-foreground-muted">점수</span>
+                {latest.total_score != null && (
+                  <p className="mt-1 text-2xl font-bold text-foreground sm:text-3xl">
+                    {Number(latest.total_score).toFixed(1)}
+                    <span className="text-sm font-normal text-foreground-muted"> / 100</span>
+                  </p>
+                )}
+              </div>
+            </div>
+            <p className="mt-1.5 text-center text-xs text-foreground-muted">
+              {new Date(latest.started_at).toLocaleDateString("ko-KR")} ·{" "}
+              {MOCK_EXAM_MODE_LABELS[latest.mode as keyof typeof MOCK_EXAM_MODE_LABELS]}
+            </p>
+
+            {/* 코칭 한줄평 */}
+            {latest.coaching_headline && (
+              <div className="mt-3 rounded-lg bg-surface-secondary/60 px-3 py-2">
+                <p className="text-xs leading-relaxed text-foreground-secondary sm:text-sm">
+                  {latest.coaching_headline}
+                </p>
+              </div>
+            )}
+
+            {/* 상세 결과 보기 */}
+            <button
+              onClick={() => onViewResult(latest.session_id)}
+              className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary-500 px-4 py-2 text-sm font-medium text-white hover:bg-primary-600 transition-colors sm:mt-4 sm:py-2.5"
+            >
+              상세 결과 보기
+              <ArrowRight size={14} />
+            </button>
+          </div>
+
+          {/* 등급 추이 그래프 (2건 이상) 또는 현재 상태 카드 (1건) */}
+          {trendData.length >= 2 ? (
+            <GradeProgressChart data={trendData} />
+          ) : trendData.length === 1 ? (
+            <CurrentStateCard data={trendData[0]} />
+          ) : null}
+        </div>
       )}
 
-      <ResultSummary
-        report={sessionData.report}
-        evaluations={sessionData.evaluations}
-        answers={sessionData.answers}
-        questions={sessionData.questions}
-        sessionDate={sessionData.session.started_at}
-        mode={sessionData.session.mode}
-        previousResult={previousResult}
-      />
 
-      {/* 성장 리포트 (2회차부터 표시) */}
-      <GrowthReport report={sessionData.report} />
-    </div>
-  );
-}
-
-/* ── 나의 이력 탭 ── */
-
-function HistoryTab({
-  initialData,
-  onViewResult,
-}: {
-  initialData?: MockExamHistoryItem[];
-  onViewResult: (sessionId: string) => void;
-}) {
-  const [modeFilter, setModeFilter] = useState<"all" | MockExamMode>("all");
-
-  const { data: historyResult, isLoading } = useQuery({
-    queryKey: ["mock-exam-history"],
-    queryFn: () => getHistory(),
-    staleTime: 5 * 60 * 1000,
-    initialData: initialData ? { data: initialData } : undefined,
-  });
-
-  const items = historyResult?.data || [];
-  const filtered =
-    modeFilter === "all"
-      ? items
-      : items.filter((h) => h.mode === modeFilter);
-
-  // 등급 추이 데이터 (완료된 것만, 시간순)
-  const trendData = items
-    .filter((h) => h.status === "completed" && h.final_level)
-    .reverse(); // 오래된 것부터
-
-  if (isLoading) {
-    return (
-      <div className="flex justify-center py-12">
-        <Loader2 size={24} className="animate-spin text-primary-500" />
-      </div>
-    );
-  }
-
-  if (items.length === 0) {
-    return (
-      <div className="space-y-6">
-        <CollapsibleBanner
-          title="나의 이력이란?"
-          description="모의고사 응시 기록과 등급 변화 추이를 한눈에 확인할 수 있습니다."
-        />
-        <div className="rounded-xl border border-border bg-surface p-4 sm:p-6">
-          <h3 className="font-semibold text-foreground">나의 응시 이력</h3>
-          <div className="mt-4 flex flex-col items-center py-6 text-center sm:mt-6 sm:py-8">
-            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-surface-secondary">
-              <ClipboardList size={24} className="text-foreground-muted" />
-            </div>
-            <p className="mt-3 text-sm font-medium text-foreground-secondary">
-              아직 응시 이력이 없습니다
-            </p>
-            <p className="mt-1 text-xs text-foreground-muted">
-              모의고사를 응시하면 이력과 성장 그래프가 표시됩니다
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-4">
-      <CollapsibleBanner
-        title="나의 이력이란?"
-        description="모의고사 응시 기록과 등급 변화 추이를 한눈에 확인할 수 있습니다."
-      />
-
-      {/* 등급 추이 그래프 (2건 이상) 또는 현재 상태 카드 (1건) */}
-      {trendData.length >= 2 ? (
-        <GradeProgressChart data={trendData} />
-      ) : trendData.length === 1 ? (
-        <CurrentStateCard data={trendData[0]} />
-      ) : null}
-
-      {/* 헤더 + 필터 */}
-      <div className="flex items-center justify-between">
-        <h3 className="font-semibold text-foreground">
-          나의 응시 이력
-          <span className="ml-2 text-sm font-normal text-foreground-muted">
-            {filtered.length}건
-          </span>
-        </h3>
-        <div className="flex items-center gap-1">
-          <Filter size={12} className="text-foreground-muted" />
-          {(["all", "training", "test"] as const).map((mode) => (
+      {/* 응시 이력 섹션 */}
+      <div className="mt-1 border-t border-border pt-3 sm:mt-2 sm:pt-4">
+        <div className="flex items-center justify-between">
+          <h3 className="flex items-center gap-2 font-semibold text-foreground">
+            <History size={16} className="text-foreground-muted" />
+            응시 이력
+            <span className="text-sm font-normal text-foreground-muted">
+              {filtered.length}건
+            </span>
+          </h3>
+          <div className="flex items-center gap-0.5 sm:gap-1.5">
+            {(["all", "training", "test"] as const).map((mode) => (
+              <button
+                key={mode}
+                onClick={() => setModeFilter(mode)}
+                className={`rounded-full px-2 py-1 text-[11px] transition-colors sm:px-2.5 ${
+                  modeFilter === mode
+                    ? "bg-primary-100 font-medium text-primary-600"
+                    : "text-foreground-muted hover:bg-surface-secondary"
+                }`}
+              >
+                {mode === "all" ? "전체" : MOCK_EXAM_MODE_LABELS[mode]}
+              </button>
+            ))}
+            <span className="mx-px h-3 w-px bg-border sm:mx-0.5" />
             <button
-              key={mode}
-              onClick={() => setModeFilter(mode)}
-              className={`rounded-full px-2.5 py-1 text-[11px] transition-colors ${
-                modeFilter === mode
-                  ? "bg-primary-100 font-medium text-primary-600"
+              onClick={() => setShowExpired(!showExpired)}
+              className={`rounded-full px-2 py-1 text-[11px] transition-colors sm:px-2.5 ${
+                showExpired
+                  ? "bg-foreground-muted/15 font-medium text-foreground-secondary"
                   : "text-foreground-muted hover:bg-surface-secondary"
               }`}
             >
-              {mode === "all" ? "전체" : MOCK_EXAM_MODE_LABELS[mode]}
+              만료 포함
             </button>
-          ))}
         </div>
       </div>
 
@@ -726,7 +617,7 @@ function HistoryTab({
               onViewResult(item.session_id);
             }
           }}
-          className="w-full rounded-xl border border-border bg-surface p-3 text-left transition-colors hover:border-primary-200 sm:p-4"
+          className="mt-2.5 w-full rounded-xl border border-border bg-surface p-3 text-left transition-colors hover:border-primary-200 sm:mt-3 sm:p-4"
         >
           <div className="flex items-center gap-2.5 sm:gap-3">
             {/* 등급 배지 */}
@@ -746,7 +637,7 @@ function HistoryTab({
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5 sm:gap-2">
                 <span className="text-sm font-medium text-foreground">
-                  {MOCK_EXAM_MODE_LABELS[item.mode]}
+                  {item.attempt_number > 0 ? `${item.attempt_number}회차` : MOCK_EXAM_MODE_LABELS[item.mode]}
                 </span>
                 <span
                   className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium sm:px-2 ${
@@ -761,18 +652,17 @@ function HistoryTab({
               <div className="flex items-center gap-1.5 text-[11px] text-foreground-muted sm:text-xs">
                 <Calendar size={10} />
                 {new Date(item.started_at).toLocaleDateString("ko-KR")}
+                {item.attempt_number > 0 && ` · ${MOCK_EXAM_MODE_LABELS[item.mode]}`}
               </div>
             </div>
 
-            {/* FACT 점수 + 화살표 */}
+            {/* 점수 + 화살표 */}
             <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
               {item.total_score != null && (
-                <div className="text-right">
-                  <p className="text-base font-bold text-foreground sm:text-lg">
-                    {item.total_score}
-                  </p>
-                  <p className="text-[10px] text-foreground-muted">/ 100</p>
-                </div>
+                <p className="whitespace-nowrap text-right text-base font-bold text-foreground sm:text-lg">
+                  {item.total_score}
+                  <span className="text-[10px] font-normal text-foreground-muted"> / 100</span>
+                </p>
               )}
               {item.status === "completed" && item.final_level && (
                 <ArrowRight size={14} className="hidden text-foreground-muted sm:block" />
@@ -800,6 +690,7 @@ function HistoryTab({
           )}
         </button>
       ))}
+      </div>
     </div>
   );
 }
