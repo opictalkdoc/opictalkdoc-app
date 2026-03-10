@@ -19,7 +19,6 @@ import type {
   MockTestReport,
   GrowthComparison,
   GrowthAnalysis,
-  OpicLevel,
 } from "@/lib/types/mock-exam";
 import { OPIC_LEVEL_ORDER, FACT_LABELS } from "@/lib/types/mock-exam";
 
@@ -296,7 +295,7 @@ function ComparisonTable({
 }
 
 function DiffBadge({ diff, type }: { diff: number; type: "level" | "score" }) {
-  if (diff === 0) {
+  if (diff == null || diff === 0) {
     return (
       <span className="inline-flex items-center gap-0.5 text-foreground-muted">
         <Minus size={10} />

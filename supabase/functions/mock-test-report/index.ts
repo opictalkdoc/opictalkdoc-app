@@ -360,7 +360,7 @@ async function generateGrowthReport(
 
   // 성장 패턴 감지 (Phase D)
   if (sessionCount >= 3) {
-    const pattern = detectGrowthPattern(factScores, prevReports);
+    const pattern = detectGrowthPattern(factScores, finalLevel, prevReports);
     if (pattern) {
       growthAnalysis.growth_pattern = pattern.pattern;
       growthAnalysis.pattern_message = pattern.message;
@@ -510,6 +510,7 @@ ${typeStr}
 // Phase D: 성장 패턴 감지 (3회차+)
 function detectGrowthPattern(
   currentFact: { score_f: number; score_a: number; score_c: number; score_t: number },
+  currentLevel: string,
   // deno-lint-ignore no-explicit-any
   prevReports: any[],
 ): { pattern: string; message: string } | null {
@@ -553,7 +554,7 @@ function detectGrowthPattern(
   const totalTrend = (fTrend + aTrend + cTrend + tTrend) / 4;
   if (
     totalTrend > 2 &&
-    prev1.final_level === currentFact &&
+    prev1.final_level === currentLevel &&
     prev2.final_level === prev1.final_level
   ) {
     return {
