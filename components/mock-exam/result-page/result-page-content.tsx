@@ -151,33 +151,34 @@ export function ResultPageContent({
 
       {/* 탭 콘텐츠 — 스크롤 가능 */}
       <div className="h-0 flex-grow overflow-y-auto max-md:[scrollbar-width:none] max-md:[&::-webkit-scrollbar]:hidden">
-        <div className="mx-auto max-w-5xl px-3 py-4 sm:px-6 sm:py-6">
-          {activeTab === "overview" && (
-            <OverviewTab
-              report={report}
-              coaching={coaching}
-              sessionDate={session.started_at}
-              mode={session.mode}
-              previousResult={previousResult}
-            />
-          )}
-          {activeTab === "diagnosis" && (
-            <DiagnosisTab
-              report={report}
-              coaching={coaching}
-            />
-          )}
-          {activeTab === "questions" && (
-            <QuestionsTab
-              evaluations={evaluations}
-              answers={answers}
-              questions={questions}
-            />
-          )}
-          {activeTab === "growth" && (
-            <GrowthTab report={report} />
-          )}
-        </div>
+        {activeTab === "questions" ? (
+          <QuestionsTab
+            evaluations={evaluations}
+            answers={answers}
+            questions={questions}
+          />
+        ) : (
+          <div className="mx-auto max-w-5xl px-3 py-4 sm:px-6 sm:py-6">
+            {activeTab === "overview" && (
+              <OverviewTab
+                report={report}
+                coaching={coaching}
+                sessionDate={session.started_at}
+                mode={session.mode}
+                previousResult={previousResult}
+              />
+            )}
+            {activeTab === "diagnosis" && (
+              <DiagnosisTab
+                report={report}
+                coaching={coaching}
+              />
+            )}
+            {activeTab === "growth" && (
+              <GrowthTab report={report} />
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

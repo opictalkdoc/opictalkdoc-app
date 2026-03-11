@@ -1,6 +1,6 @@
 "use client";
 
-// 문항별 탭: 요약 통계 + 15문항 그리드 + 클릭 상세 패널
+// 문항별 탭: PC 세로 막대 차트 + 모바일 가로 바 아코디언
 import { useState, useMemo, useRef, useCallback, useEffect } from "react";
 import {
   CheckCircle2,
@@ -14,6 +14,7 @@ import {
   BookOpen,
   Play,
   Pause,
+  ChevronDown,
 } from "lucide-react";
 import type {
   MockTestEvaluation,
@@ -53,8 +54,44 @@ interface QuestionData {
   pronunciationAvg: number;
 }
 
+// ── 바 색상 헬퍼 ──
+
+function getBarColor(passRate: number, isSkipped: boolean) {
+  if (isSkipped) return "bg-foreground-muted/20";
+  if (passRate >= 0.8) return "bg-green-400";
+  if (passRate < 0.5) return "bg-red-400";
+  return "bg-primary-400";
+}
+
+function getBarHoverColor(passRate: number, isSkipped: boolean) {
+  if (isSkipped) return "hover:bg-foreground-muted/30";
+  if (passRate >= 0.8) return "hover:bg-green-500";
+  if (passRate < 0.5) return "hover:bg-red-500";
+  return "hover:bg-primary-500";
+}
+
+function getStatusIcon(item: QuestionData) {
+  if (item.isSkipped) return { Icon: SkipForward, color: "text-foreground-muted" };
+  if (item.fulfillmentStatus === "fulfilled") return { Icon: CheckCircle2, color: "text-green-500" };
+  if (item.fulfillmentStatus === "partial") return { Icon: AlertTriangle, color: "text-yellow-500" };
+  if (item.fulfillmentStatus === "failed") return { Icon: XCircle, color: "text-red-500" };
+  return null;
+}
+
+function getStatusChar(item: QuestionData) {
+  if (item.isSkipped) return { char: "—", color: "text-foreground-muted" };
+  if (item.fulfillmentStatus === "fulfilled") return { char: "✓", color: "text-green-500" };
+  if (item.fulfillmentStatus === "partial") return { char: "△", color: "text-yellow-500" };
+  if (item.fulfillmentStatus === "failed") return { char: "✗", color: "text-red-500" };
+  return { char: "", color: "text-foreground-muted" };
+}
+
+// ── 메인 ──
+
 export function QuestionsTab({ evaluations, answers, questions }: QuestionsTabProps) {
-  const [selectedQ, setSelectedQ] = useState<number | null>(null);
+  const [expandedQ, setExpandedQ] = useState<number | null>(null);
+  const detailRef = useRef<HTMLDivElement | null>(null);
+  const mobileRowRefs = useRef<Map<number, HTMLDivElement>>(new Map());
 
   const qMap = useMemo(() => new Map(questions.map((q) => [q.id, q])), [questions]);
   const evalMap = useMemo(() => new Map(evaluations.map((e) => [e.question_number, e])), [evaluations]);
@@ -97,16 +134,64 @@ export function QuestionsTab({ evaluations, answers, questions }: QuestionsTabPr
     return { total: 14, answered: answered.length, fulfilled, skipped, avgPassRate, avgPron };
   }, [items]);
 
-  const selectedItem = selectedQ != null ? items.find((i) => i.questionNumber === selectedQ) : null;
+  const selectedItem = expandedQ != null ? items.find((i) => i.questionNumber === expandedQ) || null : null;
+
+  // 자동 스크롤
+  useEffect(() => {
+    if (expandedQ != null) {
+      requestAnimationFrame(() => {
+        // PC: 상세 패널 헤더로 스크롤
+        if (window.innerWidth >= 768 && detailRef.current) {
+          detailRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+        // 모바일: 아코디언 행으로 스크롤
+        if (window.innerWidth < 768) {
+          const row = mobileRowRefs.current.get(expandedQ);
+          if (row) row.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }
+      });
+    }
+  }, [expandedQ]);
+
+  const handleSelect = useCallback((qNum: number) => {
+    setExpandedQ((prev) => (prev === qNum ? null : qNum));
+  }, []);
 
   return (
-    <div className="space-y-4">
-      {/* ═══ 요약 통계 바 ═══ */}
-      <div className="rounded-xl border border-border bg-surface p-3 sm:p-4">
-        <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 sm:gap-4">
+    <div>
+      {/* ═══ PC: Q번호 버튼 (sticky) — 스크롤 컨테이너 직속, 차트와 동일 패딩 ═══ */}
+      <div className="sticky top-0 z-10 hidden md:block bg-background">
+        <div className="mx-auto max-w-5xl px-3 pt-4 pb-2 sm:px-6">
+          <div className="rounded-xl border border-border bg-surface px-4 py-2">
+            <div className="flex gap-1.5">
+              {items.map((item) => {
+                const isSelected = expandedQ === item.questionNumber;
+                return (
+                  <button
+                    key={item.questionNumber}
+                    onClick={() => handleSelect(item.questionNumber)}
+                    className={`flex-1 rounded py-1 text-[11px] font-bold transition-colors ${
+                      isSelected
+                        ? "bg-primary-500 text-white"
+                        : "bg-surface-secondary text-foreground-secondary hover:bg-primary-100 hover:text-primary-600"
+                    }`}
+                  >
+                    Q{item.questionNumber}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+
+    <div className="mx-auto max-w-5xl px-3 pb-4 sm:px-6 sm:pb-6 space-y-4 pt-4 md:pt-0">
+      {/* ═══ 요약 통계 바 — 모바일만 ═══ */}
+      <div className="md:hidden rounded-xl border border-border bg-surface p-3">
+        <div className="grid grid-cols-3 gap-3">
           <StatItem label="과제충족" value={`${stats.fulfilled}/${stats.total}`} sub="문항" />
           <StatItem
-            label="평균 통과율"
+            label="평균 완성도"
             value={`${(stats.avgPassRate * 100).toFixed(0)}%`}
             color={stats.avgPassRate >= 0.8 ? "text-green-600" : stats.avgPassRate < 0.6 ? "text-red-500" : "text-foreground"}
           />
@@ -115,58 +200,208 @@ export function QuestionsTab({ evaluations, answers, questions }: QuestionsTabPr
             value={stats.avgPron > 0 ? stats.avgPron.toFixed(0) : "—"}
             color={stats.avgPron >= 80 ? "text-green-600" : stats.avgPron < 60 ? "text-red-500" : "text-foreground"}
           />
-          {stats.skipped > 0 && (
-            <StatItem label="건너뜀" value={`${stats.skipped}`} color="text-foreground-muted" />
-          )}
         </div>
       </div>
 
-      {/* ═══ 15문항 카드 그리드 ═══ */}
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
-        {items.map((item) => (
-          <QuestionCard
-            key={item.questionNumber}
-            item={item}
-            isSelected={selectedQ === item.questionNumber}
-            onSelect={() => setSelectedQ(selectedQ === item.questionNumber ? null : item.questionNumber)}
-          />
-        ))}
+      {/* ═══ PC: 세로 막대 차트 (Q버튼 없이 막대만) ═══ */}
+      <div className="hidden md:block">
+        <VerticalBarChart items={items} selectedQ={expandedQ} onSelect={handleSelect} />
       </div>
 
-      {/* ═══ 선택한 문항 상세 패널 ═══ */}
+      {/* ═══ PC: 선택한 문항 상세 ═══ */}
+      {!selectedItem && (
+        <p className="hidden md:block text-center text-sm text-foreground-muted py-6">
+          문항 번호를 클릭하면 상세 분석을 볼 수 있습니다.
+        </p>
+      )}
       {selectedItem && (
-        <div className="rounded-xl border-2 border-primary-200 bg-surface overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
-          <div className="flex items-center justify-between border-b border-border bg-primary-50/30 px-4 py-3">
-            <div className="flex items-center gap-2">
-              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary-100 text-xs font-bold text-primary-600">
-                {selectedItem.questionNumber}
-              </span>
-              <div>
-                <p className="text-sm font-medium text-foreground line-clamp-1">
-                  {selectedItem.question?.question_korean || `문항 ${selectedItem.questionNumber}`}
-                </p>
-                <div className="flex items-center gap-2 text-xs text-foreground-muted">
-                  {selectedItem.question?.question_type_eng && (
-                    <span>{QT_KO[selectedItem.question.question_type_eng] || selectedItem.question.question_type_eng}</span>
-                  )}
-                  {selectedItem.evaluation?.checkbox_type && (
-                    <span>· {CB_KO[selectedItem.evaluation.checkbox_type] || selectedItem.evaluation.checkbox_type}</span>
-                  )}
+        <div key={selectedItem.questionNumber} ref={detailRef} className="hidden md:block scroll-mt-[76px]">
+          <div className="rounded-xl border-2 border-primary-200 bg-surface overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+            <div className="flex items-center justify-between border-b border-border bg-primary-50/30 px-4 py-3">
+              <div className="flex items-center gap-2">
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary-100 text-xs font-bold text-primary-600">
+                  {selectedItem.questionNumber}
+                </span>
+                <div>
+                  <p className="text-sm font-medium text-foreground line-clamp-1">
+                    {selectedItem.question?.question_korean || `문항 ${selectedItem.questionNumber}`}
+                  </p>
+                  <div className="flex items-center gap-2 text-xs text-foreground-muted">
+                    {selectedItem.question?.question_type_eng && (
+                      <span>{QT_KO[selectedItem.question.question_type_eng] || selectedItem.question.question_type_eng}</span>
+                    )}
+                    {selectedItem.evaluation?.checkbox_type && (
+                      <span>· {CB_KO[selectedItem.evaluation.checkbox_type] || selectedItem.evaluation.checkbox_type}</span>
+                    )}
+                  </div>
                 </div>
               </div>
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-bold text-primary-600">
+                  {(selectedItem.passRate * 100).toFixed(0)}%
+                </span>
+                <button
+                  onClick={() => setExpandedQ(null)}
+                  className="rounded-lg p-1.5 text-foreground-muted hover:bg-surface-secondary"
+                >
+                  <XCircle size={18} />
+                </button>
+              </div>
             </div>
-            <button
-              onClick={() => setSelectedQ(null)}
-              className="rounded-lg p-1.5 text-foreground-muted hover:bg-surface-secondary"
-            >
-              <XCircle size={18} />
-            </button>
+            <DetailPanel item={selectedItem} />
           </div>
-
-          {/* 상세 콘텐츠 */}
-          <DetailPanel item={selectedItem} />
         </div>
       )}
+
+      {/* ═══ 모바일: 가로 바 아코디언 ═══ */}
+      <div className="md:hidden rounded-xl border border-border bg-surface overflow-hidden divide-y divide-border/50">
+        {items.map((item) => {
+          const isExpanded = expandedQ === item.questionNumber;
+          const { isSkipped, passRate, question, evaluation } = item;
+          const barColor = getBarColor(passRate, isSkipped);
+          const status = getStatusIcon(item);
+          const duration = evaluation?.audio_duration ? Number(evaluation.audio_duration) : 0;
+
+          return (
+            <div
+              key={item.questionNumber}
+              ref={(el) => { if (el) mobileRowRefs.current.set(item.questionNumber, el); }}
+            >
+              {/* 행 헤더 */}
+              <button
+                onClick={() => handleSelect(item.questionNumber)}
+                className={`flex w-full items-center gap-2 px-3 py-2.5 text-left transition-colors ${
+                  isExpanded ? "bg-primary-50/50" : "hover:bg-surface-secondary/30"
+                }`}
+              >
+                {/* Q번호 배지 */}
+                <span className={`flex h-6 shrink-0 items-center justify-center rounded-full px-2 text-[11px] font-bold ${
+                  isExpanded ? "bg-primary-500 text-white" : "bg-surface-secondary text-foreground-secondary"
+                }`}>
+                  Q{item.questionNumber}
+                </span>
+
+                {/* 완성도 바 or 건너뜀 */}
+                {!isSkipped ? (
+                  <div className="flex min-w-0 flex-1 items-center gap-2">
+                    <div className="h-2 flex-1 rounded-full bg-surface-secondary">
+                      <div
+                        className={`h-2 rounded-full transition-all ${barColor}`}
+                        style={{ width: `${passRate * 100}%` }}
+                      />
+                    </div>
+                    <span className="w-8 shrink-0 text-right text-xs font-medium tabular-nums text-foreground">
+                      {(passRate * 100).toFixed(0)}%
+                    </span>
+                  </div>
+                ) : (
+                  <span className="flex-1 text-xs text-foreground-muted">건너뜀</span>
+                )}
+
+                {/* 답변 시간 */}
+                {!isSkipped && duration > 0 && (
+                  <span className={`shrink-0 text-[11px] tabular-nums ${
+                    duration < 20 ? "font-medium text-red-500" : "text-foreground-muted"
+                  }`}>
+                    {duration.toFixed(0)}초
+                  </span>
+                )}
+
+                {/* 상태 아이콘 */}
+                {status && <status.Icon size={14} className={`shrink-0 ${status.color}`} />}
+
+                {/* 화살표 */}
+                <ChevronDown
+                  size={14}
+                  className={`shrink-0 text-foreground-muted transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}
+                />
+              </button>
+
+              {/* 펼쳐진 상세 */}
+              {isExpanded && (
+                <div className="border-t border-border/50 animate-in fade-in slide-in-from-top-2 duration-200">
+                  {/* 유형 + 완성도 미니 헤더 */}
+                  <div className="flex items-center justify-between bg-primary-50/20 px-3 py-1.5">
+                    <span className="text-[11px] text-foreground-muted">
+                      {question?.question_type_eng
+                        ? QT_KO[question.question_type_eng] || question.question_type_eng
+                        : ""}
+                      {evaluation?.checkbox_type
+                        ? ` · ${CB_KO[evaluation.checkbox_type] || evaluation.checkbox_type}`
+                        : ""}
+                    </span>
+                    <span className="text-[11px] font-medium text-primary-600">
+                      완성도 {(passRate * 100).toFixed(0)}%
+                    </span>
+                  </div>
+                  <DetailPanel item={item} />
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+    </div>
+  );
+}
+
+// ── PC 세로 막대 차트 ──
+
+function VerticalBarChart({
+  items,
+  selectedQ,
+  onSelect,
+}: {
+  items: QuestionData[];
+  selectedQ: number | null;
+  onSelect: (qNum: number) => void;
+}) {
+  return (
+    <div className="rounded-xl border border-border bg-surface p-4 pb-3">
+      <div className="flex gap-1.5">
+        {items.map((item) => {
+          const isSelected = selectedQ === item.questionNumber;
+          const { isSkipped, passRate, evaluation } = item;
+          const heightPercent = isSkipped ? 3 : Math.max(3, passRate * 100);
+          const barBg = getBarColor(passRate, isSkipped);
+          const duration = evaluation?.audio_duration ? Number(evaluation.audio_duration) : 0;
+          const { char: statusChar, color: statusColor } = getStatusChar(item);
+
+          return (
+            <div key={item.questionNumber} className="flex flex-1 flex-col items-center gap-1">
+              {/* 퍼센트 라벨 */}
+              <span className={`shrink-0 text-[11px] font-medium tabular-nums ${
+                isSelected ? "text-primary-600" : "text-foreground-secondary"
+              }`}>
+                {isSkipped ? "—" : (passRate * 100).toFixed(0)}
+              </span>
+
+              {/* 막대 */}
+              <div className="flex w-full h-[160px] items-end px-0.5">
+                <div
+                  className={`w-full rounded-t transition-all ${barBg} ${
+                    isSelected ? "ring-2 ring-primary-500 ring-offset-1" : ""
+                  }`}
+                  style={{ height: `${heightPercent}%` }}
+                />
+              </div>
+
+              {/* 하단 라벨 */}
+              <div className={`w-full space-y-0.5 border-t border-border/50 pt-1.5 text-center ${isSelected ? "opacity-100" : "opacity-75"}`}>
+                <p className={`text-[10px] tabular-nums ${
+                  !isSkipped && duration > 0 && duration < 20
+                    ? "font-medium text-red-500"
+                    : "text-foreground-muted"
+                }`}>
+                  {isSkipped || duration <= 0 ? "—" : `${duration.toFixed(0)}초`}
+                </p>
+                <p className={`text-[11px] font-medium ${statusColor}`}>{statusChar}</p>
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -182,104 +417,6 @@ function StatItem({ label, value, sub, color }: { label: string; value: string; 
         {sub && <span className="text-xs font-normal text-foreground-muted ml-0.5">{sub}</span>}
       </p>
     </div>
-  );
-}
-
-// ── 문항 카드 ──
-
-function QuestionCard({
-  item,
-  isSelected,
-  onSelect,
-}: {
-  item: QuestionData;
-  isSelected: boolean;
-  onSelect: () => void;
-}) {
-  const { questionNumber, question, isSkipped, passRate, fulfillmentStatus, evaluation } = item;
-
-  // 카드 색상
-  const borderColor = isSelected
-    ? "border-primary-500 ring-2 ring-primary-200"
-    : isSkipped
-      ? "border-border bg-surface-secondary/30"
-      : fulfillmentStatus === "fulfilled" && passRate >= 0.8
-        ? "border-green-200"
-        : fulfillmentStatus === "failed" || passRate < 0.5
-          ? "border-red-200"
-          : "border-border";
-
-  // 상태 아이콘 + 색
-  const StatusIcon = isSkipped
-    ? SkipForward
-    : fulfillmentStatus === "fulfilled"
-      ? CheckCircle2
-      : fulfillmentStatus === "partial"
-        ? AlertTriangle
-        : fulfillmentStatus === "failed"
-          ? XCircle
-          : null;
-
-  const statusColor = isSkipped
-    ? "text-foreground-muted"
-    : fulfillmentStatus === "fulfilled"
-      ? "text-green-500"
-      : fulfillmentStatus === "partial"
-        ? "text-yellow-500"
-        : fulfillmentStatus === "failed"
-          ? "text-red-500"
-          : "text-foreground-muted";
-
-  // 한줄 미리보기
-  const coaching = evaluation?.coaching_feedback as CoachingFeedback | null;
-  const insight = coaching?.one_line_insight;
-
-  return (
-    <button
-      onClick={onSelect}
-      className={`rounded-lg border p-2.5 text-left transition-all hover:shadow-sm ${borderColor}`}
-    >
-      {/* 헤더: Q번호 + 상태 */}
-      <div className="flex items-center justify-between mb-1.5">
-        <span className="text-xs font-bold text-foreground-secondary">Q{questionNumber}</span>
-        {StatusIcon && <StatusIcon size={14} className={statusColor} />}
-      </div>
-
-      {/* 유형 */}
-      <p className="text-xs font-medium text-foreground mb-1 line-clamp-1">
-        {question?.question_type_eng
-          ? QT_KO[question.question_type_eng] || question.question_type_eng
-          : "—"}
-      </p>
-
-      {/* 통과율 바 */}
-      {!isSkipped && (
-        <div className="mb-1">
-          <div className="flex items-center justify-between mb-0.5">
-            <span className="text-[11px] text-foreground-muted">통과율</span>
-            <span className="text-[11px] font-medium text-foreground">{(passRate * 100).toFixed(0)}%</span>
-          </div>
-          <div className="h-1.5 rounded-full bg-surface-secondary">
-            <div
-              className={`h-1.5 rounded-full transition-all ${
-                passRate >= 0.8 ? "bg-green-400" : passRate < 0.5 ? "bg-red-400" : "bg-primary-400"
-              }`}
-              style={{ width: `${passRate * 100}%` }}
-            />
-          </div>
-        </div>
-      )}
-
-      {/* 스킵 표시 */}
-      {isSkipped && (
-        <p className="text-[11px] text-foreground-muted">건너뜀</p>
-      )}
-
-      {/* 한줄 미리보기 */}
-      {!isSkipped && insight && (
-        <p className="text-[10px] text-foreground-muted line-clamp-2 mt-1 leading-relaxed">{insight}</p>
-      )}
-    </button>
   );
 }
 
@@ -303,9 +440,6 @@ function DetailPanel({ item }: { item: QuestionData }) {
 
   const taskFulfillment = evaluation.task_fulfillment;
   const priorityPrescription = evaluation.priority_prescription;
-
-  // 개별평가(training-eval-panel)와 동일한 순서:
-  // 질문 원문 → 나의 답변+오디오 → 구분선 → Step 1~5 전체 펼침
 
   return (
     <div className="divide-y divide-border/50">
@@ -560,10 +694,9 @@ function TaskFulfillmentBlock({ fulfillment }: { fulfillment: TaskFulfillment })
   );
 }
 
-// ── 답변 원문 + 오디오 플레이어 (training-eval-panel과 동일) ──
+// ── 답변 원문 + 오디오 플레이어 ──
 
 function TranscriptWithAudio({ evaluation, answer }: { evaluation: MockTestEvaluation; answer: MockTestAnswer | null }) {
-  // audio_url은 answers 테이블에 있음 (evaluations에는 JOIN 시에만 존재)
   const audioUrl = answer?.audio_url || evaluation.audio_url;
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const progressBarRef = useRef<HTMLDivElement | null>(null);
@@ -611,7 +744,6 @@ function TranscriptWithAudio({ evaluation, answer }: { evaluation: MockTestEvalu
     setCurrentTime(audio.currentTime);
   }, [ensureAudio]);
 
-  // 문항 변경 시 오디오 정리
   useEffect(() => {
     return () => {
       if (audioRef.current) {
@@ -625,7 +757,6 @@ function TranscriptWithAudio({ evaluation, answer }: { evaluation: MockTestEvalu
 
   return (
     <div>
-      {/* 오디오 플레이어 */}
       {audioUrl && (
         <div className="mb-2 flex items-center gap-2 rounded-lg border border-border bg-surface-secondary/50 px-3 py-2">
           <button
@@ -657,12 +788,10 @@ function TranscriptWithAudio({ evaluation, answer }: { evaluation: MockTestEvalu
         </div>
       )}
 
-      {/* 답변 원문 */}
       <p className="whitespace-pre-wrap rounded-lg border border-border bg-white p-3 text-[13px] leading-relaxed text-foreground">
         {evaluation.transcript}
       </p>
 
-      {/* 메타 정보 */}
       <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-foreground-muted">
         {evaluation.wpm != null && evaluation.wpm > 0 && <span>WPM: {evaluation.wpm}</span>}
         {evaluation.audio_duration != null && Number(evaluation.audio_duration) > 0 && (
