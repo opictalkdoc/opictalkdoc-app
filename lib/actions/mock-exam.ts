@@ -451,7 +451,9 @@ export async function getSession(
       id: string;
       question_english: string;
       question_korean: string;
+      question_short: string;
       question_type_eng: string;
+      survey_type: string;
       topic: string;
       category: string;
       audio_url: string | null;

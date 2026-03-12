@@ -61,9 +61,9 @@ const services = [
 
 const illustrations = [
   { src: "/images/hero-beer.webp", caption: "퇴근 후 맥주 한 캔" },
-  { src: "/images/hero-coffee.webp", caption: "주말 아침 커피" },
-  { src: "/images/hero-sofa.webp", caption: "소파 위 넷플릭스" },
   { src: "/images/hero-game.webp", caption: "친구랑 게임" },
+  { src: "/images/hero-sofa.webp", caption: "소파 위 넷플릭스" },
+  { src: "/images/hero-coffee.webp", caption: "주말 아침 커피" },
   { src: "/images/hero-chat.webp", caption: "친구와 수다" },
 ];
 
