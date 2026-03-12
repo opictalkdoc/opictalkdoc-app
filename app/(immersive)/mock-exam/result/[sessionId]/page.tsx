@@ -3,7 +3,7 @@ import { ResultPageContent } from "@/components/mock-exam/result-page/result-pag
 import { getSession, getHistory } from "@/lib/actions/mock-exam";
 
 export const metadata = {
-  title: "모의고사 결과 | 오픽톡닥",
+  title: "나의 모의고사 | 오픽톡닥",
 };
 
 interface Props {
@@ -18,7 +18,7 @@ export default async function MockExamResultPage({ params, searchParams }: Props
   if (!sessionId) {
     return (
       <>
-        <ImmersiveHeader title="모의고사 결과" backHref="/mock-exam?tab=history" />
+        <ImmersiveHeader title="나의 모의고사" backHref="/mock-exam?tab=history" />
         <main className="flex h-0 flex-grow flex-col items-center justify-center">
           <p className="text-foreground-secondary">잘못된 접근입니다</p>
           <a href="/mock-exam" className="mt-2 text-sm text-primary-500 hover:underline">
@@ -43,7 +43,7 @@ export default async function MockExamResultPage({ params, searchParams }: Props
 
   return (
     <>
-      <ImmersiveHeader title="모의고사 결과" backHref="/mock-exam?tab=history" />
+      <ImmersiveHeader title="나의 모의고사" backHref="/mock-exam?tab=history" />
       <main className="flex h-0 flex-grow flex-col md:h-auto md:flex-1">
         <ResultPageContent
           sessionId={sessionId}

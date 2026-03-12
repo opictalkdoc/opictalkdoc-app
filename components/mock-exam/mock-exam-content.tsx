@@ -482,11 +482,11 @@ function HistoryTab({
     return (
       <div className="space-y-6">
         <CollapsibleBanner
-          title="모의고사 결과란?"
+          title="나의 모의고사란?"
           description="모의고사 응시 후 예상 등급, FACT 영역별 점수, 문항별 피드백을 확인하고, 응시 이력과 등급 변화 추이를 한눈에 볼 수 있습니다."
         />
         <div className="rounded-xl border border-border bg-surface p-4 sm:p-6">
-          <h3 className="font-semibold text-foreground">모의고사 결과</h3>
+          <h3 className="font-semibold text-foreground">나의 모의고사</h3>
           <div className="mt-4 flex flex-col items-center py-6 text-center sm:mt-6 sm:py-8">
             <div className="flex h-14 w-14 items-center justify-center rounded-full bg-surface-secondary">
               <BarChart3 size={24} className="text-foreground-muted" />
@@ -506,7 +506,7 @@ function HistoryTab({
   return (
     <div className="space-y-3 sm:space-y-4">
       <CollapsibleBanner
-        title="모의고사 결과란?"
+        title="나의 모의고사란?"
         description="모의고사 응시 후 예상 등급, FACT 영역별 점수, 문항별 피드백을 확인하고, 응시 이력과 등급 변화 추이를 한눈에 볼 수 있습니다."
       />
 

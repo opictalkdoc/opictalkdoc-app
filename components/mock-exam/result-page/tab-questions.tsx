@@ -15,6 +15,7 @@ import {
   Play,
   Pause,
   ChevronDown,
+  MousePointerClick,
 } from "lucide-react";
 import type {
   MockTestEvaluation,
@@ -35,7 +36,9 @@ interface QuestionsTabProps {
     id: string;
     question_english: string;
     question_korean: string;
+    question_short: string;
     question_type_eng: string;
+    survey_type: string;
     topic: string;
     category: string;
   }>;
@@ -58,21 +61,21 @@ interface QuestionData {
 
 function getBarColor(passRate: number, isSkipped: boolean) {
   if (isSkipped) return "bg-foreground-muted/20";
-  if (passRate >= 0.8) return "bg-green-400";
+  if (passRate >= 0.8) return "bg-emerald-500";
   if (passRate < 0.5) return "bg-red-400";
   return "bg-primary-400";
 }
 
 function getBarHoverColor(passRate: number, isSkipped: boolean) {
   if (isSkipped) return "hover:bg-foreground-muted/30";
-  if (passRate >= 0.8) return "hover:bg-green-500";
+  if (passRate >= 0.8) return "hover:bg-emerald-600";
   if (passRate < 0.5) return "hover:bg-red-500";
   return "hover:bg-primary-500";
 }
 
 function getStatusIcon(item: QuestionData) {
   if (item.isSkipped) return { Icon: SkipForward, color: "text-foreground-muted" };
-  if (item.fulfillmentStatus === "fulfilled") return { Icon: CheckCircle2, color: "text-green-500" };
+  if (item.fulfillmentStatus === "fulfilled") return { Icon: CheckCircle2, color: "text-emerald-600" };
   if (item.fulfillmentStatus === "partial") return { Icon: AlertTriangle, color: "text-yellow-500" };
   if (item.fulfillmentStatus === "failed") return { Icon: XCircle, color: "text-red-500" };
   return null;
@@ -80,7 +83,7 @@ function getStatusIcon(item: QuestionData) {
 
 function getStatusChar(item: QuestionData) {
   if (item.isSkipped) return { char: "—", color: "text-foreground-muted" };
-  if (item.fulfillmentStatus === "fulfilled") return { char: "✓", color: "text-green-500" };
+  if (item.fulfillmentStatus === "fulfilled") return { char: "✓", color: "text-emerald-600" };
   if (item.fulfillmentStatus === "partial") return { char: "△", color: "text-yellow-500" };
   if (item.fulfillmentStatus === "failed") return { char: "✗", color: "text-red-500" };
   return { char: "", color: "text-foreground-muted" };
@@ -193,12 +196,12 @@ export function QuestionsTab({ evaluations, answers, questions }: QuestionsTabPr
           <StatItem
             label="평균 완성도"
             value={`${(stats.avgPassRate * 100).toFixed(0)}%`}
-            color={stats.avgPassRate >= 0.8 ? "text-green-600" : stats.avgPassRate < 0.6 ? "text-red-500" : "text-foreground"}
+            color={stats.avgPassRate >= 0.8 ? "text-emerald-700" : stats.avgPassRate < 0.6 ? "text-red-500" : "text-foreground"}
           />
           <StatItem
             label="평균 발음"
             value={stats.avgPron > 0 ? stats.avgPron.toFixed(0) : "—"}
-            color={stats.avgPron >= 80 ? "text-green-600" : stats.avgPron < 60 ? "text-red-500" : "text-foreground"}
+            color={stats.avgPron >= 80 ? "text-emerald-700" : stats.avgPron < 60 ? "text-red-500" : "text-foreground"}
           />
         </div>
       </div>
@@ -210,28 +213,41 @@ export function QuestionsTab({ evaluations, answers, questions }: QuestionsTabPr
 
       {/* ═══ PC: 선택한 문항 상세 ═══ */}
       {!selectedItem && (
-        <p className="hidden md:block text-center text-sm text-foreground-muted py-6">
-          문항 번호를 클릭하면 상세 분석을 볼 수 있습니다.
-        </p>
+        <div className="hidden md:flex flex-col items-center gap-2 py-8">
+          <div className="flex items-center gap-2 text-sm text-foreground-secondary">
+            <span>상단의</span>
+            <span className="inline-flex items-center rounded bg-surface-secondary px-2.5 py-1 text-[11px] font-bold text-foreground-secondary border border-border">
+              Q2
+            </span>
+            <MousePointerClick className="w-4 h-4 text-primary-500" />
+            <span>버튼을 눌러 상세 분석을 확인하세요</span>
+          </div>
+        </div>
       )}
       {selectedItem && (
         <div key={selectedItem.questionNumber} ref={detailRef} className="hidden md:block scroll-mt-[76px]">
           <div className="rounded-xl border-2 border-primary-200 bg-surface overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
             <div className="flex items-center justify-between border-b border-border bg-primary-50/30 px-4 py-3">
               <div className="flex items-center gap-2">
-                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary-100 text-xs font-bold text-primary-600">
-                  {selectedItem.questionNumber}
+                <span className="flex h-7 shrink-0 items-center justify-center rounded-full bg-primary-100 px-2.5 text-xs font-bold text-primary-600">
+                  Q{selectedItem.questionNumber}
                 </span>
                 <div>
                   <p className="text-sm font-medium text-foreground line-clamp-1">
-                    {selectedItem.question?.question_korean || `문항 ${selectedItem.questionNumber}`}
+                    {selectedItem.question?.question_short || selectedItem.question?.question_korean || `문항 ${selectedItem.questionNumber}`}
                   </p>
-                  <div className="flex items-center gap-2 text-xs text-foreground-muted">
-                    {selectedItem.question?.question_type_eng && (
-                      <span>{QT_KO[selectedItem.question.question_type_eng] || selectedItem.question.question_type_eng}</span>
+                  <div className="flex items-center gap-1.5 text-xs text-foreground-muted">
+                    {selectedItem.question?.survey_type && (
+                      <span>{selectedItem.question.survey_type}</span>
                     )}
-                    {selectedItem.evaluation?.checkbox_type && (
-                      <span>· {CB_KO[selectedItem.evaluation.checkbox_type] || selectedItem.evaluation.checkbox_type}</span>
+                    {selectedItem.question?.category && (
+                      <span>· {selectedItem.question.category}</span>
+                    )}
+                    {selectedItem.question?.topic && (
+                      <span>· {selectedItem.question.topic}</span>
+                    )}
+                    {selectedItem.question?.question_type_eng && (
+                      <span>· {QT_KO[selectedItem.question.question_type_eng] || selectedItem.question.question_type_eng}</span>
                     )}
                   </div>
                 </div>
@@ -530,8 +546,8 @@ function DetailPanel({ item }: { item: QuestionData }) {
         <div className="px-4 py-3">
           <p className="text-xs font-medium text-foreground-muted mb-2">이렇게 말하면 더 좋아요</p>
           <div className="space-y-2.5">
-            <div className="rounded-lg bg-green-50/50 p-2.5">
-              <p className="text-xs font-medium text-green-700 mb-1">교정 답변 — 문법만 수정</p>
+            <div className="rounded-lg bg-emerald-50/50 p-2.5">
+              <p className="text-xs font-medium text-emerald-800 mb-1">교정 답변 — 문법만 수정</p>
               <p className="text-[13px] leading-relaxed text-foreground">{coaching.answer_improvement.corrected_version}</p>
             </div>
             <div className="rounded-lg bg-primary-50/50 p-2.5">
@@ -580,7 +596,7 @@ function DetailPanel({ item }: { item: QuestionData }) {
             <div className="rounded-lg bg-surface-secondary/30 p-3 space-y-3">
               {coaching.deep_analysis.strengths && (
                 <div>
-                  <p className="text-xs font-medium text-green-600 mb-1">강점</p>
+                  <p className="text-xs font-medium text-emerald-700 mb-1">강점</p>
                   <p className="text-xs text-foreground-secondary">{coaching.deep_analysis.strengths}</p>
                 </div>
               )}
@@ -647,7 +663,7 @@ function SkippedPanel({ evaluation }: { evaluation: MockTestEvaluation | null })
 
 function TaskFulfillmentBlock({ fulfillment }: { fulfillment: TaskFulfillment }) {
   const statusConfig = {
-    fulfilled: { label: "충족", color: "text-green-600 bg-green-50", icon: "✓" },
+    fulfilled: { label: "충족", color: "text-emerald-700 bg-emerald-50", icon: "✓" },
     partial: { label: "부분 충족", color: "text-yellow-600 bg-yellow-50", icon: "△" },
     failed: { label: "미충족", color: "text-red-500 bg-red-50", icon: "✗" },
   };
@@ -665,7 +681,7 @@ function TaskFulfillmentBlock({ fulfillment }: { fulfillment: TaskFulfillment })
         {fulfillment.checklist?.required?.map((item, i) => (
           <div key={`r-${i}`} className="flex items-start gap-1.5 text-xs">
             {item.pass ? (
-              <CheckCircle2 size={10} className="mt-0.5 shrink-0 text-green-500" />
+              <CheckCircle2 size={10} className="mt-0.5 shrink-0 text-emerald-600" />
             ) : (
               <XCircle size={10} className="mt-0.5 shrink-0 text-red-400" />
             )}
@@ -677,7 +693,7 @@ function TaskFulfillmentBlock({ fulfillment }: { fulfillment: TaskFulfillment })
         {fulfillment.checklist?.advanced?.map((item, i) => (
           <div key={`a-${i}`} className="flex items-start gap-1.5 text-xs">
             {item.pass ? (
-              <CheckCircle2 size={10} className="mt-0.5 shrink-0 text-green-500" />
+              <CheckCircle2 size={10} className="mt-0.5 shrink-0 text-emerald-600" />
             ) : (
               <XCircle size={10} className="mt-0.5 shrink-0 text-yellow-500" />
             )}

@@ -2,7 +2,6 @@
 
 // 종합 탭: S1(등급 스냅샷) + S2(FACT 영역) + S4(로드맵) + CTA
 import {
-  TrendingUp,
   ArrowRight,
   BarChart3,
   AlertTriangle,
@@ -13,13 +12,9 @@ import {
 import type {
   MockTestReport,
   MockExamHistoryItem,
-  OpicLevel,
   CoachingReportV3,
 } from "@/lib/types/mock-exam";
-import {
-  OPIC_LEVEL_DESC,
-  FACT_LABELS,
-} from "@/lib/types/mock-exam";
+import { FACT_LABELS } from "@/lib/types/mock-exam";
 import { getLevelDiff, TYPE_MAP_KO, CATEGORY_KO } from "./shared-helpers";
 
 interface OverviewTabProps {
@@ -45,96 +40,153 @@ export function OverviewTab({
   const ge = coaching?.grade_explanation;
   const roadmap = coaching?.roadmap;
   const recommendation = coaching?.training_recommendation;
+  const score = Number(report.total_score ?? 0);
 
   return (
     <div className="space-y-4">
       {/* ═══ S1: 결과 스냅샷 ═══ */}
-      <div className="rounded-xl border border-border bg-surface p-4 sm:p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="font-semibold text-foreground">모의고사 결과</h3>
-          <span className="text-xs text-foreground-muted">
-            {new Date(sessionDate).toLocaleDateString("ko-KR")} ·{" "}
-            {mode === "training" ? "훈련" : "실전"}
-          </span>
+      <div className="rounded-xl border border-border bg-surface overflow-hidden">
+        {/* 헤더 */}
+        <div className="flex items-center justify-between px-4 py-3 sm:px-6 border-b border-border/50">
+          <h3 className="font-semibold text-foreground">나의 모의고사</h3>
+          <div className="flex items-center gap-2">
+            {previousResult && previousResult.final_level && levelDiff && (
+              <span
+                className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${
+                  levelDiff.direction === "up"
+                    ? "bg-emerald-50 text-emerald-600"
+                    : levelDiff.direction === "down"
+                      ? "bg-red-50 text-red-500"
+                      : "bg-surface-secondary text-foreground-muted"
+                }`}
+              >
+                {levelDiff.direction === "up"
+                  ? `↑${levelDiff.diff}단계`
+                  : levelDiff.direction === "down"
+                    ? `↓${Math.abs(levelDiff.diff)}단계`
+                    : "이전 유지"}
+              </span>
+            )}
+            <span className="text-xs text-foreground-muted">
+              {new Date(sessionDate).toLocaleDateString("ko-KR")} ·{" "}
+              {mode === "training" ? "훈련" : "실전"}
+            </span>
+          </div>
         </div>
 
-        {/* 등급 배지 */}
-        <div className="flex flex-col items-center">
-          <div className="relative flex h-20 w-20 items-center justify-center rounded-full bg-primary-50 ring-4 ring-primary-100 sm:h-24 sm:w-24">
-            <span className="text-2xl font-bold text-primary-600 sm:text-3xl">
+        {/* 등급 | 점수 — 이력 탭과 동일한 그리드 */}
+        <div className="grid grid-cols-2">
+          <div className="flex flex-col items-center border-r border-border py-4">
+            <span className="text-[10px] text-foreground-muted">등급</span>
+            <span className="mt-1 text-2xl font-bold text-primary-600 sm:text-3xl">
               {report.final_level || "—"}
             </span>
-            {levelDiff?.direction === "up" && (
-              <div className="absolute -right-1 -top-1 flex h-7 w-7 items-center justify-center rounded-full bg-green-500">
-                <TrendingUp size={14} className="text-white" />
-              </div>
+          </div>
+          <div className="flex flex-col items-center py-4">
+            <span className="text-[10px] text-foreground-muted">점수</span>
+            {report.total_score != null && (
+              <p className="mt-1 text-2xl font-bold text-foreground sm:text-3xl">
+                {score.toFixed(1)}
+                <span className="text-sm font-normal text-foreground-muted"> / 100</span>
+              </p>
             )}
           </div>
-
-          <p className="mt-2 text-sm text-foreground-secondary text-center">
-            {snapshot?.grade_interpretation ||
-              (report.final_level ? OPIC_LEVEL_DESC[report.final_level as OpicLevel] : "등급 미산출")}
-          </p>
-
-          {report.target_level && report.final_level && (
-            <div className="mt-1.5 flex items-center gap-2 text-xs text-foreground-muted">
-              <span>{report.final_level}</span>
-              <ArrowRight size={10} />
-              <span className="font-medium text-primary-500">{report.target_level}</span>
-              <span>(목표)</span>
-            </div>
-          )}
-
-          {report.total_score != null && (
-            <p className="mt-2 text-3xl font-bold text-foreground">
-              {Number(report.total_score ?? 0).toFixed(1)}
-              <span className="text-base font-normal text-foreground-muted"> / 100</span>
-            </p>
-          )}
         </div>
+
+        {/* 등급 위치 — NL~AL 스펙트럼 */}
+        {report.final_level && report.target_level && (() => {
+          const LEVELS = ["NL", "NM", "NH", "IL", "IM1", "IM2", "IM3", "IH", "AL"];
+          const curIdx = LEVELS.indexOf(report.final_level);
+          const tgtIdx = LEVELS.indexOf(report.target_level);
+          if (curIdx < 0 || tgtIdx < 0) return null;
+
+          return (
+            <div className="mt-2 px-4 sm:px-6 pb-5">
+              <div className="flex items-center pb-5 pt-4">
+                {LEVELS.map((level, i) => {
+                  const isCurrent = i === curIdx;
+                  const isTarget = i === tgtIdx;
+
+                  return (
+                    <div
+                      key={level}
+                      className={`flex items-center ${i < LEVELS.length - 1 ? "flex-1" : ""}`}
+                    >
+                      <div className="relative flex-shrink-0">
+                        <div
+                          className={`rounded-full ${
+                            isCurrent
+                              ? "h-4 w-4 bg-primary-500 ring-[3px] ring-primary-100"
+                              : isTarget
+                                ? "h-3.5 w-3.5 border-2 border-primary-400 bg-primary-50"
+                                : i < curIdx
+                                  ? "h-2 w-2 bg-primary-300"
+                                  : "h-2 w-2 bg-border"
+                          }`}
+                        />
+                        {/* 목표: 상단 레이블 */}
+                        {isTarget && !isCurrent && (
+                          <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2">
+                            <span className="text-[10px] font-medium text-primary-400 whitespace-nowrap">
+                              목표
+                            </span>
+                          </div>
+                        )}
+                        {/* 하단 등급명 — 모든 등급 표시 */}
+                        <div className="absolute top-full mt-1 left-1/2 -translate-x-1/2">
+                          <span
+                            className={`text-[10px] whitespace-nowrap ${
+                              isCurrent
+                                ? "font-bold text-primary-600"
+                                : isTarget
+                                  ? "font-medium text-primary-400"
+                                  : i < curIdx
+                                    ? "text-primary-300"
+                                    : "text-foreground-muted/60"
+                            }`}
+                          >
+                            {level}
+                          </span>
+                        </div>
+                      </div>
+                      {i < LEVELS.length - 1 && (
+                        <div
+                          className={`h-[2px] flex-1 mx-0.5 ${
+                            i < curIdx
+                              ? "bg-primary-300"
+                              : i >= curIdx && i < tgtIdx
+                                ? "bg-primary-200"
+                                : "bg-border/50"
+                          }`}
+                        />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })()}
 
         {/* 한줄 총평 */}
         {snapshot?.headline && (
-          <div className="mt-4 rounded-lg bg-surface-secondary/50 p-3">
+          <div className="mx-4 sm:mx-6 mb-3 rounded-lg bg-surface-secondary/50 p-3">
             <p className="text-sm leading-relaxed text-foreground">{snapshot.headline}</p>
           </div>
         )}
 
         {/* 진단 태그 */}
         {snapshot?.diagnosis_tags && snapshot.diagnosis_tags.length > 0 && (
-          <div className="mt-3 flex flex-wrap gap-1.5 justify-center">
-            {snapshot.diagnosis_tags.map((tag, i) => (
-              <span
-                key={i}
-                className="rounded-full bg-primary-50 px-2.5 py-1 text-xs font-medium text-primary-600"
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-        )}
-
-        {/* 이전 비교 */}
-        {previousResult && previousResult.final_level && (
-          <div className="mt-4 rounded-lg border border-primary-100 bg-primary-50/30 p-3">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-foreground-secondary">이전 대비</span>
-              <div className="flex items-center gap-2">
-                <span className="text-foreground-muted">{previousResult.final_level}</span>
-                <ArrowRight size={12} className="text-foreground-muted" />
-                <span className="font-bold text-foreground">{report.final_level}</span>
-                {levelDiff && levelDiff.direction !== "same" && (
-                  <span
-                    className={`rounded-full px-1.5 py-0.5 text-xs font-bold ${
-                      levelDiff.direction === "up"
-                        ? "bg-green-100 text-green-600"
-                        : "bg-red-100 text-red-500"
-                    }`}
-                  >
-                    {levelDiff.direction === "up" ? "+" : ""}{levelDiff.diff}단계
-                  </span>
-                )}
-              </div>
+          <div className="px-4 sm:px-6 pb-5">
+            <div className="flex flex-wrap gap-1.5">
+              {snapshot.diagnosis_tags.map((tag, i) => (
+                <span
+                  key={i}
+                  className="rounded-full bg-primary-50 px-3 py-1 text-xs font-medium text-primary-600 border border-primary-100"
+                >
+                  {tag}
+                </span>
+              ))}
             </div>
           </div>
         )}

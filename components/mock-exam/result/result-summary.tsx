@@ -265,7 +265,7 @@ function Section1Snapshot({
   return (
     <div className="rounded-xl border border-border bg-surface p-4 sm:p-6">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="font-semibold text-foreground">모의고사 결과</h3>
+        <h3 className="font-semibold text-foreground">나의 모의고사</h3>
         <span className="text-xs text-foreground-muted">
           {new Date(sessionDate).toLocaleDateString("ko-KR")} ·{" "}
           {mode === "training" ? "훈련" : "실전"}

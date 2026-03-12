@@ -170,41 +170,46 @@ export function DiagnosisTab({ report, coaching }: DiagnosisTabProps) {
 function PriorityCard({ priority: p }: { priority: Top3Priority }) {
   return (
     <div className="rounded-lg border border-border bg-surface-secondary/20 p-3 sm:p-4">
-      <div className="flex items-start gap-3">
+      {/* 헤더: 순위 + 영역 + 제목 — 인라인 */}
+      <div className="flex items-center gap-2 mb-2">
         <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary-100 text-xs font-bold text-primary-600">
           {p.rank}
         </span>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium border ${AREA_COLOR[p.area] || "bg-surface-secondary text-foreground-muted"}`}>
-              {AREA_KO[p.area] || p.area}
-            </span>
-            <span className="text-sm font-medium text-foreground">{p.label}</span>
-          </div>
-          <p className="text-xs text-foreground-secondary mb-2">{p.why}</p>
-          {p.before && p.after && (
-            <div className="flex flex-col gap-1 rounded-lg bg-surface-secondary/50 p-2 text-xs">
-              <div className="flex items-start gap-1.5">
-                <span className="shrink-0 text-red-400 text-[11px] font-medium mt-0.5">BEFORE</span>
-                <span className="text-foreground-secondary line-through">{p.before}</span>
-              </div>
-              <div className="flex items-start gap-1.5">
-                <span className="shrink-0 text-green-600 text-[11px] font-medium mt-0.5">AFTER</span>
-                <span className="text-foreground font-medium">{p.after}</span>
-              </div>
-            </div>
-          )}
-          {p.fix && (
-            <p className="mt-1.5 text-xs text-primary-600 flex items-start gap-1">
-              <Lightbulb size={10} className="shrink-0 mt-0.5" />
-              {p.fix}
-            </p>
-          )}
-          {p.where && p.where.length > 0 && (
-            <p className="mt-1 text-[11px] text-foreground-muted">{p.where.join(", ")}에서 발견</p>
-          )}
-        </div>
+        <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium border ${AREA_COLOR[p.area] || "bg-surface-secondary text-foreground-muted"}`}>
+          {AREA_KO[p.area] || p.area}
+        </span>
+        <span className="text-sm font-medium text-foreground">{p.label}</span>
       </div>
+
+      {/* 설명 */}
+      <p className="text-xs text-foreground-secondary mb-2">{p.why}</p>
+
+      {/* BEFORE/AFTER — 레이블 위, 내용 아래 */}
+      {p.before && p.after && (
+        <div className="rounded-lg bg-surface-secondary/50 p-2.5 text-xs space-y-1.5">
+          <div>
+            <span className="text-red-400 text-[11px] font-medium">BEFORE</span>
+            <p className="text-foreground-secondary line-through mt-0.5">{p.before}</p>
+          </div>
+          <div>
+            <span className="text-green-600 text-[11px] font-medium">AFTER</span>
+            <p className="text-foreground font-medium mt-0.5">{p.after}</p>
+          </div>
+        </div>
+      )}
+
+      {/* 팁 */}
+      {p.fix && (
+        <p className="mt-2 text-xs text-primary-600 flex items-start gap-1">
+          <Lightbulb size={10} className="shrink-0 mt-0.5" />
+          {p.fix}
+        </p>
+      )}
+
+      {/* 발견 위치 */}
+      {p.where && p.where.length > 0 && (
+        <p className="mt-1 text-[11px] text-foreground-muted">{p.where.join(", ")}에서 발견</p>
+      )}
     </div>
   );
 }

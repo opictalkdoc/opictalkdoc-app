@@ -6,8 +6,6 @@ import {
   TrendingDown,
   Minus,
   ArrowRight,
-  ChevronDown,
-  ChevronUp,
   Target,
   Lightbulb,
   AlertTriangle,
@@ -21,21 +19,7 @@ import type {
   GrowthAnalysis,
 } from "@/lib/types/mock-exam";
 import { OPIC_LEVEL_ORDER, FACT_LABELS } from "@/lib/types/mock-exam";
-
-// question_type 한글 매핑
-const QT_KO: Record<string, string> = {
-  description: "묘사",
-  routine: "루틴",
-  rp_11: "질문하기",
-  comparison: "비교",
-  past_childhood: "어릴 때",
-  past_special: "특별 경험",
-  past_recent: "최근 경험",
-  past_habitual: "과거 습관",
-  rp_12: "대안제시",
-  adv_14: "비교변화",
-  adv_15: "의견제시",
-};
+import { QT_KO } from "../result-page/shared-helpers";
 
 // FACT 색상 매핑
 const FACT_COLORS: Record<string, string> = {
@@ -59,7 +43,6 @@ interface GrowthReportProps {
 }
 
 export function GrowthReport({ report }: GrowthReportProps) {
-  const [isExpanded, setIsExpanded] = useState(true);
   const comparison = report.growth_comparison;
   const analysis = report.growth_analysis;
 
@@ -71,25 +54,15 @@ export function GrowthReport({ report }: GrowthReportProps) {
   return (
     <div className="rounded-xl border-2 border-primary-100 bg-surface">
       {/* 헤더 */}
-      <button
-        onClick={() => setIsExpanded(!isExpanded)}
-        className="flex w-full items-center justify-between p-4 sm:p-6"
-      >
-        <div className="flex items-center gap-2">
-          <TrendingUp size={18} className="text-primary-500" />
-          <h3 className="font-semibold text-foreground">성장 리포트</h3>
-          <span className="rounded-full bg-primary-50 px-2 py-0.5 text-xs font-medium text-primary-600">
-            {comparison.session_count}회차
-          </span>
-        </div>
-        <span className="flex items-center gap-1 text-sm text-primary-500">
-          {isExpanded ? "접기" : "펼치기"}
-          {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+      <div className="flex items-center gap-2 p-4 sm:p-6">
+        <TrendingUp size={18} className="text-primary-500" />
+        <h3 className="font-semibold text-foreground">성장 리포트</h3>
+        <span className="rounded-full bg-primary-50 px-2 py-0.5 text-xs font-medium text-primary-600">
+          {comparison.session_count}회차
         </span>
-      </button>
+      </div>
 
-      {isExpanded && (
-        <div className="border-t border-border px-4 pb-4 space-y-4 sm:px-6 sm:pb-6">
+      <div className="border-t border-border px-4 pb-4 space-y-4 sm:px-6 sm:pb-6">
           {/* ① 한 줄 요약 */}
           {report.growth_summary && (
             <div className="rounded-lg bg-primary-50/50 p-3 mt-4">
@@ -126,15 +99,17 @@ export function GrowthReport({ report }: GrowthReportProps) {
                   if (!comment) return null;
                   const diff = comparison[`score_${key.toLowerCase()}_diff` as keyof GrowthComparison] as number;
                   return (
-                    <div key={key} className="flex items-start gap-2">
-                      <span className={`shrink-0 text-xs font-bold mt-0.5 w-16 ${FACT_COLORS[key]}`}>
-                        {FACT_LABELS[key]}
+                    <div key={key} className="flex items-start gap-3">
+                      <div className="shrink-0 w-20 sm:flex sm:w-24 sm:items-baseline sm:gap-1.5">
+                        <span className={`text-xs font-bold ${FACT_COLORS[key]}`}>
+                          {FACT_LABELS[key]}
+                        </span>
                         {diff != null && (
-                          <span className={`ml-1 text-[11px] ${diff > 0 ? "text-green-500" : diff < 0 ? "text-red-400" : "text-foreground-muted"}`}>
+                          <div className={`text-[11px] font-medium ${diff > 0 ? "text-green-500" : diff < 0 ? "text-red-400" : "text-foreground-muted"}`}>
                             {diff > 0 ? "+" : ""}{diff.toFixed(1)}
-                          </span>
+                          </div>
                         )}
-                      </span>
+                      </div>
                       <p className="text-xs text-foreground-secondary leading-relaxed">{comment}</p>
                     </div>
                   );
@@ -185,7 +160,6 @@ export function GrowthReport({ report }: GrowthReportProps) {
             </div>
           )}
         </div>
-      )}
     </div>
   );
 }
@@ -321,13 +295,25 @@ function DiffBadge({ diff, type }: { diff: number; type: "level" | "score" }) {
 
 // ── ⑤ 유형별 비교 ──
 
+// 유형 고정 표시 순서
+const QT_ORDER = [
+  "description", "routine", "comparison",
+  "past_childhood", "past_recent", "past_special",
+  "rp_11", "rp_12", "adv_14", "adv_15",
+];
+
 function TypeComparisonSection({
   items,
 }: {
   items: GrowthComparison["type_comparison"];
 }) {
   const [showAll, setShowAll] = useState(false);
-  const displayItems = showAll ? items : items.slice(0, 5);
+  const sorted = [...items].sort((a, b) => {
+    const ai = QT_ORDER.indexOf(a.type);
+    const bi = QT_ORDER.indexOf(b.type);
+    return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+  });
+  const displayItems = showAll ? sorted : sorted.slice(0, 5);
 
   return (
     <Section
@@ -337,7 +323,7 @@ function TypeComparisonSection({
       <div className="space-y-1.5">
         {displayItems.map((item) => (
           <div key={item.type} className="flex items-center gap-2">
-            <span className="w-16 text-xs text-foreground-secondary shrink-0">
+            <span className="w-24 text-xs text-foreground-secondary shrink-0 truncate" title={QT_KO[item.type] || item.type}>
               {QT_KO[item.type] || item.type}
             </span>
             {/* 프로그레스 바 */}
@@ -379,7 +365,7 @@ function TypeComparisonSection({
           </div>
         ))}
       </div>
-      {items.length > 5 && (
+      {sorted.length > 5 && (
         <button
           onClick={() => setShowAll(!showAll)}
           className="mt-2 text-xs text-primary-500 hover:text-primary-600"

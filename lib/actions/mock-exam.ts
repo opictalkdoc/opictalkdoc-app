@@ -503,7 +503,7 @@ export async function getSession(
       // 세션의 question_ids로 질문 정보 조회
       supabase
         .from("questions")
-        .select("id, question_english, question_korean, question_type_eng, topic, category, audio_url")
+        .select("id, question_english, question_korean, question_short, question_type_eng, survey_type, topic, category, audio_url")
         .in("id", session.question_ids || []),
     ]);
 
