@@ -136,24 +136,24 @@ export default function HomePage() {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: "easeOut" }}
-            className="inline-flex items-center gap-1.5 rounded-full border border-[#EAE0D5] bg-white/60 px-3 py-1 text-[0.7rem] font-bold tracking-wide text-[#8B7E72] sm:px-[18px] sm:py-2 sm:text-[clamp(0.75rem,0.9vw,0.85rem)]"
+            className="inline-flex items-center gap-1.5 rounded-full bg-[#D4835E]/[0.1] px-3 py-1 text-[0.7rem] font-bold tracking-wide text-[#D4835E] sm:px-[18px] sm:py-2 sm:text-[clamp(0.75rem,0.9vw,0.85rem)]"
           >
-            나만의 이야기로 채우는 OPIc
+            나의 스토리로 채우는 OPIc
           </motion.span>
 
           <motion.h1
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.15, ease: "easeOut" }}
-            className="mt-[clamp(12px,2vh,24px)] text-[32px] font-extrabold leading-[1.3] tracking-[-0.04em] text-[#3A2E25] sm:text-[clamp(2rem,3.2vw,3.4rem)]"
+            className="mt-[clamp(12px,2vh,24px)] text-[30px] font-extrabold leading-[1.3] tracking-[-0.04em] text-[#3A2E25] sm:text-[clamp(1.75rem,2.8vw,2.8rem)]"
           >
-            화려한 필터는 끄세요.
+            외운 말이 막혔던 순간,
             <br />
-            <span className="text-[36px] text-[#D4835E] sm:text-[clamp(2.4rem,3.8vw,4rem)]">
+            <span className="text-[#D4835E]">
               당신의 평범한 하루가
             </span>
             <br />
-            가장 완벽한 스토리입니다.
+            가장 완벽한 대본입니다.
           </motion.h1>
         </div>
 
@@ -218,12 +218,6 @@ export default function HomePage() {
             >
               나만의 첫 이야기 시작하기 <ArrowRight className="h-4 w-4" />
             </Link>
-            <Link
-              href="/pricing"
-              className="inline-flex items-center rounded-full border border-[#EAE0D5] bg-white px-[clamp(24px,2.5vw,32px)] py-[clamp(10px,1.2vh,15px)] text-[clamp(13px,1vw,15px)] font-bold text-[#4A3F36] transition-colors hover:bg-[#F3ECE4]"
-            >
-              요금제 보기
-            </Link>
           </motion.div>
         </div>
 
@@ -270,24 +264,27 @@ export default function HomePage() {
             </p>
             <Link
               href="/strategy"
-              className="mt-7 inline-flex items-center gap-1.5 rounded-full bg-[#3A2E25] px-8 py-3.5 text-[15px] font-bold text-white transition-all hover:-translate-y-px hover:bg-[#4A3F36]"
+              className="mt-7 inline-flex items-center gap-1.5 rounded-full bg-[#D4835E] px-10 py-4 text-[16px] font-bold text-white shadow-lg shadow-[#D4835E]/25 transition-all hover:-translate-y-0.5 hover:bg-[#C4734E] hover:shadow-xl hover:shadow-[#D4835E]/30"
             >
-              정확히 알아보기 <ArrowRight className="h-4 w-4" />
+              내 전략, 괜찮을까? <ArrowRight className="h-4 w-4" />
             </Link>
+            <p className="mt-3 text-[0.85rem] text-[#B5A99D]">30초면 확인할 수 있습니다</p>
+          </ScrollReveal>
+
+          {/* 브릿지 카피 */}
+          <ScrollReveal preset="fade-in" delay={0.3} duration={0.8}>
+            <p className="mt-16 text-center text-[1rem] text-[#8B7E72] sm:mt-20 sm:text-[1.05rem]">
+              그래서 오픽톡닥은
+              <br className="sm:hidden" />{" "}
+              <strong className="text-[#3A2E25]">정확한 데이터</strong>와{" "}
+              <strong className="text-[#3A2E25]">당신만의 이야기</strong>로
+              준비합니다.
+            </p>
           </ScrollReveal>
         </div>
       </section>
 
-      {/* 브릿지 카피 */}
-      <ScrollReveal preset="fade-in" duration={0.8}>
-        <div className="bg-white px-6 pb-10 text-center text-[1rem] text-[#8B7E72] sm:text-[1.05rem]">
-          그래서 오픽톡닥은
-          <br className="sm:hidden" />{" "}
-          <strong className="text-[#3A2E25]">정확한 데이터</strong>와{" "}
-          <strong className="text-[#3A2E25]">당신만의 이야기</strong>로
-          준비합니다.
-        </div>
-      </ScrollReveal>
+      {/* 브릿지 카피 — 전략 섹션 내부로 통합 */}
 
       {/* ━━━ 3. Journey (서비스) — 핵심 02/03 강조 ━━━ */}
       <section id="features" className="rounded-t-[32px] bg-[#F3ECE4] py-20 sm:rounded-t-[48px] sm:py-[120px]">
@@ -515,11 +512,11 @@ export default function HomePage() {
       </section>
 
       {/* ━━━ 5. FAQ ━━━ */}
-      <section className="bg-[#F3ECE4] py-20 sm:py-[100px]">
-        <div className="mx-auto max-w-[680px] px-6">
+      <section className="bg-[#F3ECE4] py-20 sm:py-[120px]">
+        <div className="mx-auto max-w-[780px] px-6">
           <ScrollReveal preset="fade-up" className="mb-12 text-center">
             <Pill>자주 묻는 질문</Pill>
-            <h2 className="mt-4 text-[1.6rem] font-extrabold tracking-[-0.02em] text-[#3A2E25] sm:text-[2rem]">
+            <h2 className="mt-4 text-[1.8rem] font-extrabold tracking-[-0.03em] text-[#3A2E25] sm:text-[2.4rem]">
               궁금한 점이 있으신가요?
             </h2>
           </ScrollReveal>
@@ -547,8 +544,8 @@ export default function HomePage() {
         <div className="pointer-events-none absolute right-[-100px] top-[-100px] h-[400px] w-[400px] bg-[radial-gradient(circle,rgba(212,131,94,0.08)_0%,transparent_70%)]" />
         <div className="relative mx-auto max-w-3xl px-6">
           <ScrollReveal preset="fade-up">
-            <h2 className="text-[1.8rem] font-extrabold leading-[1.35] tracking-[-0.03em] text-[#3A2E25] sm:text-[2.8rem]">
-              진짜 내 이야기로
+            <h2 className="text-[1.8rem] font-extrabold leading-[1.35] tracking-[-0.03em] text-[#3A2E25] sm:text-[2.4rem]">
+              진짜 나의 이야기로
               <br />
               OPIc을 시작해 보세요.
             </h2>
