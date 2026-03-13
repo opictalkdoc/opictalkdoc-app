@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X, Settings, LogOut } from "lucide-react";
+import { Menu, X, Settings, LogOut, Shield } from "lucide-react";
 import { serverSignOut } from "@/lib/supabase";
 
 type NavItem = { label: string; href: string; soon?: boolean };
@@ -12,10 +12,12 @@ export function MobileNav({
   isLoggedIn,
   items,
   userName,
+  isAdmin,
 }: {
   isLoggedIn: boolean;
   items: NavItem[];
   userName?: string;
+  isAdmin?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -73,9 +75,23 @@ export function MobileNav({
               })}
             </div>
 
-            {/* 로그인 시: 마이페이지 + 로그아웃 */}
+            {/* 로그인 시: 관리자 + 마이페이지 + 로그아웃 */}
             {isLoggedIn && (
               <div className="mt-3 space-y-1 border-t border-border pt-3">
+                {isAdmin && (
+                  <Link
+                    href="/admin"
+                    onClick={() => setOpen(false)}
+                    className={`flex items-center gap-2 rounded-[var(--radius-lg)] px-3 py-2.5 text-sm font-medium transition-colors ${
+                      pathname.startsWith("/admin")
+                        ? "bg-primary-50 text-primary-600"
+                        : "text-primary-600 hover:bg-primary-50"
+                    }`}
+                  >
+                    <Shield size={16} />
+                    관리자
+                  </Link>
+                )}
                 <Link
                   href="/mypage"
                   onClick={() => setOpen(false)}

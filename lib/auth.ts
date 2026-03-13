@@ -1,4 +1,6 @@
 import { cache } from "react";
+import { redirect } from "next/navigation";
+import { createClient } from "@supabase/supabase-js";
 import { createServerSupabaseClient } from "./supabase-server";
 
 // ── getUser(): Supabase 서버 검증 (34-43ms) ──
@@ -22,3 +24,29 @@ export const getAuthClaims = cache(async () => {
   if (error || !data) return null;
   return data.claims;
 });
+
+// ── getAdminUser(): 레이아웃용 관리자 확인 ──
+// getUser() 후 app_metadata.role === 'admin' 확인
+export const getAdminUser = cache(async () => {
+  const user = await getUser();
+  if (!user) return null;
+  if (user.app_metadata?.role !== "admin") return null;
+  return user;
+});
+
+// ── requireAdmin(): Server Actions용 관리자 인증 ──
+// admin 아니면 에러 throw. 반환: { supabase (service client), userId }
+export async function requireAdmin() {
+  const user = await getUser();
+  if (!user) {
+    redirect("/login");
+  }
+  if (user.app_metadata?.role !== "admin") {
+    throw new Error("관리자 권한이 필요합니다");
+  }
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+  return { supabase, userId: user.id };
+}

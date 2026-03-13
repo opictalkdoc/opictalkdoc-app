@@ -259,7 +259,10 @@ opictalkdoc/                 # Git 루트 = Next.js 루트 (표준 구조)
 │       ├── mock-test-report/index.ts      # Edge Function Stage C (규칙엔진 + FACT + GPT 리포트)
 │       └── tutoring/index.ts              # Edge Function (8 handler: brief/warmup/epp/variation/transformation/timed/repair/complete)
 ├── app/                     # App Router 페이지
-│   └── providers.tsx        # QueryClientProvider 래퍼
+│   ├── providers.tsx        # QueryClientProvider 래퍼
+│   ├── (admin)/             # 관리자 라우트 그룹 (사이드바 + 역할 검증)
+│   │   ├── layout.tsx       # AdminLayout (getAdminUser 검증 → redirect)
+│   │   └── admin/{page,users,payments,content,import,mock-exam,logs}/
 ├── components/
 │   ├── dashboard/
 │   │   └── dashboard-stats.tsx  # useQuery 클라이언트 컴포넌트
@@ -295,6 +298,10 @@ opictalkdoc/                 # Git 루트 = Next.js 루트 (표준 구조)
 │   ├── tutoring/            # 튜터링 모듈 UI
 │   │   ├── tutoring-content.tsx       # 3탭 래퍼 (진단/처방/훈련)
 │   │   └── training-session.tsx       # 훈련 세션 (Screen 0~6, 7개 프로토콜)
+│   ├── admin/               # 관리자 컴포넌트 (8개)
+│   │   ├── admin-sidebar.tsx, admin-stat-card.tsx, admin-data-table.tsx
+│   │   ├── admin-import-content.tsx, credit-adjust-modal.tsx
+│   │   ├── prompt-editor.tsx, eval-pipeline-view.tsx, audit-log-detail.tsx
 │   └── shadowing/           # 쉐도잉 훈련 모듈 UI (9개 컴포넌트)
 │       ├── shadowing-content.tsx      # 메인 래퍼 + 키보드 단축키
 │       ├── shadowing-player.tsx       # 오디오 플레이어 + 문장 하이라이트
@@ -311,16 +318,23 @@ opictalkdoc/                 # Git 루트 = Next.js 루트 (표준 구조)
 │   ├── actions/scripts.ts     # Server Actions (16개)
 │   ├── actions/mock-exam.ts   # Server Actions (10개)
 │   ├── actions/tutoring.ts    # Server Actions (7개 + 처방엔진)
+│   ├── actions/admin-reviews.ts  # 관리자 기출 입력 (requireAdmin 적용)
+│   ├── actions/admin/stats.ts    # 관리자 대시보드 통계 (2함수)
+│   ├── actions/admin/users.ts    # 사용자 관리 (3함수)
+│   ├── actions/admin/payments.ts # 결제 관리 (1함수)
+│   ├── actions/admin/content.ts  # 콘텐츠 관리 (8함수)
+│   ├── actions/admin/mock-exam.ts # 모의고사 모니터링 (3함수)
+│   ├── actions/admin/logs.ts     # 감사 로그 (1함수)
 │   ├── hooks/use-recorder.ts  # 녹음 훅 (볼륨 분석, 무음 감지)
 │   ├── hooks/use-question-player.ts  # 질문 오디오 재생 훅
 │   ├── hooks/use-eval-polling.ts     # 평가 폴링 훅
 │   ├── queries/master-questions.ts
 │   ├── react-query.ts        # QueryClient 팩토리 (서버/브라우저 싱글턴)
 │   ├── stores/shadowing.ts    # Zustand 쉐도잉 상태 (persist)
-│   ├── types/{reviews,scripts,mock-exam,tutoring}.ts  # 타입 정의
+│   ├── types/{reviews,scripts,mock-exam,tutoring,admin}.ts  # 타입 정의
 │   ├── validations/{reviews,scripts,mock-exam}.ts # Zod 스키마
 │   ├── utils/combo-extractor.ts
-│   ├── auth.ts               # getUser() + getAuthClaims()
+│   ├── auth.ts               # getUser() + getAuthClaims() + getAdminUser() + requireAdmin()
 │   ├── supabase.ts
 │   └── supabase-server.ts
 └── public/                  # 정적 파일 (로고, 폰트 등)
@@ -495,12 +509,13 @@ origin: https://opictalkdoc@github.com/opictalkdoc/opictalkdoc-app.git
 | 03-10 | UX+설계 | 전 모듈 탭 URL 동기화(history.replaceState) + 모의고사 초기 로딩 최적화 + 성장리포트 설계 문서 (GPT-5.4 자문) |
 | 03-10 | 성장리포트 A ✅ | **등급 추이 그래프** Recharts (등급 라인+준비도 바+FACT 미니+병목 감지+커스텀 툴팁) |
 | 03-10 | 성장리포트 B-D ✅ | **성장 리포트** DB 3컬럼 + EF 성장분석 GPT(gpt-4.1-mini) + UI 7섹션 + 튜터링 CTA + 성장패턴 감지 |
+| 03-13 | 관리자 시스템 ✅ | **관리자** Phase 0~2 (app_metadata.role + admin_audit_log + RLS 확장 + 7페이지 + SA 18함수 + 8컴포넌트) |
 
 <!-- 이후 새 이력은 이 테이블에 행 추가 + memory/개발이력.md에 상세 기록 -->
 
 ## 🔮 현재 상태 & 다음 단계
 
-**현재**: Phase 3 (핵심 모듈 이관) — Step 4 튜터링 ✅ + 성장리포트 전체 ✅ (Phase A-D)
+**현재**: Phase 3 (핵심 모듈 이관) — Step 4 튜터링 ✅ + 성장리포트 전체 ✅ + 관리자 시스템 ✅
 **다음 작업**: 모의고사 평가 v3 고도화 → 리브랜딩(P-5)
 
 ### 튜터링 모듈 구현 현황
@@ -544,8 +559,9 @@ origin: https://opictalkdoc@github.com/opictalkdoc/opictalkdoc-app.git
 - **모의고사** (/mock-exam): 응시 | 결과 | 나의 이력
 - **튜터링** (/tutoring): 진단 | 처방 | 훈련
 
-### DB 현황 (24개 테이블)
+### DB 현황 (28개 테이블)
 - **questions**: 471행 (D-1 전면 교체 — 13컬럼, 새 ID 체계. 원본: `docs/질문 DB/questions_db.xlsx`)
+- **profiles**: 사용자 프로필 (Supabase Auth 연동)
 - **orders**: 결제 기록 테이블 (RLS: 본인 조회만)
 - **user_credits**: 사용자 이용권 테이블 (회원가입 트리거로 자동 생성)
 - **submissions**: 후기 마스터 (17컬럼 + credit_granted, RLS: 본인 CRUD + complete 전체 SELECT)
@@ -557,17 +573,21 @@ origin: https://opictalkdoc@github.com/opictalkdoc/opictalkdoc-app.git
 - **script_packages**: TTS 패키지 WAV+JSON (FK → scripts, CASCADE)
 - **shadowing_sessions**: 쉐도잉 세션 (FK → scripts, script_packages)
 - **shadowing_evaluations**: 쉐도잉 AI 평가 (5영역 + OPIc 등급)
+- **opic_tips**: 학습 팁 (등급별, 답변 유형별)
 - **mock_test_sessions**: 모의고사 세션 (mode, status, 14 question_ids, started_at, 72h/90min)
 - **mock_test_answers**: 답변 기록 (question_number, audio_url, eval_status 7단계)
 - **mock_test_evaluations**: 개별 평가 (STT + 발음 + GPT 체크박스, FK → answers)
 - **mock_test_reports**: 종합 리포트 (FACT 점수, 등급, GPT 총평, 성장 리포트 3컬럼, FK → sessions)
-- **mock_test_evaluation_queue**: 평가 큐 (EF fire-and-forget 체인용)
+- **mock_test_eval_settings**: 모의고사 평가 설정
+- **evaluation_prompts**: 평가 프롬프트 템플릿
+- **master_questions**: 레거시 질문 DB (사용 안 함, questions로 대체됨)
 - **tutoring_sessions**: 튜터링 세션 (status: active/paused/completed)
 - **tutoring_prescriptions**: 처방 과제 (priority 1~N, status: pending/in_progress/completed)
 - **tutoring_training_sessions**: 훈련 세션 (session_type: guided/free/simulation)
 - **tutoring_attempts**: 훈련 시도 (Screen별, protocol별, metrics/pronunciation/evaluation)
 - **tutoring_review_schedule**: SRS 복습 스케줄
 - **tutoring_skill_history**: 성장 추적
+- **admin_audit_log**: 관리자 감사 로그 (action, target_type, target_id, details JSONB, RLS: admin SELECT만)
 - **Storage**: audio-recordings + script-packages + mock-test-recordings + tutoring-recordings 버킷
 
 ### 결제 시스템 현황
@@ -627,5 +647,5 @@ PGPASSWORD='opictalk2026' PGCLIENTENCODING='UTF8' "/c/Program Files/PostgreSQL/1
 > 의사결정 기록은 `docs/의사결정.md` 참조
 
 ---
-*최종 업데이트: 2026-03-10*
-*상태: Phase 3 Step 4 튜터링 ✅ + 성장리포트 A-D ✅. 다음: 평가 v3 고도화 → 리브랜딩(P-5)*
+*최종 업데이트: 2026-03-13*
+*상태: Phase 3 Step 4 튜터링 ✅ + 성장리포트 A-D ✅ + 관리자 시스템 ✅. 다음: 평가 v3 고도화 → 리브랜딩(P-5)*

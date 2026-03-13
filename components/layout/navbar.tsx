@@ -31,6 +31,7 @@ export function Navbar() {
   const pathname = usePathname();
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
   const [userName, setUserName] = useState("");
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const handleLogoClick = useCallback((e: React.MouseEvent) => {
     if (pathname === "/") {
@@ -50,10 +51,15 @@ export function Navbar() {
   useEffect(() => {
     const supabase = createClient();
 
-    // 초기 세션 확인 (로컬 쿠키에서 읽기 — 네트워크 호출 없음)
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const extractSession = (session: import("@supabase/supabase-js").Session | null) => {
       setIsLoggedIn(!!session);
       setUserName(session?.user?.user_metadata?.display_name || session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.name || "");
+      setIsAdmin(session?.user?.app_metadata?.role === "admin");
+    };
+
+    // 초기 세션 확인 (로컬 쿠키에서 읽기 — 네트워크 호출 없음)
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      extractSession(session);
     }).catch(() => {
       // 세션 확인 실패 시 비로그인으로 처리 (영구 null 방지)
       setIsLoggedIn(false);
@@ -62,8 +68,7 @@ export function Navbar() {
     // 인증 상태 변경 구독 (로그인/로그아웃 시 즉시 반영)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
-        setIsLoggedIn(!!session);
-        setUserName(session?.user?.user_metadata?.display_name || session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.name || "");
+        extractSession(session);
       }
     );
 
@@ -116,7 +121,7 @@ export function Navbar() {
             // 세션 확인 전: 빈 공간 (깜빡임 최소화)
             <div className="h-8 w-8" />
           ) : isLoggedIn ? (
-            <UserMenu name={userName} />
+            <UserMenu name={userName} isAdmin={isAdmin} />
           ) : (
             <div className="flex items-center gap-2">
               <Link
@@ -136,7 +141,7 @@ export function Navbar() {
 
           {/* 모바일 햄버거 */}
           {isLoggedIn !== null && (
-            <MobileNav isLoggedIn={isLoggedIn} items={navItems} userName={userName} />
+            <MobileNav isLoggedIn={isLoggedIn} items={navItems} userName={userName} isAdmin={isAdmin} />
           )}
         </div>
       </nav>

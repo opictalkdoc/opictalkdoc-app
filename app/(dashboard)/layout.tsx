@@ -1,15 +1,15 @@
 import { Suspense } from "react";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
-import { getAuthClaims } from "@/lib/auth";
+import { getUser } from "@/lib/auth";
 import { GradeNudgeBanner } from "@/components/ui/grade-nudge-banner";
 
-// 비동기 서버 컴포넌트: JWT 클레임에서 등급 정보를 읽어 배너에 전달
-// getClaims()는 로컬 JWT 검증 (JWKS 캐시 후 0ms, 서버 왕복 없음)
+// 비동기 서버 컴포넌트: getUser()로 최신 user_metadata에서 등급 정보를 읽어 배너에 전달
+// getClaims()는 로컬 JWT를 읽어 updateUser() 후 갱신이 안 되는 문제가 있어 getUser() 사용
 async function GradeNudgeBannerLoader() {
-  const claims = await getAuthClaims();
-  const currentGrade = claims?.user_metadata?.current_grade || "";
-  const targetGrade = claims?.user_metadata?.target_grade || "";
+  const user = await getUser();
+  const currentGrade = user?.user_metadata?.current_grade || "";
+  const targetGrade = user?.user_metadata?.target_grade || "";
   return <GradeNudgeBanner currentGrade={currentGrade} targetGrade={targetGrade} />;
 }
 

@@ -2,10 +2,10 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { Settings, LogOut } from "lucide-react";
+import { Settings, LogOut, Shield } from "lucide-react";
 import { serverSignOut } from "@/lib/supabase";
 
-export function UserMenu({ name }: { name: string }) {
+export function UserMenu({ name, isAdmin }: { name: string; isAdmin?: boolean }) {
   const [open, setOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -39,6 +39,16 @@ export function UserMenu({ name }: { name: string }) {
               {name || "사용자"}
             </p>
           </div>
+          {isAdmin && (
+            <Link
+              href="/admin"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-2 px-3 py-2.5 text-sm text-primary-600 transition-colors hover:bg-primary-50"
+            >
+              <Shield size={16} />
+              관리자
+            </Link>
+          )}
           <Link
             href="/mypage"
             onClick={() => setOpen(false)}

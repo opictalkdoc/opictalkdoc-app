@@ -4,6 +4,7 @@
 // 1) matchAdminQuestions — 설명 텍스트 → AI 매칭
 // 2) saveAdminReview — 컨펌된 매칭 결과 → DB 저장
 
+import { requireAdmin } from "@/lib/auth";
 import { createClient } from "@supabase/supabase-js";
 import {
   matchQuestionsGlobal,
@@ -20,9 +21,6 @@ function createServiceClient() {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 }
-
-// ── 관리자 전용 user_id (시스템 계정: system@opictalkdoc.com) ──
-const ADMIN_USER_ID = "cffac7a1-cede-4dc6-b2ce-a72db70954c4";
 
 // ── placeholder 설문 값 (NOT NULL 제약 충족용) ──
 const ADMIN_PLACEHOLDER = {
@@ -53,6 +51,7 @@ export async function matchAdminQuestions(
   descriptions: { index: number; text: string }[]
 ): Promise<{ matches: QuestionMatch[]; error?: string }> {
   try {
+    await requireAdmin();
     const supabase = createServiceClient();
 
     const { data: dbQuestions, error: dbError } = await supabase
@@ -98,6 +97,7 @@ export async function getAdminQuestionCandidates(): Promise<{
   error?: string;
 }> {
   try {
+    await requireAdmin();
     const supabase = createServiceClient();
     const { data, error } = await supabase
       .from("questions")
@@ -131,6 +131,7 @@ export async function saveAdminReview(
   confirmedQuestions: ConfirmedQuestion[]
 ): Promise<{ success: boolean; error?: string }> {
   try {
+    const { userId } = await requireAdmin();
     const supabase = createServiceClient();
 
     // 자기소개 question_id 조회
@@ -145,7 +146,7 @@ export async function saveAdminReview(
     const { data: submission, error: subError } = await supabase
       .from("submissions")
       .insert({
-        user_id: ADMIN_USER_ID,
+        user_id: userId,
         exam_date: new Date().toISOString().split("T")[0],
         exam_difficulty: ADMIN_PLACEHOLDER.exam_difficulty,
         pre_exam_level: ADMIN_PLACEHOLDER.pre_exam_level,
@@ -252,6 +253,15 @@ export async function saveAdminReview(
         return { success: false, error: `콤보 저장 실패: ${comboError.message}` };
       }
     }
+
+    // 감사 로그
+    await supabase.from("admin_audit_log").insert({
+      admin_id: userId,
+      action: "import_review",
+      target_type: "submission",
+      target_id: String(submissionId),
+      details: { question_count: confirmedQuestions.length },
+    });
 
     return { success: true };
   } catch (error) {
