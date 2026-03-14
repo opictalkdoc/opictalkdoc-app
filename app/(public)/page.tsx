@@ -437,78 +437,30 @@ export default function HomePage() {
               </div>
             </ScrollReveal>
 
-            {/* 베이직 (인기) */}
+            {/* 베이직 */}
             <ScrollReveal preset="fade-up" delay={0.1}>
-              <div className="relative flex h-full flex-col rounded-[20px] bg-[#3A2E25] p-8 text-white shadow-[0_16px_48px_-8px_rgba(58,46,37,0.2)]">
-                <span className="mb-3 inline-flex w-fit rounded-full bg-[#D4835E] px-3 py-1 text-xs font-bold text-white">
-                  인기
-                </span>
-                <span className="text-[15px] font-semibold text-[#B5A99D]">
+              <div className="flex h-full flex-col rounded-[20px] border border-[#EAE0D5] bg-white p-8">
+                <span className="text-[15px] font-semibold text-[#8B7E72]">
                   베이직
                 </span>
                 <div className="mt-2 flex items-baseline gap-1">
-                  <span className="font-serif text-[2.5rem] font-bold">
+                  <span className="font-serif text-[2.5rem] font-bold text-[#3A2E25]">
                     ₩19,900
                   </span>
-                  <span className="text-sm text-[#8B7E72]">/ 3회권</span>
+                  <span className="text-sm text-[#B5A99D]">/ 3회권</span>
                 </div>
-                <p className="mt-1 text-sm text-[#8B7E72]">
+                <p className="mt-1 text-sm text-[#B5A99D]">
                   본격적인 실전 감각을 키우세요
                 </p>
-                <span className="mt-2 inline-flex w-fit rounded-full bg-[#4A3F36] px-2.5 py-0.5 text-xs font-medium text-[#B5A99D]">
+                <span className="mt-2 inline-flex w-fit rounded-full bg-[#F3ECE4] px-2.5 py-0.5 text-xs font-medium text-[#8B7E72]">
                   1개월 이용
                 </span>
-                <div className="my-6 h-px bg-[#4A3F36]" />
+                <div className="my-6 h-px bg-[#EAE0D5]" />
                 <ul className="flex-1 space-y-3 pl-6 sm:pl-8">
                   {[
                     "실전 모의고사 3회",
                     "스크립트 패키지 생성 15회",
                     "약점 진단 리포트",
-                    "체화 · 쉐도잉 훈련 무제한",
-                  ].map((f) => (
-                    <li
-                      key={f}
-                      className="flex items-center gap-2.5 text-sm text-[#D4CEC7]"
-                    >
-                      <Check className="h-4 w-4 shrink-0 text-[#D4835E]" />
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-                <Link
-                  href="/store"
-                  className="mt-8 flex h-12 items-center justify-center rounded-full bg-[#D4835E] text-[15px] font-bold text-white shadow-[0_4px_16px_rgba(212,131,94,0.3)] transition-colors hover:bg-[#C07350]"
-                >
-                  구매하기
-                </Link>
-              </div>
-            </ScrollReveal>
-
-            {/* 프리미엄 */}
-            <ScrollReveal preset="fade-up" delay={0.2}>
-              <div className="flex h-full flex-col rounded-[20px] border border-[#EAE0D5] bg-white p-8">
-                <span className="text-[15px] font-semibold text-[#8B7E72]">
-                  프리미엄
-                </span>
-                <div className="mt-2 flex items-baseline gap-1">
-                  <span className="font-serif text-[2.5rem] font-bold text-[#3A2E25]">
-                    ₩49,900
-                  </span>
-                  <span className="text-sm text-[#B5A99D]">/ 10회권</span>
-                </div>
-                <p className="mt-1 text-sm text-[#B5A99D]">
-                  목표 등급 달성을 위한 완벽 준비
-                </p>
-                <span className="mt-2 inline-flex w-fit rounded-full bg-[#F3ECE4] px-2.5 py-0.5 text-xs font-medium text-[#8B7E72]">
-                  2개월 이용
-                </span>
-                <div className="my-6 h-px bg-[#EAE0D5]" />
-                <ul className="flex-1 space-y-3 pl-6 sm:pl-8">
-                  {[
-                    "실전 모의고사 10회",
-                    "스크립트 패키지 생성 50회",
-                    "튜터링 3회 포함",
-                    "약점 진단 · 성장 리포트",
                     "체화 · 쉐도잉 훈련 무제한",
                   ].map((f) => (
                     <li
@@ -523,6 +475,54 @@ export default function HomePage() {
                 <Link
                   href="/store"
                   className="mt-8 flex h-12 items-center justify-center rounded-full border border-[#EAE0D5] text-[15px] font-bold text-[#3A2E25] transition-colors hover:bg-[#F3ECE4]"
+                >
+                  구매하기
+                </Link>
+              </div>
+            </ScrollReveal>
+
+            {/* 프리미엄 (인기) */}
+            <ScrollReveal preset="fade-up" delay={0.2}>
+              <div className="relative flex h-full flex-col rounded-[20px] bg-[#3A2E25] p-8 text-white shadow-[0_16px_48px_-8px_rgba(58,46,37,0.2)]">
+                <span className="mb-3 inline-flex w-fit rounded-full bg-[#D4835E] px-3 py-1 text-xs font-bold text-white">
+                  인기
+                </span>
+                <span className="text-[15px] font-semibold text-[#B5A99D]">
+                  프리미엄
+                </span>
+                <div className="mt-2 flex items-baseline gap-1">
+                  <span className="font-serif text-[2.5rem] font-bold">
+                    ₩49,900
+                  </span>
+                  <span className="text-sm text-[#8B7E72]">/ 10회권</span>
+                </div>
+                <p className="mt-1 text-sm text-[#8B7E72]">
+                  목표 등급 달성을 위한 완벽 준비
+                </p>
+                <span className="mt-2 inline-flex w-fit rounded-full bg-[#4A3F36] px-2.5 py-0.5 text-xs font-medium text-[#B5A99D]">
+                  2개월 이용
+                </span>
+                <div className="my-6 h-px bg-[#4A3F36]" />
+                <ul className="flex-1 space-y-3 pl-6 sm:pl-8">
+                  {[
+                    "실전 모의고사 10회",
+                    "스크립트 패키지 생성 50회",
+                    "튜터링 3회 포함",
+                    "약점 진단 · 성장 리포트",
+                    "체화 · 쉐도잉 훈련 무제한",
+                  ].map((f) => (
+                    <li
+                      key={f}
+                      className="flex items-center gap-2.5 text-sm text-[#D4CEC7]"
+                    >
+                      <Check className="h-4 w-4 shrink-0 text-[#D4835E]" />
+                      {f}
+                    </li>
+                  ))}
+                </ul>
+                <Link
+                  href="/store"
+                  className="mt-8 flex h-12 items-center justify-center rounded-full bg-[#D4835E] text-[15px] font-bold text-white shadow-[0_4px_16px_rgba(212,131,94,0.3)] transition-colors hover:bg-[#C07350]"
                 >
                   구매하기
                 </Link>

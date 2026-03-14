@@ -94,7 +94,7 @@ const plans: {
       "약점 진단 리포트",
       "체화 · 쉐도잉 훈련 무제한",
     ],
-    highlight: true,
+    highlight: false,
   },
   {
     name: "프리미엄",
@@ -110,7 +110,7 @@ const plans: {
       "약점 진단 · 성장 리포트",
       "체화 · 쉐도잉 훈련 무제한",
     ],
-    highlight: false,
+    highlight: true,
   },
 ];
 

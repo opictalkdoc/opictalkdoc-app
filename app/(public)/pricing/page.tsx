@@ -37,7 +37,7 @@ const plans = [
     ],
     cta: "구매하기",
     href: "/store",
-    highlight: true,
+    highlight: false,
   },
   {
     name: "프리미엄",
@@ -54,7 +54,7 @@ const plans = [
     ],
     cta: "구매하기",
     href: "/store",
-    highlight: false,
+    highlight: true,
   },
 ];
 
