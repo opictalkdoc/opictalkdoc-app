@@ -27,8 +27,6 @@ import {
   Lightbulb,
   BookOpen,
   FlaskConical,
-  Send,
-  CreditCard,
   type LucideIcon,
 } from "lucide-react";
 import { TOPIC_ICONS } from "@/components/reviews/submit/topic-pagination";
@@ -42,6 +40,7 @@ import {
   checkScriptCredit,
 } from "@/lib/actions/scripts";
 import { getTopicsByCategory } from "@/lib/queries/master-questions";
+import { NoCreditCard } from "@/components/trial/no-credit-card";
 import type { ScriptListItem, ShadowingHistoryItem } from "@/lib/types/scripts";
 import {
   SCRIPT_SOURCE_LABELS,
@@ -220,53 +219,7 @@ function CreateTab() {
         {/* CTA — 크레딧 유무에 따라 분기 */}
         <div className="mt-4 border-t border-border pt-3 sm:mt-6 sm:pt-4">
           {creditInfo && !creditInfo.hasCredit ? (
-            <div className="space-y-2">
-              <p className="text-center text-xs text-foreground-muted">
-                스크립트 생성권이 없습니다
-              </p>
-              {/* PC: 한 줄 3컬럼 / 모바일: 세로 리스트 */}
-              <div className="flex flex-col gap-2 sm:flex-row sm:gap-2.5">
-                <Link
-                  href="/scripts/create?mode=trial"
-                  className="flex items-center gap-3 rounded-[var(--radius-lg)] border border-secondary-200 bg-secondary-50/30 p-3 transition-colors hover:border-secondary-300 hover:bg-secondary-50/60 sm:flex-1 sm:flex-col sm:items-center sm:gap-1.5 sm:p-3.5 sm:text-center"
-                >
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-secondary-100 sm:h-9 sm:w-9">
-                    <FlaskConical size={16} className="text-secondary-600" />
-                  </div>
-                  <div className="min-w-0 flex-1 sm:flex-none">
-                    <p className="text-sm font-semibold text-foreground">체험판으로 미리 보기</p>
-                    <p className="text-xs text-foreground-muted">샘플 데이터로 생성 과정을 체험</p>
-                  </div>
-                  <ArrowRight size={14} className="shrink-0 text-foreground-muted sm:hidden" />
-                </Link>
-                <Link
-                  href="/reviews?tab=submit"
-                  className="flex items-center gap-3 rounded-[var(--radius-lg)] border border-border bg-surface p-3 transition-colors hover:border-primary-200 hover:bg-primary-50/30 sm:flex-1 sm:flex-col sm:items-center sm:gap-1.5 sm:p-3.5 sm:text-center"
-                >
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary-100 sm:h-9 sm:w-9">
-                    <Send size={16} className="text-primary-600" />
-                  </div>
-                  <div className="min-w-0 flex-1 sm:flex-none">
-                    <p className="text-sm font-semibold text-foreground">후기 제출로 크레딧 받기</p>
-                    <p className="text-xs text-foreground-muted">시험 후기 제출 시 크레딧 지급</p>
-                  </div>
-                  <ArrowRight size={14} className="shrink-0 text-foreground-muted sm:hidden" />
-                </Link>
-                <Link
-                  href="/store"
-                  className="flex items-center gap-3 rounded-[var(--radius-lg)] border border-border bg-surface p-3 transition-colors hover:border-primary-200 hover:bg-primary-50/30 sm:flex-1 sm:flex-col sm:items-center sm:gap-1.5 sm:p-3.5 sm:text-center"
-                >
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-accent-100 sm:h-9 sm:w-9">
-                    <CreditCard size={16} className="text-accent-600" />
-                  </div>
-                  <div className="min-w-0 flex-1 sm:flex-none">
-                    <p className="text-sm font-semibold text-foreground">요금제 구매하기</p>
-                    <p className="text-xs text-foreground-muted">크레딧을 구매하여 바로 이용</p>
-                  </div>
-                  <ArrowRight size={14} className="shrink-0 text-foreground-muted sm:hidden" />
-                </Link>
-              </div>
-            </div>
+            <NoCreditCard type="script" credits={creditInfo.totalCredits} />
           ) : (
             <Link
               href="/scripts/create"

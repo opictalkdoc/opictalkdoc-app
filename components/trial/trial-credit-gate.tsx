@@ -1,6 +1,6 @@
 "use client";
 
-import { X, FlaskConical, Send, CreditCard } from "lucide-react";
+import { X, FlaskConical, CreditCard } from "lucide-react";
 import Link from "next/link";
 
 interface TrialCreditGateProps {
@@ -46,21 +46,6 @@ export function TrialCreditGate({ open, onClose, type }: TrialCreditGateProps) {
             <div>
               <p className="text-sm font-semibold text-foreground">체험판으로 체험하기</p>
               <p className="text-xs text-foreground-muted">샘플 데이터로 기능을 미리 경험</p>
-            </div>
-          </Link>
-
-          {/* 후기 제출 */}
-          <Link
-            href="/reviews?tab=submit"
-            onClick={onClose}
-            className="flex items-center gap-3 rounded-xl border border-border bg-surface p-4 transition-colors hover:border-primary-300 hover:bg-primary-50/30"
-          >
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-100">
-              <Send size={18} className="text-primary-600" />
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-foreground">후기 제출로 크레딧 받기</p>
-              <p className="text-xs text-foreground-muted">시험 후기를 제출하면 스크립트 크레딧 지급</p>
             </div>
           </Link>
 

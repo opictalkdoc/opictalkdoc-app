@@ -19,7 +19,8 @@ import {
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { GradeProgressChart, CurrentStateCard } from "./history/grade-progress-chart";
 import { ExamPoolSelector } from "./start/exam-pool-selector";
-import { ModeSelector, TestModeConfirm } from "./start/mode-selector";
+import { ModeSelector, TestModeConfirm, type ExtendedMockExamMode } from "./start/mode-selector";
+import { NoCreditCard } from "@/components/trial/no-credit-card";
 import {
   getExamPool,
   getActiveSession,
@@ -137,7 +138,7 @@ function StartTab({
   const router = useRouter();
   const queryClient = useQueryClient();
   const [selectedPoolId, setSelectedPoolId] = useState<number | null>(null);
-  const [selectedMode, setSelectedMode] = useState<MockExamMode | null>(null);
+  const [selectedMode, setSelectedMode] = useState<ExtendedMockExamMode | null>(null);
   const [showTestConfirm, setShowTestConfirm] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [isAbandoning, setIsAbandoning] = useState(false);
@@ -153,18 +154,7 @@ function StartTab({
     initialData: initialActive,
   });
 
-  // 기출 풀 조회
-  const {
-    data: poolResult,
-    isLoading: poolLoading,
-    refetch: refetchPool,
-  } = useQuery({
-    queryKey: ["mock-exam-pool"],
-    queryFn: () => getExamPool(),
-    staleTime: 60 * 1000, // 1분
-  });
-
-  // 크레딧 확인
+  // 크레딧 확인 (기출 풀 쿼리보다 먼저 — hasCredit으로 기출 풀 fetch 제어)
   const { data: creditResult } = useQuery({
     queryKey: ["mock-exam-credit"],
     queryFn: () => checkMockExamCredit(),
@@ -172,13 +162,28 @@ function StartTab({
     initialData: initialCredit,
   });
 
+  const credit = creditResult?.data;
+  // undefined = 아직 로딩 중, true/false = 판별 완료
+  const hasCredit = credit ? credit.available : undefined;
+
+  // 기출 풀 조회 — 크레딧이 있을 때만 (체험판은 기출 선택 불필요)
+  const {
+    data: poolResult,
+    isLoading: poolLoading,
+    refetch: refetchPool,
+  } = useQuery({
+    queryKey: ["mock-exam-pool"],
+    queryFn: () => getExamPool(),
+    staleTime: 60 * 1000,
+    enabled: hasCredit !== false,
+  });
+
   const activeSession = activeResult?.data;
   const pools = poolResult?.data || [];
-  const credit = creditResult?.data;
 
-  // 세션 생성 핸들러
+  // 세션 생성 핸들러 (훈련/실전 모드만)
   const handleCreateSession = useCallback(async () => {
-    if (!selectedPoolId || !selectedMode) return;
+    if (!selectedPoolId || !selectedMode || selectedMode === "trial") return;
 
     setIsCreating(true);
     setError(null);
@@ -186,7 +191,7 @@ function StartTab({
     try {
       const result = await createSession({
         submission_id: selectedPoolId,
-        mode: selectedMode,
+        mode: selectedMode as MockExamMode,
       });
 
       if (result.error) {
@@ -214,12 +219,17 @@ function StartTab({
 
   // 시작 버튼 핸들러
   const handleStart = useCallback(() => {
+    if (selectedMode === "trial") {
+      // 체험판: 기출 선택 스킵, 바로 세션 페이지로 이동
+      router.push("/mock-exam/session?mode=trial");
+      return;
+    }
     if (selectedMode === "test") {
       setShowTestConfirm(true);
     } else {
       handleCreateSession();
     }
-  }, [selectedMode, handleCreateSession]);
+  }, [selectedMode, handleCreateSession, router]);
 
   return (
     <div className="space-y-6">
@@ -334,41 +344,55 @@ function StartTab({
         </div>
       </div>
 
-      {/* 크레딧 표시 */}
-      {credit && (
+      {/* 크레딧 표시 — 크레딧 있을 때만 (없을 때는 NoCreditCard에서 표시) */}
+      {credit && credit.available && (
         <div className="flex items-center gap-2 text-sm">
           <span className="text-foreground-secondary">모의고사 크레딧:</span>
           <span className="font-bold text-foreground">
             {credit.planCredits + credit.credits}회
           </span>
-          {!credit.available && (
-            <span className="text-xs text-accent-500">
-              (크레딧이 부족합니다)
-            </span>
-          )}
         </div>
       )}
 
-      {/* 기출 선택 */}
-      <div className="rounded-xl border border-border bg-surface p-4 sm:p-6">
-        <ExamPoolSelector
-          pools={pools}
-          selectedId={selectedPoolId}
-          onSelect={setSelectedPoolId}
-          isLoading={poolLoading}
-          onRefresh={() => refetchPool()}
-          disabled={!!activeSession}
-        />
-      </div>
-
-      {/* 모드 선택 — 기출 선택 후에만 표시 */}
-      {selectedPoolId && (
+      {/* 크레딧 없을 때: 모드 선택 먼저 (체험판 + 잠금 모드) — 활성 세션이 없을 때만 */}
+      {hasCredit === false && !activeSession && (
         <div className="rounded-xl border border-border bg-surface p-4 sm:p-6">
           <ModeSelector
             selectedMode={selectedMode}
             onSelect={setSelectedMode}
+            hasCredit={false}
           />
+          <div className="mt-4">
+            <NoCreditCard type="mock-exam" credits={credit ? credit.planCredits + credit.credits : 0} />
+          </div>
         </div>
+      )}
+
+      {/* 크레딧 있을 때: 기존 플로우 (기출 선택 → 모드 선택) */}
+      {hasCredit === true && (
+        <>
+          <div className="rounded-xl border border-border bg-surface p-4 sm:p-6">
+            <ExamPoolSelector
+              pools={pools}
+              selectedId={selectedPoolId}
+              onSelect={setSelectedPoolId}
+              isLoading={poolLoading}
+              onRefresh={() => refetchPool()}
+              disabled={!!activeSession}
+            />
+          </div>
+
+          {/* 모드 선택 — 기출 선택 후에만 표시 */}
+          {selectedPoolId && (
+            <div className="rounded-xl border border-border bg-surface p-4 sm:p-6">
+              <ModeSelector
+                selectedMode={selectedMode}
+                onSelect={setSelectedMode}
+                hasCredit={true}
+              />
+            </div>
+          )}
+        </>
       )}
 
       {/* 에러 메시지 */}
@@ -378,12 +402,12 @@ function StartTab({
         </div>
       )}
 
-      {/* CTA 버튼 */}
-      {selectedPoolId && selectedMode && (
+      {/* CTA 버튼 — 크레딧 있고 기출+모드 선택 완료 시 */}
+      {hasCredit === true && selectedPoolId && selectedMode && selectedMode !== "trial" && (
         <div className="flex justify-center">
           <button
             onClick={handleStart}
-            disabled={isCreating || !credit?.available}
+            disabled={isCreating}
             className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-primary-500 px-8 text-base font-semibold text-white transition-colors hover:bg-primary-600 disabled:opacity-50"
           >
             {isCreating ? (

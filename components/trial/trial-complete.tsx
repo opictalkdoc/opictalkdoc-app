@@ -5,7 +5,6 @@ import {
   PartyPopper,
   CheckCircle2,
   CreditCard,
-  Send,
   ArrowRight,
 } from "lucide-react";
 
@@ -33,15 +32,8 @@ export function TrialComplete({ type }: TrialCompleteProps) {
 
         <div className="mt-6 flex w-full max-w-xs flex-col gap-3">
           <Link
-            href="/reviews?tab=submit"
-            className="flex items-center justify-center gap-2 rounded-[var(--radius-lg)] bg-primary-500 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary-600"
-          >
-            <Send size={16} />
-            후기 제출하고 크레딧 받기
-          </Link>
-          <Link
             href="/store"
-            className="flex items-center justify-center gap-2 rounded-[var(--radius-lg)] border border-border bg-surface px-5 py-2.5 text-sm font-medium text-foreground-secondary transition-colors hover:bg-surface-secondary"
+            className="flex items-center justify-center gap-2 rounded-[var(--radius-lg)] bg-primary-500 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary-600"
           >
             <CreditCard size={16} />
             요금제 보기

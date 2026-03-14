@@ -6,15 +6,20 @@ import {
   Timer,
   Check,
   AlertTriangle,
+  Lock,
 } from "lucide-react";
 import type { MockExamMode } from "@/lib/types/mock-exam";
 
+// "trial"을 포함하는 확장 모드 타입
+export type ExtendedMockExamMode = MockExamMode | "trial";
+
 interface ModeSelectorProps {
-  selectedMode: MockExamMode | null;
-  onSelect: (mode: MockExamMode) => void;
+  selectedMode: ExtendedMockExamMode | null;
+  onSelect: (mode: ExtendedMockExamMode) => void;
+  hasCredit?: boolean;
 }
 
-export function ModeSelector({ selectedMode, onSelect }: ModeSelectorProps) {
+export function ModeSelector({ selectedMode, onSelect, hasCredit = true }: ModeSelectorProps) {
   return (
     <div>
       <p className="mb-3 text-sm font-medium text-foreground">
@@ -24,13 +29,20 @@ export function ModeSelector({ selectedMode, onSelect }: ModeSelectorProps) {
       <div className="grid gap-3 sm:grid-cols-2">
         {/* 훈련 모드 */}
         <button
-          onClick={() => onSelect("training")}
-          className={`rounded-xl border p-5 text-left transition-all ${
-            selectedMode === "training"
-              ? "border-primary-500 bg-primary-50/30 ring-2 ring-primary-100"
-              : "border-border bg-surface hover:border-primary-200"
+          onClick={() => hasCredit && onSelect("training")}
+          className={`relative rounded-xl border p-5 text-left transition-all ${
+            !hasCredit
+              ? "cursor-not-allowed border-border bg-surface opacity-60"
+              : selectedMode === "training"
+                ? "border-primary-500 bg-primary-50/30 ring-2 ring-primary-100"
+                : "border-border bg-surface hover:border-primary-200"
           }`}
         >
+          {!hasCredit && (
+            <div className="absolute right-3 top-3">
+              <Lock size={14} className="text-foreground-muted" />
+            </div>
+          )}
           <div className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-100">
               <BookOpen size={16} className="text-primary-600" />
@@ -57,13 +69,20 @@ export function ModeSelector({ selectedMode, onSelect }: ModeSelectorProps) {
 
         {/* 실전 모드 */}
         <button
-          onClick={() => onSelect("test")}
-          className={`rounded-xl border p-5 text-left transition-all ${
-            selectedMode === "test"
-              ? "border-accent-500 bg-accent-50/30 ring-2 ring-accent-100"
-              : "border-border bg-surface hover:border-accent-200"
+          onClick={() => hasCredit && onSelect("test")}
+          className={`relative rounded-xl border p-5 text-left transition-all ${
+            !hasCredit
+              ? "cursor-not-allowed border-border bg-surface opacity-60"
+              : selectedMode === "test"
+                ? "border-accent-500 bg-accent-50/30 ring-2 ring-accent-100"
+                : "border-border bg-surface hover:border-accent-200"
           }`}
         >
+          {!hasCredit && (
+            <div className="absolute right-3 top-3">
+              <Lock size={14} className="text-foreground-muted" />
+            </div>
+          )}
           <div className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent-100">
               <Timer size={16} className="text-accent-600" />
@@ -91,6 +110,7 @@ export function ModeSelector({ selectedMode, onSelect }: ModeSelectorProps) {
           </ul>
         </button>
       </div>
+
     </div>
   );
 }
