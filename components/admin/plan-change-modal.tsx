@@ -68,8 +68,8 @@ export function PlanChangeModal({
   // 플랜별 라벨/색상
   const planOptions = [
     { value: "free" as const, label: "Free", color: "bg-gray-100 text-gray-700 border-gray-300" },
-    { value: "basic" as const, label: "베이직", color: "bg-blue-50 text-blue-700 border-blue-400" },
-    { value: "premium" as const, label: "프리미엄", color: "bg-purple-50 text-purple-700 border-purple-400" },
+    { value: "basic" as const, label: "실전", color: "bg-blue-50 text-blue-700 border-blue-400" },
+    { value: "premium" as const, label: "올인원", color: "bg-purple-50 text-purple-700 border-purple-400" },
   ];
 
   return (

@@ -29,7 +29,7 @@ const PRODUCTS: Record<
   }
 > = {
   basic_plan: {
-    name: "베이직 플랜 (3회권)",
+    name: "실전 플랜 (3회권)",
     price: 19900,
     mockExam: 3,
     script: 15,
@@ -38,7 +38,7 @@ const PRODUCTS: Record<
     plan: "basic",
   },
   premium_plan: {
-    name: "프리미엄 플랜 (10회권)",
+    name: "올인원 플랜 (10회권)",
     price: 49900,
     mockExam: 10,
     script: 50,
@@ -56,10 +56,10 @@ const PRODUCTS: Record<
     plan: "free",
   },
   script_credit: {
-    name: "스크립트 패키지 횟수권 (10회)",
+    name: "스크립트 패키지 횟수권 (5회)",
     price: 3900,
     mockExam: 0,
-    script: 10,
+    script: 5,
     tutoring: 0,
     months: 0,
     plan: "free",

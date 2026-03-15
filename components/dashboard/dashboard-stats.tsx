@@ -8,8 +8,8 @@ import { Crown, ClipboardList, BookOpen, Calendar } from "lucide-react";
 /* ── 유틸 ── */
 
 function getPlanLabel(plan: string) {
-  if (plan === "basic") return "베이직";
-  if (plan === "premium") return "프리미엄";
+  if (plan === "basic") return "실전";
+  if (plan === "premium") return "올인원";
   return "체험";
 }
 

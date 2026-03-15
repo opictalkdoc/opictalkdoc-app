@@ -400,34 +400,51 @@ export default function HomePage() {
             {/* 체험 */}
             <ScrollReveal preset="fade-up" delay={0}>
               <div className="flex h-full flex-col rounded-[20px] border border-[#EAE0D5] bg-white p-8">
-                <span className="text-[15px] font-semibold text-[#8B7E72]">
-                  체험
-                </span>
-                <div className="mt-2 flex items-baseline">
-                  <span className="font-serif text-[2.5rem] font-bold text-[#3A2E25]">
-                    ₩0
+                <div className="flex flex-col items-center text-center">
+                  <span className="text-[15px] font-semibold text-[#8B7E72]">
+                    체험
                   </span>
+                  <p className="mt-1 text-sm text-[#B5A99D]">
+                    OPIc이 어떤 시험인지 경험해 보세요
+                  </p>
+                  <span className="mt-2 inline-flex w-fit rounded-full bg-[#F3ECE4] px-2.5 py-0.5 text-xs font-medium text-[#8B7E72]">
+                    무제한 이용
+                  </span>
+                  <div className="mt-3 flex items-baseline gap-1">
+                    <span className="text-sm text-[#B5A99D]">₩</span>
+                    <span className="font-serif text-[2.5rem] font-bold text-[#3A2E25]">
+                      0
+                    </span>
+                  </div>
                 </div>
-                <p className="mt-1 text-sm text-[#B5A99D]">
-                  OPIc이 어떤 시험인지 경험해 보세요
-                </p>
                 <div className="my-6 h-px bg-[#EAE0D5]" />
-                <ul className="flex-1 space-y-3 pl-6 sm:pl-8">
+                <div className="flex-1 space-y-4 pl-2 sm:pl-4">
                   {[
-                    "모의고사 체험판",
-                    "기출 빈도 분석",
-                    "후기 제출 시 스크립트 2회 지급",
-                    "쉐도잉 훈련 무제한",
-                  ].map((f) => (
-                    <li
-                      key={f}
-                      className="flex items-center gap-2.5 text-sm text-[#4A3F36]"
-                    >
-                      <Check className="h-4 w-4 shrink-0 text-[#D4835E]" />
-                      {f}
-                    </li>
-                  ))}
-                </ul>
+                    { title: "기출 빈도 분석", details: ["어드밴스 카테고리만 제공"], enabled: true },
+                    { title: "내 경험 기반 맞춤 스크립트", details: ["체험판 + 후기 제출 시 크레딧 지급"] },
+                    { title: "내 스크립트로 원어민 발음 체화", details: ["체험판 + 쉐도잉 훈련 무제한"] },
+                    { title: "기출 기반 실전 모의고사", details: ["모의고사 체험판"], enabled: true },
+                    { title: "문항별 개별 평가 + 종합 리포트", details: [], enabled: false },
+                    { title: "약점 자동 처방 튜터링", details: [], enabled: false },
+                  ].map((group) => {
+                    const disabled = !group.enabled;
+                    return (
+                      <div key={group.title} className={disabled ? "opacity-35" : ""}>
+                        <div className="flex items-start gap-2">
+                          <Check className={`mt-0.5 h-4 w-4 shrink-0 ${disabled ? "text-[#B5A99D]" : "text-[#D4835E]"}`} />
+                          <span className={`text-sm font-semibold ${disabled ? "text-[#B5A99D] line-through" : "text-[#3A2E25]"}`}>{group.title}</span>
+                        </div>
+                        {!disabled && group.details.length > 0 && (
+                          <div className="ml-6 mt-0.5 space-y-0.5">
+                            {group.details.map((d, i) => (
+                              <p key={d} className={i === 0 ? "text-xs font-medium text-[#D4835E]" : "text-xs text-[#8B7E72]"}>{d}</p>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
                 <Link
                   href="/signup"
                   className="mt-8 flex h-12 items-center justify-center rounded-full bg-[#3A2E25] text-[15px] font-bold text-white transition-colors hover:bg-[#4A3F36]"
@@ -437,41 +454,54 @@ export default function HomePage() {
               </div>
             </ScrollReveal>
 
-            {/* 베이직 */}
+            {/* 실전 */}
             <ScrollReveal preset="fade-up" delay={0.1}>
               <div className="flex h-full flex-col rounded-[20px] border border-[#EAE0D5] bg-white p-8">
-                <span className="text-[15px] font-semibold text-[#8B7E72]">
-                  베이직
-                </span>
-                <div className="mt-2 flex items-baseline gap-1">
-                  <span className="font-serif text-[2.5rem] font-bold text-[#3A2E25]">
-                    ₩19,900
+                <div className="flex flex-col items-center text-center">
+                  <span className="text-[15px] font-semibold text-[#8B7E72]">
+                    실전
                   </span>
-                  <span className="text-sm text-[#B5A99D]">/ 3회권</span>
+                  <p className="mt-1 text-sm text-[#B5A99D]">
+                    본격적인 실전 감각을 키우세요
+                  </p>
+                  <span className="mt-2 inline-flex w-fit rounded-full bg-[#F3ECE4] px-2.5 py-0.5 text-xs font-medium text-[#8B7E72]">
+                    1개월 이용
+                  </span>
+                  <div className="mt-3 flex items-baseline gap-1">
+                    <span className="font-serif text-[2.5rem] font-bold text-[#3A2E25]">
+                      ₩19,900
+                    </span>
+                    <span className="text-sm text-[#B5A99D]">/ 3회권</span>
+                  </div>
                 </div>
-                <p className="mt-1 text-sm text-[#B5A99D]">
-                  본격적인 실전 감각을 키우세요
-                </p>
-                <span className="mt-2 inline-flex w-fit rounded-full bg-[#F3ECE4] px-2.5 py-0.5 text-xs font-medium text-[#8B7E72]">
-                  1개월 이용
-                </span>
                 <div className="my-6 h-px bg-[#EAE0D5]" />
-                <ul className="flex-1 space-y-3 pl-6 sm:pl-8">
+                <div className="flex-1 space-y-4 pl-2 sm:pl-4">
                   {[
-                    "실전 모의고사 3회",
-                    "스크립트 패키지 생성 15회",
-                    "약점 진단 리포트",
-                    "체화 · 쉐도잉 훈련 무제한",
-                  ].map((f) => (
-                    <li
-                      key={f}
-                      className="flex items-center gap-2.5 text-sm text-[#4A3F36]"
-                    >
-                      <Check className="h-4 w-4 shrink-0 text-[#D4835E]" />
-                      {f}
-                    </li>
-                  ))}
-                </ul>
+                    { title: "기출 빈도 분석", details: ["전체 카테고리 제공"], enabled: true },
+                    { title: "내 경험 기반 맞춤 스크립트", details: ["스크립트 패키지 생성 15회", "1회 생성 = 7가지 학습콘텐츠"], enabled: true },
+                    { title: "내 스크립트로 원어민 발음 체화", details: ["내 스크립트가 원어민 음성으로 변환", "듣기 → 따라읽기 → 혼자말하기 → 실전 녹음", "무제한 반복 훈련"], enabled: true },
+                    { title: "기출 기반 실전 모의고사", details: ["모의고사 3회", "기출 질문에서 실전과 동일하게 출제"], enabled: true },
+                    { title: "문항별 개별 평가 + 종합 리포트", details: ["10가지 유형별 맞춤 체크리스트", "과제충족 진단 + 최우선 처방 + 교정문", "영역별 실력 분석 + 성장 리포트"], enabled: true },
+                    { title: "약점 자동 처방 튜터링", details: [], enabled: false },
+                  ].map((group) => {
+                    const disabled = !group.enabled;
+                    return (
+                      <div key={group.title} className={disabled ? "opacity-35" : ""}>
+                        <div className="flex items-start gap-2">
+                          <Check className={`mt-0.5 h-4 w-4 shrink-0 ${disabled ? "text-[#B5A99D]" : "text-[#D4835E]"}`} />
+                          <span className={`text-sm font-semibold ${disabled ? "text-[#B5A99D] line-through" : "text-[#3A2E25]"}`}>{group.title}</span>
+                        </div>
+                        {!disabled && group.details.length > 0 && (
+                          <div className="ml-6 mt-0.5 space-y-0.5">
+                            {group.details.map((d, i) => (
+                              <p key={d} className={i === 0 ? "text-xs font-medium text-[#D4835E]" : "text-xs text-[#8B7E72]"}>{d}</p>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
                 <Link
                   href="/store"
                   className="mt-8 flex h-12 items-center justify-center rounded-full border border-[#EAE0D5] text-[15px] font-bold text-[#3A2E25] transition-colors hover:bg-[#F3ECE4]"
@@ -481,45 +511,52 @@ export default function HomePage() {
               </div>
             </ScrollReveal>
 
-            {/* 프리미엄 (인기) */}
+            {/* 올인원 (인기) */}
             <ScrollReveal preset="fade-up" delay={0.2}>
               <div className="relative flex h-full flex-col rounded-[20px] bg-[#3A2E25] p-8 text-white shadow-[0_16px_48px_-8px_rgba(58,46,37,0.2)]">
-                <span className="mb-3 inline-flex w-fit rounded-full bg-[#D4835E] px-3 py-1 text-xs font-bold text-white">
+                <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-[#D4835E] px-3 py-1 text-xs font-bold text-white">
                   인기
                 </span>
-                <span className="text-[15px] font-semibold text-[#B5A99D]">
-                  프리미엄
-                </span>
-                <div className="mt-2 flex items-baseline gap-1">
-                  <span className="font-serif text-[2.5rem] font-bold">
-                    ₩49,900
+                <div className="flex flex-col items-center text-center">
+                  <span className="text-[15px] font-semibold text-[#B5A99D]">
+                    올인원
                   </span>
-                  <span className="text-sm text-[#8B7E72]">/ 10회권</span>
+                  <p className="mt-1 text-sm text-[#8B7E72]">
+                    빈도 분석부터 약점 튜터링까지, 한 번에
+                  </p>
+                  <span className="mt-2 inline-flex w-fit rounded-full bg-[#4A3F36] px-2.5 py-0.5 text-xs font-medium text-[#B5A99D]">
+                    2개월 이용
+                  </span>
+                  <div className="mt-3 flex items-baseline gap-1">
+                    <span className="font-serif text-[2.5rem] font-bold">
+                      ₩49,900
+                    </span>
+                    <span className="text-sm text-[#8B7E72]">/ 10회권</span>
+                  </div>
                 </div>
-                <p className="mt-1 text-sm text-[#8B7E72]">
-                  목표 등급 달성을 위한 완벽 준비
-                </p>
-                <span className="mt-2 inline-flex w-fit rounded-full bg-[#4A3F36] px-2.5 py-0.5 text-xs font-medium text-[#B5A99D]">
-                  2개월 이용
-                </span>
                 <div className="my-6 h-px bg-[#4A3F36]" />
-                <ul className="flex-1 space-y-3 pl-6 sm:pl-8">
+                <div className="flex-1 space-y-4 pl-2 sm:pl-4">
                   {[
-                    "실전 모의고사 10회",
-                    "스크립트 패키지 생성 50회",
-                    "튜터링 3회 포함",
-                    "약점 진단 · 성장 리포트",
-                    "체화 · 쉐도잉 훈련 무제한",
-                  ].map((f) => (
-                    <li
-                      key={f}
-                      className="flex items-center gap-2.5 text-sm text-[#D4CEC7]"
-                    >
-                      <Check className="h-4 w-4 shrink-0 text-[#D4835E]" />
-                      {f}
-                    </li>
+                    { title: "기출 빈도 분석", details: ["전체 카테고리 제공"] },
+                    { title: "내 경험 기반 맞춤 스크립트", details: ["스크립트 패키지 생성 50회", "1회 생성 = 7가지 학습콘텐츠", "핵심표현 · 만능패턴 · 연결어 하이라이팅"] },
+                    { title: "내 스크립트로 원어민 발음 체화", details: ["내 스크립트가 원어민 음성으로 변환", "듣기 → 따라읽기 → 혼자말하기 → 실전 녹음", "발음 평가 + 무제한 반복 훈련"] },
+                    { title: "기출 기반 실전 모의고사", details: ["모의고사 10회", "기출 질문에서 실전과 동일하게 출제"] },
+                    { title: "문항별 개별 평가 + 종합 리포트", details: ["10가지 유형별 맞춤 체크리스트", "과제충족 진단 + 최우선 처방 + 교정문", "영역별 실력 분석 + 성장 리포트"] },
+                    { title: "약점 자동 처방 튜터링", details: ["튜터링 3회 포함", "모의고사 결과 기반 처방", "5가지 프로토콜 반복 훈련"] },
+                  ].map((group) => (
+                    <div key={group.title}>
+                      <div className="flex items-start gap-2">
+                        <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#D4835E]" />
+                        <span className="text-sm font-semibold text-white">{group.title}</span>
+                      </div>
+                      <div className="ml-6 mt-0.5 space-y-0.5">
+                        {group.details.map((d, i) => (
+                          <p key={d} className={i === 0 ? "text-xs font-medium text-[#D4835E]" : "text-xs text-[#8B7E72]"}>{d}</p>
+                        ))}
+                      </div>
+                    </div>
                   ))}
-                </ul>
+                </div>
                 <Link
                   href="/store"
                   className="mt-8 flex h-12 items-center justify-center rounded-full bg-[#D4835E] text-[15px] font-bold text-white shadow-[0_4px_16px_rgba(212,131,94,0.3)] transition-colors hover:bg-[#C07350]"

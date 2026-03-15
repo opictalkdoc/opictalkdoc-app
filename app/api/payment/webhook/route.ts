@@ -10,7 +10,7 @@ const PRODUCTS: Record<
   basic_plan: { mockExam: 3, script: 15, tutoring: 0, months: 1, plan: "basic" },
   premium_plan: { mockExam: 10, script: 50, tutoring: 3, months: 2, plan: "premium" },
   mock_exam_credit: { mockExam: 1, script: 0, tutoring: 0, months: 0, plan: "free" },
-  script_credit: { mockExam: 0, script: 10, tutoring: 0, months: 0, plan: "free" },
+  script_credit: { mockExam: 0, script: 5, tutoring: 0, months: 0, plan: "free" },
   tutoring_credit: { mockExam: 0, script: 0, tutoring: 1, months: 0, plan: "free" },
 };
 

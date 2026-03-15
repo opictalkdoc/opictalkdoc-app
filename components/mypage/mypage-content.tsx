@@ -52,8 +52,8 @@ async function fetchUserCredits(userId: string): Promise<CreditsData> {
 
 const PLAN_LABELS: Record<string, string> = {
   free: "체험",
-  basic: "베이직",
-  premium: "프리미엄",
+  basic: "실전",
+  premium: "올인원",
 };
 
 const PLAN_PRICES: Record<string, string> = {
@@ -431,7 +431,7 @@ function PlanTab({ user, credits }: { user: UserData; credits?: CreditsData }) {
             더 많은 학습이 필요하신가요?
           </p>
           <p className="mt-1 text-sm text-primary-600/80">
-            베이직 플랜(₩19,900)으로 업그레이드하면 실전 모의고사 3회 +
+            실전 플랜(₩19,900)으로 업그레이드하면 실전 모의고사 3회 +
             스크립트 15회를 이용할 수 있어요.
           </p>
           <Link href="/store" className="mt-4 inline-block">

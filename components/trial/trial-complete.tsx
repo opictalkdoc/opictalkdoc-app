@@ -70,7 +70,7 @@ export function TrialComplete({ type }: TrialCompleteProps) {
       <div className="mt-4 w-full max-w-xs space-y-2">
         {[
           "예상 등급 판정 (NL ~ AL)",
-          "FACT 4영역 상세 점수",
+          "영역별 실력 상세 점수",
           "문항별 STT + 발음 분석 + 코칭 피드백",
           "성장 리포트 (이전 시험 비교 분석)",
         ].map((item) => (
