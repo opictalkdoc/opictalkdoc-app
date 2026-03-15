@@ -163,11 +163,18 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
+    // ── 평가 설정 DB 조회 ──
+    const { data: evalConfig } = await supabase
+      .from("mock_test_eval_settings")
+      .select("coach_model, coach_temperature, coach_max_tokens")
+      .eq("id", 1)
+      .single();
+
     // ── feedback_branch에 따른 분기 ──
 
     let coachingFeedback: Record<string, unknown>;
     let priorityPrescription: Array<Record<string, string>>;
-    let coachModel = "gpt-4.1";
+    let coachModel = evalConfig?.coach_model || "gpt-4.1";
     let coachTokensUsed = 0;
 
     if (feedback_branch === "failed") {
@@ -246,9 +253,11 @@ Deno.serve(async (req) => {
           userPrompt = `Student's response:\n${safeTranscript}`;
         }
 
-        // GPT-4.1 코칭 호출
+        // GPT 코칭 호출 (DB 설정 오버라이드)
+        const coachTemp = evalConfig?.coach_temperature != null ? Number(evalConfig.coach_temperature) : 0.4;
+        const coachTokensMax = evalConfig?.coach_max_tokens || 8000;
         const { result: gptResult, tokensUsed, finishReason } = await withRetry(
-          () => callGptCoach(systemPrompt, userPrompt, coachModel, 0.4, 8000),
+          () => callGptCoach(systemPrompt, userPrompt, coachModel, coachTemp, coachTokensMax),
           2,
           "GPT coach 평가",
         );

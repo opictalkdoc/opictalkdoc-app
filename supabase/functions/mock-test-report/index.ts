@@ -233,6 +233,7 @@ async function generateGrowthReport(
   factScores: { score_f: number; score_a: number; score_c: number; score_t: number; total_score: number },
   // deno-lint-ignore no-explicit-any
   evaluations: any[],
+  gptConfig?: { model?: string; temperature?: number; max_tokens?: number },
 ): Promise<void> {
   // 이전 세션들의 리포트 조회 (현재 세션 제외, 최신순)
   const { data: prevReports } = await supabase
@@ -329,9 +330,9 @@ async function generateGrowthReport(
       Authorization: `Bearer ${OPENAI_API_KEY}`,
     },
     body: JSON.stringify({
-      model: "gpt-4.1-mini",
-      temperature: 0.5,
-      max_tokens: 3000,
+      model: gptConfig?.model || "gpt-4.1-mini",
+      temperature: gptConfig?.temperature ?? 0.5,
+      max_tokens: gptConfig?.max_tokens || 3000,
       response_format: { type: "json_object" },
       messages: [
         {
@@ -570,6 +571,9 @@ function detectGrowthPattern(
 async function generateGPTReport(
   systemPrompt: string,
   userPrompt: string,
+  modelOverride?: string,
+  temperatureOverride?: number,
+  maxTokensOverride?: number,
 ): Promise<{ result: Record<string, unknown>; tokensUsed: number }> {
   const resp = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
@@ -578,9 +582,9 @@ async function generateGPTReport(
       Authorization: `Bearer ${OPENAI_API_KEY}`,
     },
     body: JSON.stringify({
-      model: "gpt-4.1",
-      temperature: 0.4,
-      max_tokens: 12000,
+      model: modelOverride || "gpt-4.1",
+      temperature: temperatureOverride ?? 0.4,
+      max_tokens: maxTokensOverride || 12000,
       response_format: { type: "json_object" },
       messages: [
         { role: "system", content: systemPrompt },
@@ -734,9 +738,22 @@ Deno.serve(async (req) => {
         .single();
 
       if (configRow) {
-        // DB에서 규칙엔진 파라미터 오버라이드 (향후 확장용)
-        // 현재는 기본값 사용, eval_settings에 규칙엔진 파라미터 추가 시 여기서 매핑
-        ruleParams = DEFAULT_PARAMS;
+        // DB에서 규칙엔진 파라미터 오버라이드
+        ruleParams = {
+          checkbox_pass_threshold: Number(configRow.re_checkbox_pass_threshold) || DEFAULT_PARAMS.checkbox_pass_threshold,
+          floor_nh: Number(configRow.re_floor_nh) || DEFAULT_PARAMS.floor_nh,
+          floor_il: Number(configRow.re_floor_il) || DEFAULT_PARAMS.floor_il,
+          floor_im1: Number(configRow.re_floor_im1) || DEFAULT_PARAMS.floor_im1,
+          floor_im2: Number(configRow.re_floor_im2) || DEFAULT_PARAMS.floor_im2,
+          ceiling_broke_down: Number(configRow.re_ceiling_broke_down) || DEFAULT_PARAMS.ceiling_broke_down,
+          ceiling_respond: Number(configRow.re_ceiling_respond) || DEFAULT_PARAMS.ceiling_respond,
+          sympathetic_low: Number(configRow.re_sympathetic_low) || DEFAULT_PARAMS.sympathetic_low,
+          sympathetic_mid: Number(configRow.re_sympathetic_mid) || DEFAULT_PARAMS.sympathetic_mid,
+          sympathetic_at_times: Number(configRow.re_sympathetic_at_times) || DEFAULT_PARAMS.sympathetic_at_times,
+          sympathetic_pron_weight: Number(configRow.re_sympathetic_pron_weight) || DEFAULT_PARAMS.sympathetic_pron_weight,
+          al_pass_threshold: Number(configRow.re_al_pass_threshold) || DEFAULT_PARAMS.al_pass_threshold,
+          q12_gatekeeper_threshold: Number(configRow.re_q12_gatekeeper_threshold) || DEFAULT_PARAMS.q12_gatekeeper_threshold,
+        };
       }
     } catch {
       // 기본값 사용
@@ -942,9 +959,15 @@ Deno.serve(async (req) => {
           userPrompt = `Generate a comprehensive OPIc evaluation report for level ${ruleResult.final_level}.`;
         }
 
-        // GPT 호출
+        // GPT 호출 (DB 설정 오버라이드)
         const gptResponse = await withRetry(
-          () => generateGPTReport(systemPrompt, userPrompt),
+          () => generateGPTReport(
+            systemPrompt,
+            userPrompt,
+            configRow?.report_model || undefined,
+            configRow?.report_temperature != null ? Number(configRow.report_temperature) : undefined,
+            configRow?.report_max_tokens || undefined,
+          ),
           2,
           "GPT 종합 리포트",
         );
@@ -1006,6 +1029,11 @@ Deno.serve(async (req) => {
         ruleResult.final_level,
         ruleResult.fact_scores,
         evaluations,
+        configRow ? {
+          model: configRow.growth_model || undefined,
+          temperature: configRow.growth_temperature != null ? Number(configRow.growth_temperature) : undefined,
+          max_tokens: configRow.growth_max_tokens || undefined,
+        } : undefined,
       );
     } catch (growthErr) {
       // 성장 리포트 실패는 전체 프로세스를 중단하지 않음

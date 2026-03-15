@@ -153,6 +153,45 @@ export async function retriggerEvaluation(sessionId: string): Promise<{
   return { success: true };
 }
 
+// ── 과제충족 체크리스트 조회 ──
+
+export async function getTaskChecklists() {
+  const { supabase } = await requireAdmin();
+  const { data } = await supabase
+    .from("task_fulfillment_checklists")
+    .select("*")
+    .order("question_type");
+  return data || [];
+}
+
+// ── 과제충족 체크리스트 업데이트 ──
+
+export async function updateTaskChecklist(
+  questionType: string,
+  updates: Record<string, unknown>,
+): Promise<{ success: boolean; error?: string }> {
+  const { supabase, userId, userEmail } = await requireAdmin();
+
+  const { error } = await supabase
+    .from("task_fulfillment_checklists")
+    .update({ ...updates, updated_at: new Date().toISOString() })
+    .eq("question_type", questionType);
+
+  if (error) return { success: false, error: error.message };
+
+  // 감사 로그
+  await supabase.from("admin_audit_log").insert({
+    admin_id: userId,
+    admin_email: userEmail,
+    action: "checklist_update",
+    target_type: "task_fulfillment_checklist",
+    target_id: questionType,
+    details: updates,
+  });
+
+  return { success: true };
+}
+
 // ── 세션 상세 조회 (사용자 화면 재사용용) ──
 
 export async function getAdminSessionDetail(sessionId: string): Promise<{

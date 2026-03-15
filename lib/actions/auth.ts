@@ -2,10 +2,10 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { z } from "zod";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import {
   loginSchema,
-  signupSchema,
   forgotPasswordSchema,
   resetPasswordSchema,
 } from "@/lib/validations/auth";
@@ -46,6 +46,13 @@ export async function login(formData: FormData): Promise<AuthResult> {
   redirect("/dashboard");
 }
 
+// SA용 스키마: confirmPassword/agreeTerms는 클라이언트에서만 검증
+const signupServerSchema = z.object({
+  name: z.string().min(1, "이름을 입력해주세요"),
+  email: z.string().email("올바른 이메일 주소를 입력해주세요"),
+  password: z.string().min(8, "비밀번호는 8자 이상이어야 합니다"),
+});
+
 export async function signup(formData: FormData): Promise<AuthResult> {
   const raw = {
     name: formData.get("name") as string,
@@ -53,7 +60,7 @@ export async function signup(formData: FormData): Promise<AuthResult> {
     password: formData.get("password") as string,
   };
 
-  const parsed = signupSchema.safeParse(raw);
+  const parsed = signupServerSchema.safeParse(raw);
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message || "입력값을 확인해주세요" };
   }
@@ -74,6 +81,12 @@ export async function signup(formData: FormData): Promise<AuthResult> {
     if (error) {
       if (error.message.includes("already registered")) {
         return { error: "이미 가입된 이메일입니다" };
+      }
+      if (error.message.includes("email_address_invalid") || error.message.includes("invalid")) {
+        return { error: "유효하지 않은 이메일 주소입니다" };
+      }
+      if (error.message.includes("rate limit")) {
+        return { error: "잠시 후 다시 시도해주세요 (요청이 너무 많습니다)" };
       }
       return { error: "회원가입에 실패했습니다. 다시 시도해주세요" };
     }

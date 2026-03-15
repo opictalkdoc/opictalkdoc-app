@@ -11,8 +11,16 @@ import {
   getAdminSessionDetail,
 } from "@/lib/actions/admin/mock-exam";
 import { EvalPipelineView } from "@/components/admin/eval-pipeline-view";
+import { EvalSettingsTab } from "@/components/admin/eval-settings-tab";
 import { ResultPageContent } from "@/components/mock-exam/result-page/result-page-content";
 import type { AdminMockSession, MockExamStats } from "@/lib/types/admin";
+
+type PageTab = "monitoring" | "settings";
+
+const PAGE_TABS: { key: PageTab; label: string }[] = [
+  { key: "monitoring", label: "모니터링" },
+  { key: "settings", label: "평가 설정" },
+];
 
 const STATUS_OPTIONS = [
   { value: "all", label: "전체" },
@@ -128,6 +136,7 @@ function SessionDetailView({
 }
 
 export default function AdminMockExamPage() {
+  const [pageTab, setPageTab] = useState<PageTab>("monitoring");
   const [page, setPage] = useState(1);
   const [status, setStatus] = useState("all");
   const [retriggering, setRetriggering] = useState<string | null>(null);
@@ -137,12 +146,14 @@ export default function AdminMockExamPage() {
     queryKey: ["admin-mock-stats"],
     queryFn: () => getMockExamStats(),
     staleTime: 60_000,
+    enabled: pageTab === "monitoring",
   });
 
   const { data: sessionsResult, isLoading, refetch } = useQuery({
     queryKey: ["admin-mock-sessions", page, status],
     queryFn: () => getMockExamSessions({ page, pageSize: 20, status }),
     staleTime: 30_000,
+    enabled: pageTab === "monitoring",
   });
 
   const sessions = sessionsResult?.data || [];
@@ -169,7 +180,7 @@ export default function AdminMockExamPage() {
   if (selectedSession) {
     return (
       <div className="space-y-4">
-        <h1 className="text-xl font-bold text-foreground">모의고사 모니터링</h1>
+        <h1 className="text-xl font-bold text-foreground">모의고사 관리</h1>
         <SessionDetailView
           sessionId={selectedSession.id}
           userEmail={selectedSession.email}
@@ -181,132 +192,158 @@ export default function AdminMockExamPage() {
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-foreground">모의고사 모니터링</h1>
-        {stats && (
-          <span className="text-sm text-foreground-muted">
-            총 <span className="font-semibold text-foreground">{stats.totalSessions}</span>건
-          </span>
-        )}
-      </div>
+      <h1 className="text-xl font-bold text-foreground">모의고사 관리</h1>
 
-      {/* 파이프라인 통계 */}
-      {stats && <EvalPipelineView stats={stats} />}
-
-      {/* 필터 */}
-      <div className="flex gap-1">
-        {STATUS_OPTIONS.map((opt) => (
+      {/* 탭 */}
+      <div className="flex gap-1 border-b border-border">
+        {PAGE_TABS.map((t) => (
           <button
-            key={opt.value}
-            onClick={() => {
-              setStatus(opt.value);
-              setPage(1);
-            }}
-            className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
-              status === opt.value
-                ? "bg-primary-500 text-white"
-                : "bg-surface-secondary text-foreground-secondary hover:text-foreground"
+            key={t.key}
+            onClick={() => setPageTab(t.key)}
+            className={`border-b-2 px-4 py-2 text-sm font-medium transition-colors ${
+              pageTab === t.key
+                ? "border-primary-500 text-primary-600"
+                : "border-transparent text-foreground-secondary hover:text-foreground"
             }`}
           >
-            {opt.label}
+            {t.label}
           </button>
         ))}
       </div>
 
-      {/* 세션 목록 */}
-      <div className="overflow-hidden rounded-xl border border-border bg-surface">
-        {isLoading ? (
-          <div className="flex items-center justify-center py-10">
-            <Loader2 size={20} className="animate-spin text-primary-400" />
-          </div>
-        ) : sessions.length === 0 ? (
-          <div className="flex flex-col items-center justify-center gap-2 py-16">
-            <GraduationCap size={32} className="text-foreground-muted/50" />
-            <span className="text-sm text-foreground-muted">모의고사 세션이 없습니다.</span>
-          </div>
-        ) : (
-          sessions.map((row, idx) => (
-            <div
-              key={row.id}
-              className={`group flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-surface-secondary ${
-                idx < sessions.length - 1 ? "border-b border-border/50" : ""
-              }`}
-            >
-              {/* 왼쪽: 사용자+시간 */}
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <span className="truncate text-sm font-medium text-foreground">
-                    {row.user_email}
-                  </span>
-                  <span className={`shrink-0 rounded-md px-1.5 py-0.5 text-[11px] font-medium ${
-                    row.mode === "test" ? "bg-purple-50 text-purple-700" : "bg-blue-50 text-blue-700"
-                  }`}>
-                    {row.mode === "test" ? "실전" : "훈련"}
-                  </span>
-                </div>
-                <div className="mt-0.5 text-xs text-foreground-muted">
-                  {new Date(row.started_at).toLocaleString("ko-KR", {
-                    month: "long",
-                    day: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </div>
-              </div>
+      {/* 평가 설정 탭 */}
+      {pageTab === "settings" && <EvalSettingsTab />}
 
-              {/* 중앙: 상태+등급 */}
-              <div className="flex shrink-0 items-center gap-2">
-                <StatusBadge status={row.status} />
-                <GradeBadge level={row.final_level} />
-              </div>
+      {/* 모니터링 탭 */}
+      {pageTab === "monitoring" && (
+        <>
+          <div className="flex items-center justify-end">
+            {stats && (
+              <span className="text-sm text-foreground-muted">
+                총 <span className="font-semibold text-foreground">{stats.totalSessions}</span>건
+              </span>
+            )}
+          </div>
 
-              {/* 오른쪽: 액션 */}
-              <div className="flex shrink-0 items-center gap-1">
-                {row.status === "completed" && (
-                  <button
-                    onClick={() => setSelectedSession({ id: row.id, email: row.user_email })}
-                    className="whitespace-nowrap rounded-md px-2.5 py-1 text-xs font-medium text-primary-600 transition-colors hover:bg-primary-50"
-                  >
-                    결과 보기
-                  </button>
-                )}
-                {row.status === "completed" && (
-                  <button
-                    onClick={() => handleRetrigger(row.id)}
-                    disabled={retriggering === row.id}
-                    title="평가 재실행"
-                    className="rounded-md p-1.5 text-foreground-muted transition-colors hover:bg-surface-secondary hover:text-primary-600 disabled:opacity-50"
-                  >
-                    <RefreshCw size={14} className={retriggering === row.id ? "animate-spin" : ""} />
-                  </button>
-                )}
+          {/* 파이프라인 통계 */}
+          {stats && <EvalPipelineView stats={stats} />}
+
+          {/* 필터 */}
+          <div className="flex gap-1">
+            {STATUS_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => {
+                  setStatus(opt.value);
+                  setPage(1);
+                }}
+                className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+                  status === opt.value
+                    ? "bg-primary-500 text-white"
+                    : "bg-surface-secondary text-foreground-secondary hover:text-foreground"
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+
+          {/* 세션 목록 */}
+          <div className="overflow-hidden rounded-xl border border-border bg-surface">
+            {isLoading ? (
+              <div className="flex items-center justify-center py-10">
+                <Loader2 size={20} className="animate-spin text-primary-400" />
               </div>
+            ) : sessions.length === 0 ? (
+              <div className="flex flex-col items-center justify-center gap-2 py-16">
+                <GraduationCap size={32} className="text-foreground-muted/50" />
+                <span className="text-sm text-foreground-muted">모의고사 세션이 없습니다.</span>
+              </div>
+            ) : (
+              sessions.map((row, idx) => (
+                <div
+                  key={row.id}
+                  className={`group flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-surface-secondary ${
+                    idx < sessions.length - 1 ? "border-b border-border/50" : ""
+                  }`}
+                >
+                  {/* 왼쪽: 사용자+시간 */}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="truncate text-sm font-medium text-foreground">
+                        {row.user_email}
+                      </span>
+                      <span className={`shrink-0 rounded-md px-1.5 py-0.5 text-[11px] font-medium ${
+                        row.mode === "test" ? "bg-purple-50 text-purple-700" : "bg-blue-50 text-blue-700"
+                      }`}>
+                        {row.mode === "test" ? "실전" : "훈련"}
+                      </span>
+                    </div>
+                    <div className="mt-0.5 text-xs text-foreground-muted">
+                      {new Date(row.started_at).toLocaleString("ko-KR", {
+                        month: "long",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </div>
+                  </div>
+
+                  {/* 중앙: 상태+등급 */}
+                  <div className="flex shrink-0 items-center gap-2">
+                    <StatusBadge status={row.status} />
+                    <GradeBadge level={row.final_level} />
+                  </div>
+
+                  {/* 오른쪽: 액션 */}
+                  <div className="flex shrink-0 items-center gap-1">
+                    {row.status === "completed" && (
+                      <button
+                        onClick={() => setSelectedSession({ id: row.id, email: row.user_email })}
+                        className="whitespace-nowrap rounded-md px-2.5 py-1 text-xs font-medium text-primary-600 transition-colors hover:bg-primary-50"
+                      >
+                        결과 보기
+                      </button>
+                    )}
+                    {row.status === "completed" && (
+                      <button
+                        onClick={() => handleRetrigger(row.id)}
+                        disabled={retriggering === row.id}
+                        title="평가 재실행"
+                        className="rounded-md p-1.5 text-foreground-muted transition-colors hover:bg-surface-secondary hover:text-primary-600 disabled:opacity-50"
+                      >
+                        <RefreshCw size={14} className={retriggering === row.id ? "animate-spin" : ""} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* 페이지네이션 */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-2">
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="rounded-lg px-3 py-1.5 text-xs font-medium text-foreground-secondary transition-colors hover:bg-surface-secondary disabled:opacity-40"
+              >
+                이전
+              </button>
+              <span className="text-xs tabular-nums text-foreground-muted">
+                {page} / {totalPages}
+              </span>
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+                className="rounded-lg px-3 py-1.5 text-xs font-medium text-foreground-secondary transition-colors hover:bg-surface-secondary disabled:opacity-40"
+              >
+                다음
+              </button>
             </div>
-          ))
-        )}
-      </div>
-
-      {/* 페이지네이션 */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2">
-          <button
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            disabled={page === 1}
-            className="rounded-lg px-3 py-1.5 text-xs font-medium text-foreground-secondary transition-colors hover:bg-surface-secondary disabled:opacity-40"
-          >
-            이전
-          </button>
-          <span className="text-xs tabular-nums text-foreground-muted">
-            {page} / {totalPages}
-          </span>
-          <button
-            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-            disabled={page === totalPages}
-            className="rounded-lg px-3 py-1.5 text-xs font-medium text-foreground-secondary transition-colors hover:bg-surface-secondary disabled:opacity-40"
-          >
-            다음
-          </button>
-        </div>
+          )}
+        </>
       )}
     </div>
   );

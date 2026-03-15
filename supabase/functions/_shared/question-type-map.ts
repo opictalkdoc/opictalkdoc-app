@@ -324,6 +324,37 @@ export function buildTaskChecklistText(questionType: string, targetLevel: string
   return lines.join("\n");
 }
 
+// DB에서 로드한 체크리스트 데이터로 텍스트 빌드 (buildTaskChecklistText의 DB 오버라이드 버전)
+export function buildTaskChecklistTextFromConfig(config: TypeChecklist, targetLevel: string): string {
+  const lines: string[] = [];
+  lines.push(`## TASK FULFILLMENT CHECKLIST — ${config.label} (${config.questionType})`);
+  lines.push("");
+  lines.push("### 🔴 Required (전 등급 필수):");
+  for (const item of config.required) {
+    lines.push(`- [ ] ${item}`);
+  }
+  lines.push("");
+  lines.push("### 🟡 Advanced (IH/AL 추가 요구):");
+  for (const item of config.advanced) {
+    lines.push(`- [ ] ${item}`);
+  }
+  lines.push("");
+  lines.push(`### Fulfillment Threshold (Target: ${targetLevel})`);
+  lines.push("- IM 이하: Required 전부 충족 → fulfilled");
+  lines.push("- IH: Required 전부 + Advanced 1개 → fulfilled");
+  lines.push("- AL: Required 전부 + Advanced 전부 → fulfilled");
+  lines.push("- Required 미충족 → partial 또는 failed");
+  lines.push("");
+  lines.push(`### Ideal Answer Flow`);
+  lines.push(config.idealFlow);
+  lines.push("");
+  lines.push(`### Common Mistakes (이 유형에서 자주 발생)`);
+  for (const m of config.commonMistakes) {
+    lines.push(`- ${m}`);
+  }
+  return lines.join("\n");
+}
+
 // eval-coach 프롬프트 키 (분기별)
 export function getCoachPromptKey(feedbackBranch: string): string {
   if (feedbackBranch === "partial") return "eval_coach_partial";

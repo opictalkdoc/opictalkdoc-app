@@ -8,6 +8,7 @@ import {
   getCheckboxType,
   getJudgePromptKey,
   buildTaskChecklistText,
+  buildTaskChecklistTextFromConfig,
   TYPE_CHECKLISTS,
 } from "../_shared/question-type-map.ts";
 import {
@@ -187,6 +188,32 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
+    // ── 평가 설정 + 체크리스트 DB 조회 (1회) ──
+    const [{ data: evalConfig }, { data: dbChecklists }] = await Promise.all([
+      supabase.from("mock_test_eval_settings").select("*").eq("id", 1).single(),
+      supabase.from("task_fulfillment_checklists").select("*"),
+    ]);
+
+    // DB 체크리스트 → TYPE_CHECKLISTS 형태로 변환
+    const checklistMap: Record<string, typeof TYPE_CHECKLISTS[string]> = {};
+    if (dbChecklists?.length) {
+      for (const row of dbChecklists) {
+        checklistMap[row.question_type] = {
+          questionType: row.question_type,
+          label: row.label,
+          required: row.required || [],
+          advanced: row.advanced || [],
+          idealFlow: row.ideal_flow || "",
+          commonMistakes: row.common_mistakes || [],
+          corePrescription: row.core_prescription || "",
+          feedbackTone: row.feedback_tone || "",
+          startTemplate: row.start_template || "",
+        };
+      }
+    }
+    // DB가 비어있으면 기존 하드코딩 사용
+    const activeChecklists = Object.keys(checklistMap).length > 0 ? checklistMap : TYPE_CHECKLISTS;
+
     // eval_status → evaluating
     await updateAnswerStatus(supabase, session_id, question_number, "evaluating");
 
@@ -261,9 +288,12 @@ Deno.serve(async (req) => {
     // 체크박스 정의 + 과제충족 체크리스트 텍스트 생성 (프롬프트 동적 주입)
     const { ids: checkboxIds } = getCheckboxIdsForQuestionType(questionType);
     const checkboxDefinitionsText = buildCheckboxDefinitionsText(checkboxIds);
-    const taskChecklistText = buildTaskChecklistText(questionType, targetLevel);
-
-    const typeConfig = TYPE_CHECKLISTS[questionType];
+    // DB 체크리스트 우선, 없으면 하드코딩 폴백
+    const typeConfig = activeChecklists[questionType] || TYPE_CHECKLISTS[questionType];
+    // DB 데이터로 체크리스트 텍스트 빌드
+    const taskChecklistText = typeConfig
+      ? buildTaskChecklistTextFromConfig(typeConfig, targetLevel)
+      : buildTaskChecklistText(questionType, targetLevel);
 
     const safeTranscript = sanitizeUserInput(transcript);
     const variables: Record<string, string | number> = {
@@ -303,10 +333,12 @@ Deno.serve(async (req) => {
       userPrompt = `Student's response:\n${safeTranscript}`;
     }
 
-    // ── GPT-4.1-mini 판정 호출 ──
-    const judgeModel = "gpt-4.1-mini";
+    // ── GPT 판정 호출 (DB 설정 오버라이드) ──
+    const judgeModel = evalConfig?.judge_model || "gpt-4.1-mini";
+    const judgeTemp = evalConfig?.judge_temperature != null ? Number(evalConfig.judge_temperature) : 0.2;
+    const judgeTokens = evalConfig?.judge_max_tokens || 6000;
     const { result: gptResult, tokensUsed, finishReason } = await withRetry(
-      () => callGptJudge(systemPrompt, userPrompt, judgeModel, 0.2, 6000),
+      () => callGptJudge(systemPrompt, userPrompt, judgeModel, judgeTemp, judgeTokens),
       2,
       "GPT judge 평가",
     );
@@ -315,7 +347,7 @@ Deno.serve(async (req) => {
     if (finishReason === "length") {
       console.warn(`[eval-judge] truncation 감지: session=${session_id}, q=${question_number}`);
       // 재시도 (더 높은 max_tokens)
-      const retry = await callGptJudge(systemPrompt, userPrompt, judgeModel, 0.3, 8000);
+      const retry = await callGptJudge(systemPrompt, userPrompt, judgeModel, judgeTemp + 0.1, judgeTokens + 2000);
       if (retry.finishReason !== "length") {
         Object.assign(gptResult, retry.result);
       }

@@ -582,6 +582,47 @@ export interface MockTestEvalSettings {
   enabled_comparison_change: boolean;
   enabled_social_issue: boolean;
   updated_at: string;
+  // 규칙엔진 threshold 13개
+  re_checkbox_pass_threshold: number;
+  re_floor_nh: number;
+  re_floor_il: number;
+  re_floor_im1: number;
+  re_floor_im2: number;
+  re_ceiling_broke_down: number;
+  re_ceiling_respond: number;
+  re_sympathetic_low: number;
+  re_sympathetic_mid: number;
+  re_sympathetic_at_times: number;
+  re_sympathetic_pron_weight: number;
+  re_al_pass_threshold: number;
+  re_q12_gatekeeper_threshold: number;
+  // GPT 모델 설정 12개
+  judge_model: string;
+  judge_temperature: number;
+  judge_max_tokens: number;
+  coach_model: string;
+  coach_temperature: number;
+  coach_max_tokens: number;
+  report_model: string;
+  report_temperature: number;
+  report_max_tokens: number;
+  growth_model: string;
+  growth_temperature: number;
+  growth_max_tokens: number;
+}
+
+// task_fulfillment_checklists 테이블
+export interface TaskFulfillmentChecklist {
+  question_type: string;
+  label: string;
+  required: string[];
+  advanced: string[];
+  ideal_flow: string;
+  common_mistakes: string[];
+  core_prescription: string;
+  feedback_tone: string;
+  start_template: string;
+  updated_at: string;
 }
 
 // evaluation_prompts 테이블
