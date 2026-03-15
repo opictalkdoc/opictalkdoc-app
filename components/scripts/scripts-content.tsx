@@ -199,21 +199,24 @@ function CreateTab() {
             </div>
           ))}
         </div>
-        {/* PC 가로 3컬럼 */}
-        <div className="hidden sm:mt-6 sm:grid sm:grid-cols-3 sm:gap-4">
+        {/* PC 가로 — 단계 사이 화살표 */}
+        <div className="hidden sm:mt-6 sm:grid sm:grid-cols-[1fr_auto_1fr_auto_1fr] sm:items-center sm:gap-3">
           {[
             { step: 1, title: "주제·질문 + 내 경험", desc: "빈출 주제에서 질문 선택, 경험 입력" },
             { step: 2, title: "맞춤 스크립트 생성", desc: "내 경험 기반 영어 답변 자동 생성" },
             { step: 3, title: "확정 + 쉐도잉 패키지", desc: "확정 후 원어민 음성으로 쉐도잉 훈련" },
-          ].map((s) => (
+          ].flatMap((s, i) => [
             <div key={s.step} className="flex flex-col items-center text-center">
               <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-border bg-surface-secondary text-sm font-bold text-foreground-muted">
                 {s.step}
               </div>
               <p className="mt-2 text-sm font-semibold text-foreground">{s.title}</p>
               <p className="mt-0.5 text-xs text-foreground-secondary">{s.desc}</p>
-            </div>
-          ))}
+            </div>,
+            ...(i < 2
+              ? [<div key={`arrow-${i}`}><ChevronRight size={24} className="text-foreground-muted" /></div>]
+              : []),
+          ])}
         </div>
 
         {/* CTA — 크레딧 유무에 따라 분기 */}

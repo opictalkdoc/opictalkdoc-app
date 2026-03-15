@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Send, FileText, Trash2, ChevronDown, CheckCircle2, Info } from "lucide-react";
+import { Send, FileText, Trash2, ChevronDown, ChevronRight, CheckCircle2, Info } from "lucide-react";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { SubmissionDetail } from "./submission-detail";
 import { getMySubmissions, deleteSubmission } from "@/lib/actions/reviews";
@@ -143,21 +143,24 @@ export function SubmitTab({ initialSubmissions }: SubmitTabProps) {
             </div>
           ))}
         </div>
-        {/* PC 가로 3컬럼 */}
-        <div className="hidden sm:mt-6 sm:grid sm:grid-cols-3 sm:gap-4">
+        {/* PC 가로 — 단계 사이 화살표 */}
+        <div className="hidden sm:mt-6 sm:grid sm:grid-cols-[1fr_auto_1fr_auto_1fr] sm:items-center sm:gap-3">
           {[
             { step: 1, title: "시험 정보 입력", desc: "시험 날짜, 등급, 서베이 선택" },
             { step: 2, title: "출제 질문 입력", desc: "콤보별 주제와 질문 선택" },
             { step: 3, title: "한줄 후기 + 팁", desc: "후기 작성 후 제출 완료" },
-          ].map((s) => (
+          ].flatMap((s, i) => [
             <div key={s.step} className="flex flex-col items-center text-center">
               <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-border bg-surface-secondary text-sm font-bold text-foreground-muted">
                 {s.step}
               </div>
               <p className="mt-2 text-sm font-semibold text-foreground">{s.title}</p>
               <p className="mt-0.5 text-xs text-foreground-secondary">{s.desc}</p>
-            </div>
-          ))}
+            </div>,
+            ...(i < 2
+              ? [<div key={`arrow-${i}`}><ChevronRight size={24} className="text-foreground-muted" /></div>]
+              : []),
+          ])}
         </div>
 
         {/* CTA */}

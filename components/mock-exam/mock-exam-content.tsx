@@ -14,6 +14,7 @@ import {
   Trophy,
   Calendar,
   ChevronDown,
+  ChevronRight,
   AlertTriangle,
 } from "lucide-react";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -326,21 +327,24 @@ function StartTab({
             </div>
           ))}
         </div>
-        {/* PC 가로 3컬럼 */}
-        <div className="hidden sm:mt-6 sm:grid sm:grid-cols-3 sm:gap-4">
+        {/* PC 가로 — 단계 사이 화살표 */}
+        <div className="hidden sm:mt-6 sm:grid sm:grid-cols-[1fr_auto_1fr_auto_1fr] sm:items-center sm:gap-3">
           {[
             { step: 1, title: "기출 문제 선택", desc: "후기 기반 기출 세트 선택" },
             { step: 2, title: "모드 선택 + 응시", desc: "훈련/실전 모드로 15문항 답변" },
             { step: 3, title: "평가 리포트 확인", desc: "예상 등급과 문항별 피드백 확인" },
-          ].map((s) => (
+          ].flatMap((s, i) => [
             <div key={s.step} className="flex flex-col items-center text-center">
               <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-border bg-surface-secondary text-sm font-bold text-foreground-muted">
                 {s.step}
               </div>
               <p className="mt-2 text-sm font-semibold text-foreground">{s.title}</p>
               <p className="mt-0.5 text-xs text-foreground-secondary">{s.desc}</p>
-            </div>
-          ))}
+            </div>,
+            ...(i < 2
+              ? [<div key={`arrow-${i}`}><ChevronRight size={24} className="text-foreground-muted" /></div>]
+              : []),
+          ])}
         </div>
       </div>
 
