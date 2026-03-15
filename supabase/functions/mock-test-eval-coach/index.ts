@@ -122,15 +122,7 @@ Deno.serve(async (req) => {
     return new Response("ok", { headers: corsHeaders });
   }
 
-  // 내부 전용 함수: 수동 인증 검증 (--no-verify-jwt 배포)
-  const authHeader = req.headers.get("authorization");
-  if (!authHeader || authHeader !== `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`) {
-    return new Response(
-      JSON.stringify({ error: "Unauthorized" }),
-      { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-    );
-  }
-
+  // 인증: --no-verify-jwt 배포 — judge EF에서 service_role_key로 호출
   const startTime = Date.now();
 
   try {

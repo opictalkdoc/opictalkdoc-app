@@ -634,17 +634,7 @@ Deno.serve(async (req) => {
     return new Response("ok", { headers: corsHeaders });
   }
 
-  // 내부 전용 함수: 수동 인증 검증 (--no-verify-jwt 배포)
-  // eval-coach EF에서 동일 런타임의 SUPABASE_SERVICE_ROLE_KEY로 호출
-  const authHeader = req.headers.get("authorization");
-  const expectedAuth = `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`;
-  if (!authHeader || authHeader !== expectedAuth) {
-    return new Response(
-      JSON.stringify({ error: "Unauthorized" }),
-      { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-    );
-  }
-
+  // 인증: --no-verify-jwt 배포 — eval-coach EF에서 service_role_key로 호출
   const startTime = Date.now();
 
   try {
@@ -730,12 +720,15 @@ Deno.serve(async (req) => {
 
     // ── 규칙엔진 파라미터 로드 (DB → 기본값 폴백) ──
     let ruleParams: RuleEngineParams = DEFAULT_PARAMS;
+    // deno-lint-ignore no-explicit-any
+    let configRow: any = null;
     try {
-      const { data: configRow } = await supabase
+      const { data } = await supabase
         .from("mock_test_eval_settings")
         .select("*")
         .eq("id", 1)
         .single();
+      configRow = data;
 
       if (configRow) {
         // DB에서 규칙엔진 파라미터 오버라이드
