@@ -14,6 +14,8 @@ import {
   ShoppingCart,
   Package,
   Loader2,
+  CreditCard,
+  X,
 } from "lucide-react";
 
 /* ── 상품 정의 ── */
@@ -154,6 +156,10 @@ const addons: {
   },
 ];
 
+/* ── 결제 수단 ── */
+
+type PayMethodId = "card" | "kakaopay";
+
 /* ── 플랜 이름 맵 ── */
 
 const PLAN_LABELS: Record<string, string> = {
@@ -161,6 +167,96 @@ const PLAN_LABELS: Record<string, string> = {
   basic: "베이직",
   premium: "프리미엄",
 };
+
+/* ── 결제 수단 선택 모달 ── */
+
+function PaymentMethodModal({
+  open,
+  productName,
+  price,
+  loading,
+  loadingMethod,
+  onSelect,
+  onCancel,
+}: {
+  open: boolean;
+  productName: string;
+  price: string;
+  loading: boolean;
+  loadingMethod: PayMethodId | null;
+  onSelect: (method: PayMethodId) => void;
+  onCancel: () => void;
+}) {
+  if (!open) return null;
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+      onClick={(e) => {
+        if (e.target === e.currentTarget && !loading) onCancel();
+      }}
+    >
+      <div className="relative w-full max-w-sm rounded-[var(--radius-xl)] border border-border bg-surface p-5 shadow-xl">
+        {/* 닫기 버튼 */}
+        <button
+          onClick={onCancel}
+          disabled={loading}
+          className="absolute right-3 top-3 rounded-full p-1 text-foreground-muted transition-colors hover:bg-surface-secondary hover:text-foreground disabled:opacity-50"
+        >
+          <X size={18} />
+        </button>
+
+        {/* 상품 정보 */}
+        <div className="mb-5 text-center">
+          <p className="text-sm text-foreground-secondary">결제 상품</p>
+          <p className="mt-1 font-semibold text-foreground">{productName}</p>
+          <p className="mt-0.5 text-lg font-bold text-foreground">
+            <span className="text-sm font-normal text-foreground-secondary">₩</span>
+            {price}
+          </p>
+        </div>
+
+        {/* 결제 수단 선택 */}
+        <p className="mb-2 text-xs font-medium text-foreground-secondary">결제 수단 선택</p>
+        <div className="flex flex-col gap-2">
+          {/* 신용카드 */}
+          <button
+            onClick={() => onSelect("card")}
+            disabled={loading}
+            className="flex items-center gap-3 rounded-[var(--radius-lg)] border border-border px-4 py-3 text-sm font-medium text-foreground transition-colors hover:border-primary-300 hover:bg-primary-50/50 disabled:opacity-50"
+          >
+            {loading && loadingMethod === "card" ? (
+              <Loader2 size={20} className="animate-spin text-primary-500" />
+            ) : (
+              <CreditCard size={20} className="text-foreground-secondary" />
+            )}
+            신용카드
+          </button>
+
+          {/* 카카오페이 */}
+          <button
+            onClick={() => onSelect("kakaopay")}
+            disabled={loading}
+            className="flex items-center gap-3 rounded-[var(--radius-lg)] border border-border px-4 py-3 text-sm font-medium text-foreground transition-colors hover:border-[#FEE500] hover:bg-[#FEE500]/10 disabled:opacity-50"
+          >
+            {loading && loadingMethod === "kakaopay" ? (
+              <Loader2 size={20} className="animate-spin text-[#3C1E1E]" />
+            ) : (
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" className="shrink-0">
+                <rect width="20" height="20" rx="4" fill="#FEE500" />
+                <path
+                  d="M10 4.5C6.41 4.5 3.5 6.78 3.5 9.6c0 1.82 1.21 3.42 3.03 4.32l-.77 2.86c-.07.25.22.45.44.31l3.42-2.28c.12.01.25.01.38.01 3.59 0 6.5-2.28 6.5-5.1S13.59 4.5 10 4.5z"
+                  fill="#3C1E1E"
+                />
+              </svg>
+            )}
+            카카오페이
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 /* ── 메인 컴포넌트 ── */
 
@@ -176,6 +272,8 @@ export function StoreContent({ userId }: { userId: string }) {
   });
 
   const [loadingProduct, setLoadingProduct] = useState<string | null>(null);
+  const [pendingProduct, setPendingProduct] = useState<ProductId | null>(null);
+  const [loadingMethod, setLoadingMethod] = useState<PayMethodId | null>(null);
   const [message, setMessage] = useState<{
     type: "success" | "error";
     text: string;
@@ -244,12 +342,15 @@ export function StoreContent({ userId }: { userId: string }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // 결제 처리
-  const handlePayment = async (productId: ProductId) => {
+  // 결제 수단 선택 후 실제 결제 처리
+  const handleConfirmPayment = async (method: PayMethodId) => {
+    if (!pendingProduct) return;
+    const productId = pendingProduct;
     const product = PRODUCT_MAP[productId];
     if (!product) return;
 
     setLoadingProduct(productId);
+    setLoadingMethod(method);
     setMessage(null);
 
     try {
@@ -268,15 +369,21 @@ export function StoreContent({ userId }: { userId: string }) {
       // 모바일 결제 후 돌아올 URL (PortOne이 paymentId 등을 쿼리로 추가)
       const redirectUrl = `${window.location.origin}/store?productId=${productId}`;
 
+      // 결제 수단별 채널키 + payMethod 분기
+      const isKakaoPay = method === "kakaopay";
+      const channelKey = isKakaoPay
+        ? process.env.NEXT_PUBLIC_PORTONE_CHANNEL_KEY_KAKAOPAY!
+        : process.env.NEXT_PUBLIC_PORTONE_CHANNEL_KEY!;
+
       // 포트원 결제창 호출
       const response = await PortOne.requestPayment({
         storeId: process.env.NEXT_PUBLIC_PORTONE_STORE_ID!,
-        channelKey: process.env.NEXT_PUBLIC_PORTONE_CHANNEL_KEY!,
+        channelKey,
         paymentId,
         orderName: product.name,
         totalAmount: product.price,
         currency: "CURRENCY_KRW",
-        payMethod: "CARD",
+        payMethod: isKakaoPay ? "EASY_PAY" : "CARD",
         redirectUrl,
         customer: {
           fullName: buyerName,
@@ -326,6 +433,8 @@ export function StoreContent({ userId }: { userId: string }) {
       });
     } finally {
       setLoadingProduct(null);
+      setLoadingMethod(null);
+      setPendingProduct(null);
     }
   };
 
@@ -388,6 +497,23 @@ export function StoreContent({ userId }: { userId: string }) {
         </div>
       </div>
 
+      {/* 결제 수단 선택 모달 */}
+      <PaymentMethodModal
+        open={!!pendingProduct}
+        productName={pendingProduct ? PRODUCT_MAP[pendingProduct].name : ""}
+        price={
+          pendingProduct
+            ? PRODUCT_MAP[pendingProduct].price.toLocaleString("ko-KR")
+            : ""
+        }
+        loading={!!loadingProduct}
+        loadingMethod={loadingMethod}
+        onSelect={handleConfirmPayment}
+        onCancel={() => {
+          if (!loadingProduct) setPendingProduct(null);
+        }}
+      />
+
       {/* 플랜 카드 */}
       <div className="mb-8 sm:mb-12">
         <h2 className="mb-4 flex items-center gap-2 text-base font-bold text-foreground sm:mb-5 sm:text-lg">
@@ -397,7 +523,6 @@ export function StoreContent({ userId }: { userId: string }) {
         <div className="grid gap-4 md:grid-cols-3 sm:gap-5">
           {plans.map((plan) => {
             const current = isCurrent(plan.productId);
-            const loading = loadingProduct === plan.productId;
             return (
               <div
                 key={plan.name}
@@ -470,16 +595,11 @@ export function StoreContent({ userId }: { userId: string }) {
                   </span>
                 ) : plan.productId ? (
                   <button
-                    onClick={() => handlePayment(plan.productId!)}
-                    disabled={loading}
-                    className="mt-5 inline-flex h-10 items-center justify-center gap-1.5 rounded-[var(--radius-lg)] bg-primary-500 text-sm font-medium text-white transition-colors hover:bg-primary-600 disabled:opacity-50"
+                    onClick={() => setPendingProduct(plan.productId!)}
+                    className="mt-5 inline-flex h-10 items-center justify-center gap-1.5 rounded-[var(--radius-lg)] bg-primary-500 text-sm font-medium text-white transition-colors hover:bg-primary-600"
                   >
-                    {loading ? (
-                      <Loader2 size={15} className="animate-spin" />
-                    ) : (
-                      <ShoppingCart size={15} />
-                    )}
-                    {loading ? "결제 진행 중..." : "구매하기"}
+                    <ShoppingCart size={15} />
+                    구매하기
                   </button>
                 ) : (
                   <span className="mt-5 inline-flex h-10 items-center justify-center rounded-[var(--radius-lg)] border border-primary-200 text-sm font-medium text-primary-600">
@@ -503,7 +623,6 @@ export function StoreContent({ userId }: { userId: string }) {
         </p>
         <div className="grid gap-4 sm:grid-cols-3 sm:gap-5">
           {addons.map((addon) => {
-            const loading = loadingProduct === addon.productId;
             return (
               <div
                 key={addon.name}
@@ -531,16 +650,11 @@ export function StoreContent({ userId }: { userId: string }) {
                   </span>
                 </div>
                 <button
-                  onClick={() => handlePayment(addon.productId)}
-                  disabled={loading}
-                  className="mt-4 w-full inline-flex h-10 items-center justify-center gap-1.5 rounded-[var(--radius-lg)] border border-border text-sm font-medium text-foreground transition-colors hover:bg-surface-secondary disabled:opacity-50"
+                  onClick={() => setPendingProduct(addon.productId)}
+                  className="mt-4 w-full inline-flex h-10 items-center justify-center gap-1.5 rounded-[var(--radius-lg)] border border-border text-sm font-medium text-foreground transition-colors hover:bg-surface-secondary"
                 >
-                  {loading ? (
-                    <Loader2 size={15} className="animate-spin" />
-                  ) : (
-                    <ShoppingCart size={15} />
-                  )}
-                  {loading ? "결제 진행 중..." : "구매하기"}
+                  <ShoppingCart size={15} />
+                  구매하기
                 </button>
               </div>
             );
@@ -551,7 +665,7 @@ export function StoreContent({ userId }: { userId: string }) {
       {/* 하단 안내 */}
       <div className="rounded-[var(--radius-xl)] border border-border bg-surface-secondary p-4 text-center text-xs text-foreground-secondary sm:p-5 sm:text-sm">
         <p>
-          결제는 KG이니시스 신용카드를 통해 안전하게 처리됩니다. 플랜 상세 비교는{" "}
+          모든 결제는 안전하게 처리됩니다. 플랜 상세 비교는{" "}
           <Link
             href="/pricing"
             className="font-medium text-primary-500 hover:underline"
