@@ -10,8 +10,8 @@ interface GrowthTabProps {
 }
 
 export function GrowthTab({ report }: GrowthTabProps) {
-  // 성장 데이터가 있는지 확인
-  const hasGrowth = report.growth_summary || report.growth_comparison || report.growth_analysis;
+  // 성장 데이터가 있는지 확인 (이전 세션이 실제로 존재해야 함)
+  const hasGrowth = report.growth_comparison?.previous_session_id != null;
 
   if (!hasGrowth) {
     return (
