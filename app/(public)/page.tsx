@@ -421,8 +421,8 @@ export default function HomePage() {
                 <div className="flex-1 space-y-4 pl-2 sm:pl-4">
                   {[
                     { title: "기출 빈도 분석", details: ["어드밴스 카테고리만 제공"], enabled: true },
-                    { title: "내 경험 기반 맞춤 스크립트", details: ["체험판 + 후기 제출 시 크레딧 지급"] },
-                    { title: "내 스크립트로 원어민 발음 체화", details: ["체험판 + 쉐도잉 훈련 무제한"] },
+                    { title: "내 경험 기반 맞춤 스크립트", details: ["체험판 + 후기 제출 시 크레딧 지급"], enabled: true },
+                    { title: "내 스크립트로 원어민 발음 체화", details: ["체험판 + 쉐도잉 훈련 무제한"], enabled: true },
                     { title: "기출 기반 실전 모의고사", details: ["모의고사 체험판"], enabled: true },
                     { title: "문항별 개별 평가 + 종합 리포트", details: [], enabled: false },
                     { title: "약점 자동 처방 튜터링", details: [], enabled: false },
