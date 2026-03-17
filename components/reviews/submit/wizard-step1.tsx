@@ -193,7 +193,7 @@ export function WizardStep1({ onComplete, submissionId }: WizardStep1Props) {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       {/* ── 섹션 1: 시험 기본 정보 ── */}
-      <section className="rounded-xl border border-border bg-surface p-3.5 sm:rounded-2xl sm:p-5">
+      <section className="rounded-xl border border-border bg-surface p-3.5 sm:rounded-2xl sm:p-5 [transform:translateZ(0)]">
         <div className="flex items-center gap-2.5 border-b border-border pb-3 sm:gap-3 sm:pb-4">
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary-50 sm:h-9 sm:w-9 sm:rounded-xl">
             <CalendarDays size={16} className="text-primary-500 sm:hidden" />
@@ -327,7 +327,7 @@ export function WizardStep1({ onComplete, submissionId }: WizardStep1Props) {
       </section>
 
       {/* ── 섹션 2: 시험 배경 ── */}
-      <section className="rounded-xl border border-border bg-surface p-3.5 sm:rounded-2xl sm:p-5">
+      <section className="rounded-xl border border-border bg-surface p-3.5 sm:rounded-2xl sm:p-5 [transform:translateZ(0)]">
         <div className="flex items-center gap-2.5 border-b border-border pb-3 sm:gap-3 sm:pb-4">
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-secondary-50 sm:h-9 sm:w-9 sm:rounded-xl">
             <BookOpen size={16} className="text-secondary-600 sm:hidden" />
@@ -541,7 +541,7 @@ export function WizardStep1({ onComplete, submissionId }: WizardStep1Props) {
       </section>
 
       {/* ── 섹션 3: 체감 후기 ── */}
-      <section className="rounded-xl border border-border bg-surface p-3.5 sm:rounded-2xl sm:p-5">
+      <section className="rounded-xl border border-border bg-surface p-3.5 sm:rounded-2xl sm:p-5 [transform:translateZ(0)]">
         <div className="flex items-center gap-2.5 border-b border-border pb-3 sm:gap-3 sm:pb-4">
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-accent-50 sm:h-9 sm:w-9 sm:rounded-xl">
             <MessageCircle size={16} className="text-accent-500 sm:hidden" />
@@ -593,7 +593,7 @@ export function WizardStep1({ onComplete, submissionId }: WizardStep1Props) {
       </section>
 
       {/* ── 섹션 4: 서베이 정보 ── */}
-      <section className="rounded-xl border border-border bg-surface p-3.5 sm:rounded-2xl sm:p-5">
+      <section className="rounded-xl border border-border bg-surface p-3.5 sm:rounded-2xl sm:p-5 [transform:translateZ(0)]">
         <div className="flex items-center gap-2.5 border-b border-border pb-3 sm:gap-3 sm:pb-4">
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary-50 sm:h-9 sm:w-9 sm:rounded-xl">
             <ClipboardList size={16} className="text-primary-500 sm:hidden" />
