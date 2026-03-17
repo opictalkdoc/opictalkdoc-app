@@ -125,7 +125,7 @@ export function ResultPageContent({
   const coaching = report.coaching_report as CoachingReportV3 | null;
 
   return (
-    <div className="flex h-0 flex-grow flex-col md:h-auto md:flex-1">
+    <div className="flex h-0 min-h-0 flex-grow flex-col md:h-auto md:flex-1">
       {/* 탭 네비게이션 — 고정 */}
       <div className="shrink-0 border-b border-border bg-surface/80 backdrop-blur-sm">
         <div className="mx-auto max-w-5xl">

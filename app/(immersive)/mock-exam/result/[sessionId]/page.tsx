@@ -44,7 +44,7 @@ export default async function MockExamResultPage({ params, searchParams }: Props
   return (
     <>
       <ImmersiveHeader title="나의 모의고사" backHref="/mock-exam?tab=history" />
-      <main className="flex h-0 flex-grow flex-col md:h-auto md:flex-1">
+      <main className="flex h-0 min-h-0 flex-grow flex-col md:h-auto md:flex-1">
         <ResultPageContent
           sessionId={sessionId}
           initialData={sessionResult?.data || undefined}

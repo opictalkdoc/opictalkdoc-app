@@ -507,7 +507,7 @@ export function ScriptWizard({
     selectedQuestion?.question_type || scriptDetail?.question_type || undefined;
 
   return (
-    <div className="flex h-0 flex-grow flex-col md:h-auto md:flex-1">
+    <div className="flex h-0 min-h-0 flex-grow flex-col md:h-auto md:flex-1">
       {/* ── 단계 표시 (5단계) ── */}
       <div className="border-b border-border bg-surface px-4 py-4 sm:px-6">
         <div className="mx-auto flex max-w-3xl items-center justify-center gap-1.5 sm:gap-3">

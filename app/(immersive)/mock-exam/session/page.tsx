@@ -17,7 +17,7 @@ export default async function MockExamSessionPage({ searchParams }: Props) {
   return (
     <>
       <ImmersiveHeader title="모의고사" backHref="/mock-exam" />
-      <main className="flex h-0 flex-grow flex-col md:h-auto md:flex-1">
+      <main className="flex h-0 min-h-0 flex-grow flex-col md:h-auto md:flex-1">
         {sessionId || isTrialMode ? (
           <MockExamSessionWrapper
             sessionId={isTrialMode ? "trial_mock_session" : sessionId!}
