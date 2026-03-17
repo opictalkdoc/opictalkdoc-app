@@ -343,7 +343,7 @@ export function WizardStep1({ onComplete, submissionId }: WizardStep1Props) {
           </div>
         </div>
 
-        <div className="mt-3 grid gap-5 sm:mt-4 sm:grid-cols-2 sm:gap-6">
+        <div className="mt-3 flex flex-col gap-5 sm:mt-4 sm:grid sm:grid-cols-2 sm:gap-6">
           {/* 시험 목적 — 라디오 */}
           <Controller
             name="exam_purpose"
