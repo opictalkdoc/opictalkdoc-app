@@ -21,15 +21,15 @@ import {
 /* ── 상품 정의 ── */
 
 type ProductId =
-  | "basic_plan"
-  | "premium_plan"
+  | "standard_plan"
+  | "allinone_plan"
   | "mock_exam_credit"
   | "script_credit"
   | "tutoring_credit";
 
 const PRODUCT_MAP: Record<ProductId, { name: string; price: number }> = {
-  basic_plan: { name: "실전 플랜 (3회권)", price: 19900 },
-  premium_plan: { name: "올인원 플랜 (10회권)", price: 49900 },
+  standard_plan: { name: "실전 플랜 (3회권)", price: 19900 },
+  allinone_plan: { name: "올인원 플랜 (10회권)", price: 49900 },
   mock_exam_credit: { name: "모의고사 횟수권 (1회)", price: 7900 },
   script_credit: { name: "스크립트 패키지 횟수권 (5회)", price: 3900 },
   tutoring_credit: { name: "튜터링 횟수권 (1회)", price: 5900 },
@@ -95,7 +95,7 @@ const plans: {
   },
   {
     name: "실전",
-    productId: "basic_plan",
+    productId: "standard_plan",
     price: "19,900",
     period: " / 3회권",
     description: "본격적인 실전 감각을 키우세요",
@@ -124,7 +124,7 @@ const plans: {
   },
   {
     name: "올인원",
-    productId: "premium_plan",
+    productId: "allinone_plan",
     price: "49,900",
     period: " / 10회권",
     description: "빈도 분석부터 약점 튜터링까지, 한 번에",
@@ -202,8 +202,8 @@ type PayMethodId = "card" | "kakaopay";
 
 const PLAN_LABELS: Record<string, string> = {
   free: "체험",
-  basic: "실전",
-  premium: "올인원",
+  standard: "실전",
+  allinone: "올인원",
 };
 
 /* ── 결제 수단 선택 모달 ── */
@@ -482,9 +482,9 @@ export function StoreContent({ userId }: { userId: string }) {
     : "체험";
   const isCurrent = (productId: ProductId | null) => {
     if (!productId) return credits?.current_plan === "free" || !credits;
-    if (productId === "basic_plan") return credits?.current_plan === "basic";
-    if (productId === "premium_plan")
-      return credits?.current_plan === "premium";
+    if (productId === "standard_plan") return credits?.current_plan === "standard";
+    if (productId === "allinone_plan")
+      return credits?.current_plan === "allinone";
     return false;
   };
 

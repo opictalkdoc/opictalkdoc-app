@@ -52,14 +52,14 @@ async function fetchUserCredits(userId: string): Promise<CreditsData> {
 
 const PLAN_LABELS: Record<string, string> = {
   free: "체험",
-  basic: "실전",
-  premium: "올인원",
+  standard: "실전",
+  allinone: "올인원",
 };
 
 const PLAN_PRICES: Record<string, string> = {
   free: "무료",
-  basic: "₩19,900 / 3회권",
-  premium: "₩49,900 / 10회권",
+  standard: "₩19,900 / 3회권",
+  allinone: "₩49,900 / 10회권",
 };
 
 /* ── 타입 ── */

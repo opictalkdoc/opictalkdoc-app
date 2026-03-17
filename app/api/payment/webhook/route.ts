@@ -7,8 +7,8 @@ const PRODUCTS: Record<
   string,
   { mockExam: number; script: number; tutoring: number; months: number; plan: string }
 > = {
-  basic_plan: { mockExam: 3, script: 15, tutoring: 0, months: 1, plan: "basic" },
-  premium_plan: { mockExam: 10, script: 50, tutoring: 3, months: 2, plan: "premium" },
+  standard_plan: { mockExam: 3, script: 15, tutoring: 0, months: 1, plan: "standard" },
+  allinone_plan: { mockExam: 10, script: 50, tutoring: 3, months: 2, plan: "allinone" },
   mock_exam_credit: { mockExam: 1, script: 0, tutoring: 0, months: 0, plan: "free" },
   script_credit: { mockExam: 0, script: 5, tutoring: 0, months: 0, plan: "free" },
   tutoring_credit: { mockExam: 0, script: 0, tutoring: 1, months: 0, plan: "free" },

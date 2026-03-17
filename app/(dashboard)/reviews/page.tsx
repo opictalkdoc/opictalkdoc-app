@@ -15,11 +15,13 @@ async function ReviewsDataLoader() {
     getStatsAndFrequency(),
     getMySubmissions(),
     getPublicReviews({ page: 1, limit: 10 }),
-    // 유료 플랜 여부 확인 (빈도 분석 서브탭 잠금용)
+    // 유료 플랜 또는 admin 여부 확인 (빈도 분석 서브탭 잠금용)
     (async () => {
       try {
         const user = await getUser();
         if (!user) return false;
+        // admin은 무조건 전체 접근
+        if (user.app_metadata?.role === "admin") return true;
         const supabase = await createServerSupabaseClient();
         const { data } = await supabase
           .from("user_credits")

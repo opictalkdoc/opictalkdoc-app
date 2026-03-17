@@ -7,8 +7,8 @@ import { z } from "zod";
 const VerifySchema = z.object({
   paymentId: z.string().min(1).max(200),
   productId: z.enum([
-    "basic_plan",
-    "premium_plan",
+    "standard_plan",
+    "allinone_plan",
     "mock_exam_credit",
     "script_credit",
     "tutoring_credit",
@@ -25,26 +25,26 @@ const PRODUCTS: Record<
     script: number;
     tutoring: number;
     months: number;
-    plan: "basic" | "premium" | "free";
+    plan: "standard" | "allinone" | "free";
   }
 > = {
-  basic_plan: {
+  standard_plan: {
     name: "실전 플랜 (3회권)",
     price: 19900,
     mockExam: 3,
     script: 15,
     tutoring: 0,
     months: 1,
-    plan: "basic",
+    plan: "standard",
   },
-  premium_plan: {
+  allinone_plan: {
     name: "올인원 플랜 (10회권)",
     price: 49900,
     mockExam: 10,
     script: 50,
     tutoring: 3,
     months: 2,
-    plan: "premium",
+    plan: "allinone",
   },
   mock_exam_credit: {
     name: "모의고사 횟수권 (1회)",

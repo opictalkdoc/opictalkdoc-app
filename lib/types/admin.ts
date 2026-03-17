@@ -79,7 +79,7 @@ export interface RevenueStats {
 
 export interface PlanChangeParams {
   userId: string;
-  plan: "free" | "basic" | "premium";
+  plan: "free" | "standard" | "allinone";
   mockExamCredits: number;
   scriptCredits: number;
   expiresInMonths: number;

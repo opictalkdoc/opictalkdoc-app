@@ -8,14 +8,14 @@ import { Crown, ClipboardList, BookOpen, Calendar } from "lucide-react";
 /* ── 유틸 ── */
 
 function getPlanLabel(plan: string) {
-  if (plan === "basic") return "실전";
-  if (plan === "premium") return "올인원";
+  if (plan === "standard") return "실전";
+  if (plan === "allinone") return "올인원";
   return "체험";
 }
 
 function getPlanSub(plan: string) {
-  if (plan === "basic") return "3회권";
-  if (plan === "premium") return "10회권";
+  if (plan === "standard") return "3회권";
+  if (plan === "allinone") return "10회권";
   return "무료";
 }
 

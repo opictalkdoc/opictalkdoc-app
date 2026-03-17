@@ -6,8 +6,8 @@ import type { PlanChangeParams } from "@/lib/types/admin";
 
 const PLAN_DEFAULTS = {
   free: { mockExam: 0, script: 0, tutoring: 0, months: 0 },
-  basic: { mockExam: 3, script: 15, tutoring: 0, months: 1 },
-  premium: { mockExam: 10, script: 50, tutoring: 3, months: 2 },
+  standard: { mockExam: 3, script: 15, tutoring: 0, months: 1 },
+  allinone: { mockExam: 10, script: 50, tutoring: 3, months: 2 },
 };
 
 interface PlanChangeModalProps {
@@ -25,8 +25,8 @@ export function PlanChangeModal({
   onSubmit,
   onClose,
 }: PlanChangeModalProps) {
-  const [plan, setPlan] = useState<"free" | "basic" | "premium">(
-    (currentPlan as "free" | "basic" | "premium") || "free"
+  const [plan, setPlan] = useState<"free" | "standard" | "allinone">(
+    (currentPlan as "free" | "standard" | "allinone") || "free"
   );
   const defaults = PLAN_DEFAULTS[plan];
   const [mockExamCredits, setMockExamCredits] = useState(defaults.mockExam);
@@ -38,7 +38,7 @@ export function PlanChangeModal({
   const isFree = plan === "free";
 
   // 플랜 선택 변경 시 기본값 자동 세팅
-  const handlePlanChange = (newPlan: "free" | "basic" | "premium") => {
+  const handlePlanChange = (newPlan: "free" | "standard" | "allinone") => {
     setPlan(newPlan);
     const d = PLAN_DEFAULTS[newPlan];
     setMockExamCredits(d.mockExam);
@@ -68,8 +68,8 @@ export function PlanChangeModal({
   // 플랜별 라벨/색상
   const planOptions = [
     { value: "free" as const, label: "Free", color: "bg-gray-100 text-gray-700 border-gray-300" },
-    { value: "basic" as const, label: "실전", color: "bg-blue-50 text-blue-700 border-blue-400" },
-    { value: "premium" as const, label: "올인원", color: "bg-purple-50 text-purple-700 border-purple-400" },
+    { value: "standard" as const, label: "실전", color: "bg-blue-50 text-blue-700 border-blue-400" },
+    { value: "allinone" as const, label: "올인원", color: "bg-purple-50 text-purple-700 border-purple-400" },
   ];
 
   return (
