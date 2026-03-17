@@ -311,12 +311,10 @@ details.faq-item .faq-answer {
 
 /* 모바일 스크롤바 숨김 (콘텐츠는 스크롤 가능, 스크롤바만 비표시) */
 @media (max-width: 767px) {
-  html,
-  body {
+  * {
     scrollbar-width: none;
   }
-  html::-webkit-scrollbar,
-  body::-webkit-scrollbar {
+  *::-webkit-scrollbar {
     display: none;
   }
 }
