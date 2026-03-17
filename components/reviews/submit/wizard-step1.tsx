@@ -66,6 +66,7 @@ export function WizardStep1({ onComplete, submissionId }: WizardStep1Props) {
     formState: { errors },
   } = useForm<Step1Input>({
     resolver: zodResolver(step1Schema),
+    shouldFocusError: false,
     defaultValues: {
       exam_date: "",
       exam_difficulty: undefined,
@@ -169,6 +170,15 @@ export function WizardStep1({ onComplete, submissionId }: WizardStep1Props) {
     }
   };
 
+  // Validation 실패 시 에러 표시 + 첫 에러 필드로 스크롤
+  const onInvalid = () => {
+    setError("입력하지 않은 필수 항목이 있습니다. 빨간색 표시를 확인해주세요.");
+    setTimeout(() => {
+      const firstError = document.querySelector('form p.text-accent-500');
+      firstError?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 100);
+  };
+
   // 체크박스 토글 헬퍼
   const toggleCheckbox = (
     fieldName: "survey_leisure" | "survey_hobbies" | "survey_sports" | "survey_travel",
@@ -191,7 +201,7 @@ export function WizardStep1({ onComplete, submissionId }: WizardStep1Props) {
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+    <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="space-y-4">
       {/* ── 섹션 1: 시험 기본 정보 ── */}
       <section className="rounded-xl border border-border bg-surface p-3.5 sm:rounded-2xl sm:p-5">
         <div className="flex items-center gap-2.5 border-b border-border pb-3 sm:gap-3 sm:pb-4">
