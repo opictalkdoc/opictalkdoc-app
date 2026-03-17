@@ -309,14 +309,3 @@ details.faq-item .faq-answer {
   animation: fadeIn 0.2s ease-out;
 }
 
-/* 모바일 스크롤바 숨김 (콘텐츠는 스크롤 가능, 스크롤바만 비표시) */
-@layer base {
-  @media (max-width: 767px) {
-    * {
-      scrollbar-width: none !important;
-    }
-    *::-webkit-scrollbar {
-      display: none !important;
-    }
-  }
-}
