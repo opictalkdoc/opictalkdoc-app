@@ -184,7 +184,7 @@ export function MockExamSessionWrapper({
   // 서베이 (체험판에서는 스킵)
   if (phase === "survey") {
     return (
-      <div className="h-0 flex-grow overflow-y-auto max-md:[scrollbar-width:none] max-md:[&::-webkit-scrollbar]:hidden">
+      <div className="mobile-scrollbar-hidden h-0 flex-grow overflow-y-auto max-md:[scrollbar-width:none] max-md:[&::-webkit-scrollbar]:hidden">
         <SurveyIntro onComplete={handleSurveyComplete} />
       </div>
     );
@@ -199,7 +199,7 @@ export function MockExamSessionWrapper({
             <TrialBanner />
           </div>
         )}
-        <div className="h-0 flex-grow overflow-y-auto max-md:[scrollbar-width:none] max-md:[&::-webkit-scrollbar]:hidden">
+        <div className="mobile-scrollbar-hidden h-0 flex-grow overflow-y-auto max-md:[scrollbar-width:none] max-md:[&::-webkit-scrollbar]:hidden">
           <DeviceTest
             onComplete={handleDeviceTestComplete}
             onBack={handleDeviceTestBack}

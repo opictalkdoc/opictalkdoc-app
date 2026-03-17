@@ -152,7 +152,7 @@ export function ResultPageContent({
       </div>
 
       {/* 탭 콘텐츠 — 스크롤 가능 */}
-      <div className="h-0 flex-grow overflow-y-auto max-md:[scrollbar-width:none] max-md:[&::-webkit-scrollbar]:hidden">
+      <div className="mobile-scrollbar-hidden h-0 flex-grow overflow-y-auto max-md:[scrollbar-width:none] max-md:[&::-webkit-scrollbar]:hidden">
         {activeTab === "questions" ? (
           <QuestionsTab
             evaluations={evaluations}

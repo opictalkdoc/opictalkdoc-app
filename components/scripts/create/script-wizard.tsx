@@ -579,7 +579,7 @@ export function ScriptWizard({
       )}
 
       {/* ── 콘텐츠 영역 (스크롤) ── */}
-      <div className="mx-auto w-full max-w-3xl h-0 flex-grow overflow-y-auto px-4 py-6 sm:px-6 max-md:[scrollbar-width:none] max-md:[&::-webkit-scrollbar]:hidden md:h-auto md:flex-1">
+      <div className="mobile-scrollbar-hidden mx-auto w-full max-w-3xl h-0 flex-grow overflow-y-auto px-4 py-6 sm:px-6 max-md:[scrollbar-width:none] max-md:[&::-webkit-scrollbar]:hidden md:h-auto md:flex-1">
         {step === 1 && (
           <Step1Selection
             selectedCategory={selectedCategory}

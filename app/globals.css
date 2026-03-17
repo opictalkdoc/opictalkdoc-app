@@ -311,10 +311,18 @@ details.faq-item .faq-answer {
 
 /* 모바일 스크롤바 숨김 */
 @media (max-width: 767px) {
-  * {
+  html,
+  body,
+  .mobile-scrollbar-hidden {
+    -ms-overflow-style: none;
     scrollbar-width: none;
   }
-  *::-webkit-scrollbar {
+
+  html::-webkit-scrollbar,
+  body::-webkit-scrollbar,
+  .mobile-scrollbar-hidden::-webkit-scrollbar {
+    width: 0;
+    height: 0;
     display: none;
   }
 }

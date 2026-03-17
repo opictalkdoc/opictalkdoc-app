@@ -327,7 +327,7 @@ export function TrainingSession({
       </div>
 
       {/* Screen 콘텐츠 */}
-      <div className="h-0 flex-grow overflow-y-auto">
+      <div className="mobile-scrollbar-hidden h-0 flex-grow overflow-y-auto">
         <div className="mx-auto max-w-3xl px-4 py-6">
           {currentScreen === 0 && (
             <Screen0Brief brief={brief} onStart={nextScreen} />

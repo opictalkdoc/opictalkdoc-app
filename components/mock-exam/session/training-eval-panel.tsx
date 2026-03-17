@@ -114,7 +114,7 @@ export function TrainingEvalPanel({
       </div>
 
       {/* 콘텐츠 — 스크롤 영역 */}
-      <div className="h-0 flex-grow overflow-y-auto rounded-xl border border-border bg-surface p-4 max-md:[scrollbar-width:none] max-md:[&::-webkit-scrollbar]:hidden md:p-6">
+      <div className="mobile-scrollbar-hidden h-0 flex-grow overflow-y-auto rounded-xl border border-border bg-surface p-4 max-md:[scrollbar-width:none] max-md:[&::-webkit-scrollbar]:hidden md:p-6">
         {loading ? (
           <div className="flex flex-col items-center py-12">
             <Loader2 size={24} className="animate-spin text-primary-500" />

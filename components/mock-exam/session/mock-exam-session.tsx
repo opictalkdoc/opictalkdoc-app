@@ -726,7 +726,7 @@ export function MockExamSession({
 
                     {/* 하단: 질문 텍스트 오버레이 (선택한 언어만) */}
                     {showQuestion !== "hidden" && (
-                      <div className="absolute inset-x-0 bottom-0 z-10 max-h-[60%] overflow-y-auto bg-black/60 px-2.5 py-2 backdrop-blur-sm md:hidden">
+                      <div className="mobile-scrollbar-hidden absolute inset-x-0 bottom-0 z-10 max-h-[60%] overflow-y-auto bg-black/60 px-2.5 py-2 backdrop-blur-sm md:hidden">
                         <p className="text-[11px] leading-relaxed text-white">
                           {showQuestion === "en"
                             ? currentQuestion.question_english
