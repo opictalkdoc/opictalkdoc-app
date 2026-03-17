@@ -45,27 +45,27 @@ export type ActualDuration = (typeof ACTUAL_DURATIONS)[number];
 // ── 한글 레이블 매핑 ──
 
 export const ACHIEVED_LEVEL_LABELS: Record<AchievedLevel, string> = {
-  NL: 'NL · Novice Low',
-  NM: 'NM · Novice Mid',
-  NH: 'NH · Novice High',
-  IL: 'IL · Intermediate Low',
-  IM1: 'IM1 · Intermediate Mid 1',
-  IM2: 'IM2 · Intermediate Mid 2',
-  IM3: 'IM3 · Intermediate Mid 3',
-  IH: 'IH · Intermediate High',
-  AL: 'AL · Advanced Low',
+  NL: 'NL',
+  NM: 'NM',
+  NH: 'NH',
+  IL: 'IL',
+  IM1: 'IM1',
+  IM2: 'IM2',
+  IM3: 'IM3',
+  IH: 'IH',
+  AL: 'AL',
 };
 
 export const PRE_EXAM_LEVEL_LABELS: Record<PreExamLevel, string> = {
-  NL: 'NL · Novice Low',
-  NM: 'NM · Novice Mid',
-  NH: 'NH · Novice High',
-  IL: 'IL · Intermediate Low',
-  IM1: 'IM1 · Intermediate Mid 1',
-  IM2: 'IM2 · Intermediate Mid 2',
-  IM3: 'IM3 · Intermediate Mid 3',
-  IH: 'IH · Intermediate High',
-  AL: 'AL · Advanced Low',
+  NL: 'NL',
+  NM: 'NM',
+  NH: 'NH',
+  IL: 'IL',
+  IM1: 'IM1',
+  IM2: 'IM2',
+  IM3: 'IM3',
+  IH: 'IH',
+  AL: 'AL',
   none: '처음 응시',
 };
 

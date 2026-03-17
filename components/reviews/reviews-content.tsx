@@ -58,7 +58,7 @@ export function ReviewsContent({ initialStats, initialFrequency, initialSubmissi
   return (
     <div>
       {/* 탭 네비게이션 */}
-      <div className="mb-4 overflow-x-auto sm:mb-6">
+      <div className="mb-4 overflow-x-auto max-md:[scrollbar-width:none] max-md:[&::-webkit-scrollbar]:hidden sm:mb-6">
         <div className="flex border-b border-border">
           {tabs.map((tab) => {
             const active = activeTab === tab.id;

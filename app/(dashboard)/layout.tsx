@@ -19,6 +19,9 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
+    <>
+    {/* 모바일: body 스크롤바 숨김 */}
+    <style>{`@media(max-width:767px){html,body{scrollbar-width:none;-webkit-overflow-scrolling:touch}html::-webkit-scrollbar,body::-webkit-scrollbar{display:none}}`}</style>
     <div className="flex min-h-screen flex-col bg-background">
       <Navbar />
       {/* 배너는 넛지 UI이므로 fallback=null — 데이터 준비되면 자연스럽게 나타남 */}
@@ -30,5 +33,6 @@ export default function DashboardLayout({
       </main>
       <Footer />
     </div>
+    </>
   );
 }

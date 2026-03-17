@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { Check } from "lucide-react";
 import { WizardStep1 } from "./wizard-step1";
@@ -17,11 +17,11 @@ const WIZARD_STEPS = [
   { label: "후기 + 팁" },
 ];
 
-interface ReviewWizardProps {
-  resumeSubmissionId?: number;
-}
-
-export function ReviewWizard({ resumeSubmissionId }: ReviewWizardProps) {
+export function ReviewWizard() {
+  const searchParams = useSearchParams();
+  const resumeSubmissionId = searchParams.get("resume")
+    ? Number(searchParams.get("resume"))
+    : undefined;
   const router = useRouter();
   const queryClient = useQueryClient();
   const [currentStep, setCurrentStep] = useState(1);
