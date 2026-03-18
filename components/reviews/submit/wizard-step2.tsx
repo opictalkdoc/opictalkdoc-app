@@ -7,6 +7,7 @@ import { QuestionSelector } from "./question-selector";
 import type { SelectedQuestion } from "./question-selector";
 import { saveQuestions } from "@/lib/actions/reviews";
 import { COMBO_STEPS, type QuestionItem } from "@/lib/types/reviews";
+import type { InitialTopicsMap } from "./review-wizard";
 
 // 콤보별 선택된 질문 상태
 export interface ComboResult {
@@ -19,9 +20,10 @@ interface WizardStep2Props {
   setComboResults: React.Dispatch<React.SetStateAction<Record<string, ComboResult>>>;
   onComplete: () => void;
   onBack: () => void;
+  initialTopics?: InitialTopicsMap;
 }
 
-export function WizardStep2({ submissionId, comboResults, setComboResults, onComplete, onBack }: WizardStep2Props) {
+export function WizardStep2({ submissionId, comboResults, setComboResults, onComplete, onBack, initialTopics }: WizardStep2Props) {
   const [currentComboIdx, setCurrentComboIdx] = useState(0);
   const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
   const [isCustomMode, setIsCustomMode] = useState(false);
@@ -292,6 +294,7 @@ export function WizardStep2({ submissionId, comboResults, setComboResults, onCom
             onNotRemembered={handleNotRemembered}
             onCustomInput={handleCustomInput}
             excludedTopics={excludedTopics}
+            initialTopics={initialTopics?.[category]}
           />
         </div>
       )}

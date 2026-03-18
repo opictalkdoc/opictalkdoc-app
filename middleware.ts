@@ -41,7 +41,13 @@ export async function middleware(request: NextRequest) {
   const isProtected = protectedRoutes.some((route) => pathname.startsWith(route));
   const isAuthRoute = authRoutes.some((route) => pathname.startsWith(route));
 
-  if (isProtected || isAuthRoute) {
+  // Server Action 요청은 redirect하지 않음
+  // - Server Action은 데이터 요청이지 페이지 네비게이션이 아님
+  // - redirect 응답을 받으면 Next.js 클라이언트 라우터가 페이지를 튕김
+  // - 인증은 각 Server Action 내부의 requireUser()가 담당
+  const isServerAction = request.headers.has("Next-Action");
+
+  if ((isProtected || isAuthRoute) && !isServerAction) {
     // getSession(): 쿠키에서 JWT 로컬 읽기 — 네트워크 호출 없음 (빠름)
     // getUser(): Supabase API 왕복 — 200-300ms (느림)
     // 라우팅 판단은 getSession()으로 충분, 실제 보안은 RLS가 담당

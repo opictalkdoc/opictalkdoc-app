@@ -1,12 +1,28 @@
 import { Suspense } from "react";
 import { ImmersiveHeader } from "@/components/layout/immersive-header";
 import { ReviewWizard } from "@/components/reviews/submit/review-wizard";
+import { getTopicsByCategory } from "@/lib/queries/master-questions";
 
 export const metadata = {
   title: "후기 제출 | 오픽톡닥",
 };
 
-export default function ReviewSubmitPage() {
+export default async function ReviewSubmitPage() {
+  // 서버에서 3개 카테고리 주제 목록을 병렬 사전 조회
+  // → 미들웨어가 이미 세션을 갱신한 상태이므로 실패하지 않음
+  // → initialData로 전달하면 클라이언트에서 Server Action 재호출 불필요
+  const [topicsGeneral, topicsRoleplay, topicsAdvance] = await Promise.all([
+    getTopicsByCategory("일반"),
+    getTopicsByCategory("롤플레이"),
+    getTopicsByCategory("어드밴스"),
+  ]);
+
+  const initialTopics = {
+    "일반": topicsGeneral,
+    "롤플레이": topicsRoleplay,
+    "어드밴스": topicsAdvance,
+  };
+
   return (
     <>
       <ImmersiveHeader title="후기 제출" backHref="/reviews" />
@@ -19,7 +35,7 @@ export default function ReviewSubmitPage() {
             </div>
           }
         >
-          <ReviewWizard />
+          <ReviewWizard initialTopics={initialTopics} />
         </Suspense>
       </main>
     </>

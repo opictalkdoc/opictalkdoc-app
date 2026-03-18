@@ -17,7 +17,14 @@ const WIZARD_STEPS = [
   { label: "후기 + 팁" },
 ];
 
-export function ReviewWizard() {
+// 서버에서 사전 조회한 카테고리별 주제 목록
+export type InitialTopicsMap = Record<"일반" | "롤플레이" | "어드밴스", { topic: string; count: number; frequency: number }[]>;
+
+interface ReviewWizardProps {
+  initialTopics?: InitialTopicsMap;
+}
+
+export function ReviewWizard({ initialTopics }: ReviewWizardProps) {
   const searchParams = useSearchParams();
   const resumeSubmissionId = searchParams.get("resume")
     ? Number(searchParams.get("resume"))
@@ -156,6 +163,7 @@ export function ReviewWizard() {
             setComboResults={setComboResults}
             onComplete={() => setCurrentStep(3)}
             onBack={() => setCurrentStep(1)}
+            initialTopics={initialTopics}
           />
         )}
         {currentStep === 3 && submissionId && (

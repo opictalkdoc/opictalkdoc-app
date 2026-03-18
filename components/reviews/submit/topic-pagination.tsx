@@ -197,6 +197,7 @@ interface TopicPaginationProps {
   onCustomInput?: () => void;
   excludedTopics?: string[];
   trialTopic?: string; // 체험판: 이 주제만 선택 가능, 나머지 비활성
+  initialTopics?: { topic: string; count: number; frequency: number }[];
 }
 
 export function TopicPagination({
@@ -207,6 +208,7 @@ export function TopicPagination({
   onCustomInput,
   excludedTopics = [],
   trialTopic,
+  initialTopics,
 }: TopicPaginationProps) {
   const [page, setPage] = useState(0);
 
@@ -220,10 +222,13 @@ export function TopicPagination({
     return () => mq.removeEventListener("change", update);
   }, []);
 
-  const { data: topics = [], isLoading: loading } = useQuery({
+  const { data: topics = [], isLoading: loading, isError, refetch } = useQuery({
     queryKey: ["topics", category],
     queryFn: () => getTopicsByCategory(category),
     staleTime: Infinity, // 고정 데이터, 세션 내 1회 로드
+    initialData: initialTopics,
+    initialDataUpdatedAt: initialTopics ? Date.now() : undefined,
+    retry: 2,
   });
 
   // category, 제외 주제, 페이지 크기 변경 시 page 리셋
@@ -251,6 +256,20 @@ export function TopicPagination({
             className="h-16 animate-pulse rounded-[var(--radius-lg)] bg-surface-secondary"
           />
         ))}
+      </div>
+    );
+  }
+
+  if (isError && topics.length === 0) {
+    return (
+      <div className="flex flex-col items-center gap-2 rounded-[var(--radius-lg)] border border-accent-200 bg-accent-50/50 py-6">
+        <p className="text-sm text-foreground-secondary">주제 목록을 불러오지 못했습니다</p>
+        <button
+          onClick={() => refetch()}
+          className="rounded-[var(--radius-md)] bg-primary-500 px-4 py-1.5 text-xs font-medium text-white hover:bg-primary-600 transition-colors"
+        >
+          다시 시도
+        </button>
       </div>
     );
   }
