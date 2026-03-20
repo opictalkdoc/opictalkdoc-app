@@ -3,7 +3,7 @@
  * GPT-4.1로 IH 목표 등급 기준 재평가 결과
  */
 
-import evalResult from "../../scripts/eval-v2-result.json";
+import evalResult from "./eval-v2-result.json";
 import type { FulfillmentStatus } from "./result-v2";
 
 export interface QuestionEvalV2Real {
