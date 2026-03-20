@@ -23,27 +23,31 @@ export function ResultPageV2({ sessionId }: { sessionId: string }) {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      {/* ── 탭 네비게이션 ── */}
-      <nav className="sticky top-0 z-10 flex border-b border-border bg-background/95 backdrop-blur-sm">
-        {TABS.map((tab) => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.key;
-          return (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              className={`flex flex-1 items-center justify-center gap-1.5 py-3 text-sm font-medium transition-colors ${
-                isActive
-                  ? "border-b-2 border-primary-500 text-primary-500"
-                  : "text-foreground-muted hover:text-foreground-secondary"
-              }`}
-            >
-              <Icon className="hidden h-4 w-4 sm:block" />
-              {tab.label}
-            </button>
-          );
-        })}
-      </nav>
+      {/* ── 탭 네비게이션 (v1 동일) ── */}
+      <div className="shrink-0 border-b border-border bg-surface/80 backdrop-blur-sm">
+        <div className="mx-auto max-w-5xl">
+          <div className="flex">
+            {TABS.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.key;
+              return (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key)}
+                  className={`flex flex-1 items-center justify-center gap-1.5 border-b-2 px-2 py-3 text-xs font-medium transition-colors sm:gap-2 sm:px-4 sm:text-sm ${
+                    isActive
+                      ? "border-primary-500 text-primary-600"
+                      : "border-transparent text-foreground-muted hover:border-border hover:text-foreground-secondary"
+                  }`}
+                >
+                  <Icon size={14} className="sm:hidden md:block" />
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
 
       {/* ── 탭 콘텐츠 (스크롤 영역 — relative+absolute 패턴) ── */}
       <div className="relative min-h-0 flex-1">

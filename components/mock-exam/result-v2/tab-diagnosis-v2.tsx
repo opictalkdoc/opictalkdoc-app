@@ -15,7 +15,7 @@ export function TabDiagnosisV2() {
   const { sections, checkboxResults } = MOCK_DIAGNOSIS_DATA;
 
   return (
-    <div className="mx-auto w-full max-w-[860px] px-4 py-8 md:px-8 md:py-12">
+    <div className="mx-auto max-w-5xl px-3 py-4 sm:px-6 sm:py-6">
       <div className="space-y-6">
         {sections.map((section) => (
           <DiagnosticSectionCard

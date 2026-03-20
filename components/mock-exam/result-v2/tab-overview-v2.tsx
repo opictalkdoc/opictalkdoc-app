@@ -9,7 +9,7 @@ export function TabOverviewV2() {
   const gradeDef = GRADE_DEFINITIONS[session.grade];
 
   return (
-    <div className="mx-auto w-full max-w-[860px] px-4 py-8 md:px-8 md:py-12">
+    <div className="mx-auto max-w-5xl px-3 py-4 sm:px-6 sm:py-6">
 
       {/* ── 진단서 프레임 ── */}
       <div className="border border-[#d0d7e2] bg-white shadow-[0_12px_36px_rgba(20,28,38,0.06)]">
