@@ -119,7 +119,6 @@ export async function getAdminUserDetail(userId: string): Promise<AdminUserDetai
     scriptsResult,
     confirmedScriptsResult,
     ordersResult,
-    tutoringResult,
   ] = await Promise.all([
     // 1. 기본 정보
     supabase.auth.admin.getUserById(userId),
@@ -155,13 +154,6 @@ export async function getAdminUserDetail(userId: string): Promise<AdminUserDetai
     supabase
       .from("orders")
       .select("id, product_name, amount, status, created_at", { count: "exact" })
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false })
-      .limit(5),
-    // 8. 최근 튜터링 5건
-    supabase
-      .from("tutoring_sessions")
-      .select("id, target_grade, status, total_prescriptions, completed_prescriptions, created_at", { count: "exact" })
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
       .limit(5),
@@ -226,7 +218,6 @@ export async function getAdminUserDetail(userId: string): Promise<AdminUserDetai
       completedMockExams: completedMockResult.count || 0,
       totalScripts: scriptsResult.count || 0,
       confirmedScripts: confirmedScriptsResult.count || 0,
-      totalTutoringSessions: tutoringResult.count || 0,
       totalOrders: ordersResult.count || 0,
       totalSpent,
     },
@@ -245,14 +236,6 @@ export async function getAdminUserDetail(userId: string): Promise<AdminUserDetai
       amount: o.amount,
       status: o.status,
       created_at: o.created_at,
-    })),
-    recentTutoring: (tutoringResult.data || []).map((t) => ({
-      id: t.id,
-      target_grade: t.target_grade,
-      status: t.status,
-      total_prescriptions: t.total_prescriptions,
-      completed_prescriptions: t.completed_prescriptions,
-      created_at: t.created_at,
     })),
   };
 }

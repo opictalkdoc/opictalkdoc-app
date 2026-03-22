@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { Users, CreditCard, GraduationCap, Clock, TrendingUp, BarChart3, ClipboardList, FileText, BookOpen } from "lucide-react";
+import { Users, CreditCard, GraduationCap, Clock, TrendingUp, BarChart3, ClipboardList, FileText } from "lucide-react";
 import { getAdminDashboardStats, getRecentActivity, getConversionMetrics } from "@/lib/actions/admin/stats";
 import { AdminStatCard } from "@/components/admin/admin-stat-card";
 import { AdminTrendCharts } from "@/components/admin/admin-trend-charts";
@@ -118,7 +118,7 @@ async function ConversionStats() {
           sub={`/ ${m.totalUsers}명`}
         />
       </div>
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 gap-3">
         <MetricCard
           icon={<ClipboardList size={16} className="text-sky-500" />}
           label="모의고사"
@@ -130,12 +130,6 @@ async function ConversionStats() {
           label="스크립트"
           value={`${m.scriptRate}%`}
           sub={`${m.scriptUsers}명`}
-        />
-        <MetricCard
-          icon={<BookOpen size={16} className="text-violet-500" />}
-          label="튜터링"
-          value={`${m.tutoringRate}%`}
-          sub={`${m.tutoringUsers}명`}
         />
       </div>
     </div>

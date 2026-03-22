@@ -135,58 +135,6 @@ export interface MockExamStats {
   statusDistribution: Record<string, number>;
 }
 
-// ── 튜터링 모니터링 ──
-
-export interface AdminTutoringSession {
-  id: string;
-  user_id: string;
-  user_email: string;
-  mock_test_session_id: string | null;
-  target_grade: string | null;
-  current_level: string | null;
-  status: string;
-  total_prescriptions: number;
-  completed_prescriptions: number;
-  created_at: string;
-  last_activity_at: string | null;
-}
-
-export interface AdminTutoringStats {
-  totalSessions: number;
-  activeSessions: number;
-  completedSessions: number;
-  totalPrescriptions: number;
-  completedPrescriptions: number;
-  totalTrainings: number;
-  levelDistribution: Record<string, number>;
-  statusDistribution: Record<string, number>;
-  questionTypeDistribution: Record<string, number>;
-}
-
-export interface AdminTutoringDetail {
-  session: AdminTutoringSession;
-  prescriptions: Array<{
-    id: string;
-    priority: number;
-    question_type: string;
-    weakness_tags: string[];
-    status: string;
-    training_count: number;
-    best_score: number | null;
-  }>;
-  recentTrainings: Array<{
-    id: string;
-    prescription_id: string;
-    session_type: string;
-    question_type: string;
-    overall_score: number | null;
-    screens_completed: number;
-    duration_seconds: number | null;
-    started_at: string;
-    completed_at: string | null;
-  }>;
-}
-
 // ── 사용자 상세 ──
 
 export interface AdminUserDetail {
@@ -196,7 +144,6 @@ export interface AdminUserDetail {
     completedMockExams: number;
     totalScripts: number;
     confirmedScripts: number;
-    totalTutoringSessions: number;
     totalOrders: number;
     totalSpent: number;
   };
@@ -222,14 +169,6 @@ export interface AdminUserDetail {
     status: string;
     created_at: string;
   }>;
-  recentTutoring: Array<{
-    id: string;
-    target_grade: string | null;
-    status: string;
-    total_prescriptions: number;
-    completed_prescriptions: number;
-    created_at: string;
-  }>;
 }
 
 // ── 대시보드 추이 ──
@@ -240,7 +179,6 @@ export interface DailyTrend {
   revenue: number;
   mockExams: number;
   scripts: number;
-  tutoring: number;
 }
 
 // ── 전환율 지표 ──
@@ -254,10 +192,8 @@ export interface ConversionMetrics {
   avgOrderValue: number;
   mockExamUsers: number;
   scriptUsers: number;
-  tutoringUsers: number;
   mockExamRate: number;
   scriptRate: number;
-  tutoringRate: number;
 }
 
 // ── 공통 ──

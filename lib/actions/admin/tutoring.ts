@@ -2,110 +2,187 @@
 
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth";
-import type {
-  AdminTutoringSession,
-  AdminTutoringStats,
-  AdminTutoringDetail,
-  PaginatedResult,
-} from "@/lib/types/admin";
+import type { TutoringTier } from "@/lib/types/tutoring-v2";
 
-// ── 튜터링 통계 조회 ──
+// ═══════════════════════════════════════════════════
+// 타입
+// ═══════════════════════════════════════════════════
+
+export interface AdminTutoringStats {
+  totalSessions: number;
+  completedSessions: number;
+  activeSessions: number;
+  pendingSessions: number;
+  tierDistribution: Record<number, number>;
+  topDrills: Array<{ drill_code: string; name_ko: string; count: number }>;
+  avgCompletionRate: number; // 0~100
+}
+
+export interface AdminTutoringSession {
+  id: string;
+  user_id: string;
+  user_email: string;
+  current_tier: TutoringTier;
+  current_grade: string;
+  target_grade: string | null;
+  status: string;
+  created_at: string;
+  completed_at: string | null;
+  prescriptionCount: number;
+  completedPrescriptions: number;
+}
+
+export interface AdminTutoringDetail {
+  session: {
+    id: string;
+    user_id: string;
+    user_email: string;
+    current_tier: TutoringTier;
+    current_grade: string;
+    target_grade: string | null;
+    status: string;
+    bottleneck_results: unknown;
+    diagnosis_text: unknown;
+    created_at: string;
+    completed_at: string | null;
+  };
+  prescriptions: Array<{
+    id: string;
+    priority: number;
+    wp_code: string;
+    drill_code: string;
+    drill_name: string;
+    drill_category: string;
+    status: string;
+    prescription_data: unknown;
+    created_at: string;
+    training: {
+      id: string;
+      approach: string;
+      rounds_completed: number;
+      max_rounds: number;
+      passed: boolean;
+      started_at: string;
+      completed_at: string | null;
+    } | null;
+    attempts: Array<{
+      id: string;
+      round_number: number;
+      transcript: string | null;
+      duration_sec: number | null;
+      word_count: number | null;
+      wpm: number | null;
+      passed: boolean;
+      created_at: string;
+    }>;
+  }>;
+}
+
+// ═══════════════════════════════════════════════════
+// 1. 통계
+// ═══════════════════════════════════════════════════
 
 export async function getAdminTutoringStats(): Promise<AdminTutoringStats> {
   const { supabase } = await requireAdmin();
 
-  const [
-    totalRes,
-    activeRes,
-    completedRes,
-    totalPrescRes,
-    completedPrescRes,
-    totalTrainingRes,
-    sessionsRes,
-    prescriptionsRes,
-  ] = await Promise.all([
-    // 전체 세션 수
-    supabase.from("tutoring_sessions").select("*", { count: "exact", head: true }),
-    // 진행 중 세션
-    supabase.from("tutoring_sessions").select("*", { count: "exact", head: true }).eq("status", "active"),
-    // 완료 세션
-    supabase.from("tutoring_sessions").select("*", { count: "exact", head: true }).eq("status", "completed"),
-    // 전체 처방 수
-    supabase.from("tutoring_prescriptions").select("*", { count: "exact", head: true }),
-    // 완료 처방 수
-    supabase.from("tutoring_prescriptions").select("*", { count: "exact", head: true }).eq("status", "completed"),
-    // 전체 훈련 수
-    supabase.from("tutoring_training_sessions").select("*", { count: "exact", head: true }),
-    // 등급+상태 분포 계산용
-    supabase.from("tutoring_sessions").select("target_grade, status"),
-    // 질문 타입 분포 계산용
-    supabase.from("tutoring_prescriptions").select("question_type"),
-  ]);
+  const [totalRes, completedRes, activeRes, pendingRes, sessionsRes, prescriptionsRes, drillRes] =
+    await Promise.all([
+      // 전체 세션 수
+      supabase.from("tutoring_sessions_v2").select("*", { count: "exact", head: true }),
+      // 완료 세션 수
+      supabase.from("tutoring_sessions_v2").select("*", { count: "exact", head: true }).eq("status", "completed"),
+      // 활성 세션 수
+      supabase.from("tutoring_sessions_v2").select("*", { count: "exact", head: true }).eq("status", "active"),
+      // 대기 세션 수
+      supabase.from("tutoring_sessions_v2").select("*", { count: "exact", head: true }).eq("status", "pending"),
+      // 티어 분포용
+      supabase.from("tutoring_sessions_v2").select("current_tier"),
+      // 처방 완료율 계산용
+      supabase.from("tutoring_prescriptions_v2").select("status"),
+      // 드릴별 사용 빈도
+      supabase
+        .from("tutoring_prescriptions_v2")
+        .select("drill_code"),
+    ]);
 
-  // 등급별 분포
-  const levelDistribution: Record<string, number> = {};
-  const statusDistribution: Record<string, number> = {};
+  // 티어별 분포
+  const tierDistribution: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0 };
   for (const s of sessionsRes.data || []) {
-    if (s.target_grade) {
-      levelDistribution[s.target_grade] = (levelDistribution[s.target_grade] || 0) + 1;
-    }
-    if (s.status) {
-      statusDistribution[s.status] = (statusDistribution[s.status] || 0) + 1;
-    }
+    const t = s.current_tier as number;
+    if (t >= 1 && t <= 4) tierDistribution[t] = (tierDistribution[t] || 0) + 1;
   }
 
-  // 질문 타입 분포
-  const questionTypeDistribution: Record<string, number> = {};
-  for (const p of prescriptionsRes.data || []) {
-    if (p.question_type) {
-      questionTypeDistribution[p.question_type] = (questionTypeDistribution[p.question_type] || 0) + 1;
-    }
+  // 평균 완료율
+  const totalPrescriptions = (prescriptionsRes.data || []).length;
+  const completedPrescriptions = (prescriptionsRes.data || []).filter((p) => p.status === "completed").length;
+  const avgCompletionRate = totalPrescriptions > 0 ? Math.round((completedPrescriptions / totalPrescriptions) * 100) : 0;
+
+  // 드릴별 사용 빈도 Top 5
+  const drillCounts: Record<string, number> = {};
+  for (const p of drillRes.data || []) {
+    drillCounts[p.drill_code] = (drillCounts[p.drill_code] || 0) + 1;
+  }
+  const sortedDrills = Object.entries(drillCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5);
+
+  // 드릴 이름 조회
+  let topDrills: AdminTutoringStats["topDrills"] = [];
+  if (sortedDrills.length > 0) {
+    const drillCodes = sortedDrills.map(([code]) => code);
+    const { data: drillNames } = await supabase
+      .from("tutoring_drill_catalog")
+      .select("code, name_ko")
+      .in("code", drillCodes);
+
+    const nameMap = new Map((drillNames || []).map((d) => [d.code, d.name_ko]));
+    topDrills = sortedDrills.map(([code, count]) => ({
+      drill_code: code,
+      name_ko: nameMap.get(code) || code,
+      count,
+    }));
   }
 
   return {
     totalSessions: totalRes.count || 0,
-    activeSessions: activeRes.count || 0,
     completedSessions: completedRes.count || 0,
-    totalPrescriptions: totalPrescRes.count || 0,
-    completedPrescriptions: completedPrescRes.count || 0,
-    totalTrainings: totalTrainingRes.count || 0,
-    levelDistribution,
-    statusDistribution,
-    questionTypeDistribution,
+    activeSessions: activeRes.count || 0,
+    pendingSessions: pendingRes.count || 0,
+    tierDistribution,
+    topDrills,
+    avgCompletionRate,
   };
 }
 
-// ── 튜터링 세션 목록 조회 ──
+// ═══════════════════════════════════════════════════
+// 2. 세션 목록 (페이지네이션)
+// ═══════════════════════════════════════════════════
 
 export async function getAdminTutoringSessions(params: {
   page?: number;
   pageSize?: number;
   status?: string;
+  tier?: string;
   search?: string;
-  level?: string;
-}): Promise<PaginatedResult<AdminTutoringSession>> {
+}): Promise<{ data: AdminTutoringSession[]; total: number; page: number; pageSize: number }> {
   const { supabase } = await requireAdmin();
   const page = params.page || 1;
   const pageSize = params.pageSize || 20;
-  const offset = (page - 1) * pageSize;
 
-  let query = supabase
-    .from("tutoring_sessions")
-    .select("*", { count: "exact" });
+  // 세션 쿼리
+  let query = supabase.from("tutoring_sessions_v2").select("*", { count: "exact" });
 
   if (params.status && params.status !== "all") {
     query = query.eq("status", params.status);
   }
-
-  // 등급 필터: sessions 테이블에 직접 존재
-  if (params.level && params.level !== "all") {
-    query = query.eq("target_grade", params.level);
+  if (params.tier && params.tier !== "all") {
+    query = query.eq("current_tier", Number(params.tier));
   }
 
-  // 이메일 검색 시 넉넉히 조회 후 클라이언트 필터
+  // 이메일 검색 시 넉넉히 가져옴
   const isSearching = !!params.search?.trim();
   const fetchSize = isSearching ? 200 : pageSize;
-  const fetchOffset = isSearching ? 0 : offset;
+  const fetchOffset = isSearching ? 0 : (page - 1) * pageSize;
 
   const { data, count } = await query
     .order("created_at", { ascending: false })
@@ -113,7 +190,7 @@ export async function getAdminTutoringSessions(params: {
 
   if (!data) return { data: [], total: 0, page, pageSize };
 
-  // 사용자 이메일 병렬 조회
+  // 사용자 이메일 조회
   const userIds = [...new Set(data.map((s) => s.user_id))];
   const emailResults = await Promise.all(
     userIds.map((uid) => supabase.auth.admin.getUserById(uid))
@@ -123,24 +200,45 @@ export async function getAdminTutoringSessions(params: {
     if (res.data?.user?.email) emailMap.set(userIds[i], res.data.user.email);
   });
 
-  let sessions: AdminTutoringSession[] = data.map((s) => ({
-    id: s.id,
-    user_id: s.user_id,
-    user_email: emailMap.get(s.user_id) || "-",
-    mock_test_session_id: s.mock_test_session_id,
-    target_grade: s.target_grade,
-    current_level: s.current_level,
-    status: s.status,
-    total_prescriptions: s.total_prescriptions ?? 0,
-    completed_prescriptions: s.completed_prescriptions ?? 0,
-    created_at: s.created_at,
-    last_activity_at: s.last_activity_at,
-  }));
+  // 처방 수 집계
+  const sessionIds = data.map((s) => s.id);
+  const { data: prescriptions } = await supabase
+    .from("tutoring_prescriptions_v2")
+    .select("session_id, status")
+    .in("session_id", sessionIds);
 
-  // 클라이언트 필터: 이메일 검색
+  const prescriptionCounts = new Map<string, { total: number; completed: number }>();
+  for (const p of prescriptions || []) {
+    const cur = prescriptionCounts.get(p.session_id) || { total: 0, completed: 0 };
+    cur.total++;
+    if (p.status === "completed") cur.completed++;
+    prescriptionCounts.set(p.session_id, cur);
+  }
+
+  let sessions: AdminTutoringSession[] = data.map((s) => {
+    const pc = prescriptionCounts.get(s.id) || { total: 0, completed: 0 };
+    return {
+      id: s.id,
+      user_id: s.user_id,
+      user_email: emailMap.get(s.user_id) || "-",
+      current_tier: s.current_tier,
+      current_grade: s.current_grade,
+      target_grade: s.target_grade,
+      status: s.status,
+      created_at: s.created_at,
+      completed_at: s.completed_at,
+      prescriptionCount: pc.total,
+      completedPrescriptions: pc.completed,
+    };
+  });
+
+  // 이메일 검색 필터
   if (isSearching) {
     const term = params.search!.trim().toLowerCase();
     sessions = sessions.filter((s) => s.user_email.toLowerCase().includes(term));
+  }
+
+  if (isSearching) {
     const filteredTotal = sessions.length;
     const start = (page - 1) * pageSize;
     sessions = sessions.slice(start, start + pageSize);
@@ -150,102 +248,135 @@ export async function getAdminTutoringSessions(params: {
   return { data: sessions, total: count || 0, page, pageSize };
 }
 
-// ── 튜터링 세션 상세 조회 ──
+// ═══════════════════════════════════════════════════
+// 3. 세션 상세
+// ═══════════════════════════════════════════════════
 
-export async function getAdminTutoringDetail(
-  sessionId: string
-): Promise<AdminTutoringDetail | null> {
+export async function getAdminTutoringDetail(sessionId: string): Promise<{
+  error?: string;
+  data?: AdminTutoringDetail;
+}> {
   const { supabase } = await requireAdmin();
 
-  // 1. 세션 조회
+  // 세션 조회
   const { data: session, error: sessErr } = await supabase
-    .from("tutoring_sessions")
+    .from("tutoring_sessions_v2")
     .select("*")
     .eq("id", sessionId)
     .single();
 
-  if (sessErr || !session) return null;
-
-  // 2. 사용자 이메일 + 처방 목록 병렬 조회
-  const [emailRes, prescRes] = await Promise.all([
-    supabase.auth.admin.getUserById(session.user_id),
-    supabase
-      .from("tutoring_prescriptions")
-      .select("id, priority, question_type, weakness_tags, status, training_count, best_score")
-      .eq("session_id", sessionId)
-      .order("priority"),
-  ]);
-
-  const prescriptions = (prescRes.data || []).map((p) => ({
-    id: p.id,
-    priority: p.priority,
-    question_type: p.question_type,
-    weakness_tags: Array.isArray(p.weakness_tags) ? p.weakness_tags : [],
-    status: p.status,
-    training_count: p.training_count ?? 0,
-    best_score: p.best_score,
-  }));
-
-  // 3. 처방 ID 목록으로 최근 훈련 기록 조회
-  const prescriptionIds = prescriptions.map((p) => p.id);
-  let recentTrainings: AdminTutoringDetail["recentTrainings"] = [];
-
-  if (prescriptionIds.length > 0) {
-    const { data: trainings } = await supabase
-      .from("tutoring_training_sessions")
-      .select(
-        "id, prescription_id, session_type, question_type, overall_score, screens_completed, duration_seconds, started_at, completed_at"
-      )
-      .in("prescription_id", prescriptionIds)
-      .order("started_at", { ascending: false })
-      .limit(10);
-
-    recentTrainings = (trainings || []).map((t) => ({
-      id: t.id,
-      prescription_id: t.prescription_id,
-      session_type: t.session_type,
-      question_type: t.question_type,
-      overall_score: t.overall_score,
-      screens_completed: t.screens_completed ?? 0,
-      duration_seconds: t.duration_seconds,
-      started_at: t.started_at,
-      completed_at: t.completed_at,
-    }));
+  if (sessErr || !session) {
+    return { error: "세션을 찾을 수 없습니다" };
   }
 
-  // 세션 데이터 매핑
-  const sessionData: AdminTutoringSession = {
-    id: session.id,
-    user_id: session.user_id,
-    user_email: emailRes.data?.user?.email || "-",
-    mock_test_session_id: session.mock_test_session_id,
-    target_grade: session.target_grade,
-    current_level: session.current_level,
-    status: session.status,
-    total_prescriptions: session.total_prescriptions ?? 0,
-    completed_prescriptions: session.completed_prescriptions ?? 0,
-    created_at: session.created_at,
-    last_activity_at: session.last_activity_at,
-  };
+  // 사용자 이메일
+  const { data: userData } = await supabase.auth.admin.getUserById(session.user_id);
+  const userEmail = userData?.user?.email || "-";
+
+  // 처방 + 드릴 카탈로그 조회
+  const { data: prescriptions } = await supabase
+    .from("tutoring_prescriptions_v2")
+    .select("*")
+    .eq("session_id", sessionId)
+    .order("priority");
+
+  // 드릴 코드 목록으로 카탈로그 조회
+  const drillCodes = [...new Set((prescriptions || []).map((p) => p.drill_code))];
+  const { data: drills } = drillCodes.length > 0
+    ? await supabase.from("tutoring_drill_catalog").select("code, name_ko, category").in("code", drillCodes)
+    : { data: [] };
+  const drillMap = new Map((drills || []).map((d) => [d.code, d]));
+
+  // 처방 ID 목록으로 훈련 조회
+  const prescriptionIds = (prescriptions || []).map((p) => p.id);
+  const { data: trainings } = prescriptionIds.length > 0
+    ? await supabase.from("tutoring_training_v2").select("*").in("prescription_id", prescriptionIds)
+    : { data: [] };
+  const trainingMap = new Map((trainings || []).map((t) => [t.prescription_id, t]));
+
+  // 훈련 ID 목록으로 시도 조회
+  const trainingIds = (trainings || []).map((t) => t.id);
+  const { data: attempts } = trainingIds.length > 0
+    ? await supabase.from("tutoring_attempts_v2").select("*").in("training_id", trainingIds).order("round_number")
+    : { data: [] };
+  const attemptsByTraining = new Map<string, typeof attempts>();
+  for (const a of attempts || []) {
+    const list = attemptsByTraining.get(a.training_id) || [];
+    list.push(a);
+    attemptsByTraining.set(a.training_id, list);
+  }
+
+  // 조합
+  const prescriptionDetails = (prescriptions || []).map((p) => {
+    const drill = drillMap.get(p.drill_code);
+    const training = trainingMap.get(p.id);
+    const trainingAttempts = training ? (attemptsByTraining.get(training.id) || []) : [];
+
+    return {
+      id: p.id,
+      priority: p.priority,
+      wp_code: p.wp_code,
+      drill_code: p.drill_code,
+      drill_name: drill?.name_ko || p.drill_code,
+      drill_category: drill?.category || "-",
+      status: p.status,
+      prescription_data: p.prescription_data,
+      created_at: p.created_at,
+      training: training
+        ? {
+            id: training.id,
+            approach: training.approach,
+            rounds_completed: training.rounds_completed,
+            max_rounds: training.max_rounds,
+            passed: training.passed,
+            started_at: training.started_at,
+            completed_at: training.completed_at,
+          }
+        : null,
+      attempts: trainingAttempts.map((a) => ({
+        id: a.id,
+        round_number: a.round_number,
+        transcript: a.transcript,
+        duration_sec: a.duration_sec ? Number(a.duration_sec) : null,
+        word_count: a.word_count,
+        wpm: a.wpm ? Number(a.wpm) : null,
+        passed: a.passed,
+        created_at: a.created_at,
+      })),
+    };
+  });
 
   return {
-    session: sessionData,
-    prescriptions,
-    recentTrainings,
+    data: {
+      session: {
+        id: session.id,
+        user_id: session.user_id,
+        user_email: userEmail,
+        current_tier: session.current_tier,
+        current_grade: session.current_grade,
+        target_grade: session.target_grade,
+        status: session.status,
+        bottleneck_results: session.bottleneck_results,
+        diagnosis_text: session.diagnosis_text,
+        created_at: session.created_at,
+        completed_at: session.completed_at,
+      },
+      prescriptions: prescriptionDetails,
+    },
   };
 }
 
-// ── 튜터링 세션 삭제 (관리자) ──
+// ═══════════════════════════════════════════════════
+// 4. 세션 삭제 (CASCADE)
+// ═══════════════════════════════════════════════════
 
-export async function deleteAdminTutoringSession(
-  sessionId: string
-): Promise<{ error?: string }> {
+export async function deleteAdminTutoringSession(sessionId: string): Promise<{ error?: string }> {
   const { supabase, userId, userEmail } = await requireAdmin();
 
-  // 1. 세션 존재 확인
+  // 세션 존재 확인
   const { data: session } = await supabase
-    .from("tutoring_sessions")
-    .select("id, user_id, target_grade, status")
+    .from("tutoring_sessions_v2")
+    .select("id, user_id, current_tier, status")
     .eq("id", sessionId)
     .single();
 
@@ -253,37 +384,33 @@ export async function deleteAdminTutoringSession(
     return { error: "세션을 찾을 수 없습니다" };
   }
 
-  // 2. 처방 ID 목록 조회
+  // Storage 파일 삭제: attempts에서 audio_url 조회
   const { data: prescriptions } = await supabase
-    .from("tutoring_prescriptions")
+    .from("tutoring_prescriptions_v2")
     .select("id")
     .eq("session_id", sessionId);
 
-  const prescriptionIds = (prescriptions || []).map((p) => p.id);
-
-  if (prescriptionIds.length > 0) {
-    // 3. 훈련 세션 ID 목록 조회
-    const { data: trainingSessions } = await supabase
-      .from("tutoring_training_sessions")
+  if (prescriptions?.length) {
+    const prescriptionIds = prescriptions.map((p) => p.id);
+    const { data: trainings } = await supabase
+      .from("tutoring_training_v2")
       .select("id")
       .in("prescription_id", prescriptionIds);
 
-    const trainingSessionIds = (trainingSessions || []).map((t) => t.id);
-
-    if (trainingSessionIds.length > 0) {
-      // 4. Storage 파일 삭제: attempts에서 audio_url 조회
+    if (trainings?.length) {
+      const trainingIds = trainings.map((t) => t.id);
       const { data: attempts } = await supabase
-        .from("tutoring_attempts")
-        .select("user_audio_url")
-        .in("training_session_id", trainingSessionIds);
+        .from("tutoring_attempts_v2")
+        .select("audio_url")
+        .in("training_id", trainingIds);
 
       if (attempts?.length) {
         const bucketSegment = "/tutoring-recordings/";
         const audioPaths = attempts
           .map((a) => {
-            if (!a.user_audio_url) return null;
-            const idx = a.user_audio_url.indexOf(bucketSegment);
-            return idx !== -1 ? a.user_audio_url.slice(idx + bucketSegment.length) : null;
+            if (!a.audio_url) return null;
+            const idx = a.audio_url.indexOf(bucketSegment);
+            return idx !== -1 ? a.audio_url.slice(idx + bucketSegment.length) : null;
           })
           .filter(Boolean) as string[];
 
@@ -292,18 +419,11 @@ export async function deleteAdminTutoringSession(
         }
       }
     }
-
-    // 5. 수동 삭제: training_sessions (SET NULL이므로 CASCADE 안 됨)
-    //    → training_sessions 삭제 시 attempts는 CASCADE로 자동 삭제
-    await supabase
-      .from("tutoring_training_sessions")
-      .delete()
-      .in("prescription_id", prescriptionIds);
   }
 
-  // 6. 세션 삭제 → prescriptions(CASCADE) → review_schedule(CASCADE) 자동
+  // DB 삭제 (prescriptions, training, attempts는 CASCADE로 자동 삭제)
   const { error } = await supabase
-    .from("tutoring_sessions")
+    .from("tutoring_sessions_v2")
     .delete()
     .eq("id", sessionId);
 
@@ -311,16 +431,16 @@ export async function deleteAdminTutoringSession(
     return { error: "세션 삭제에 실패했습니다" };
   }
 
-  // 7. 감사 로그
+  // 감사 로그
   await supabase.from("admin_audit_log").insert({
     admin_id: userId,
     admin_email: userEmail,
     action: "delete_tutoring_session",
-    target_type: "tutoring_session",
+    target_type: "tutoring_session_v2",
     target_id: sessionId,
     details: {
       user_id: session.user_id,
-      target_grade: session.target_grade,
+      tier: session.current_tier,
       status: session.status,
     },
   });

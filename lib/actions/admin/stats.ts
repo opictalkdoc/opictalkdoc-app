@@ -103,7 +103,6 @@ export async function getConversionMetrics(): Promise<ConversionMetrics> {
     avgOrderRes,
     mockUsersRes,
     scriptUsersRes,
-    tutoringUsersRes,
   ] = await Promise.all([
     // 전체 회원
     supabase.from("user_credits").select("*", { count: "exact", head: true }),
@@ -120,8 +119,6 @@ export async function getConversionMetrics(): Promise<ConversionMetrics> {
     supabase.from("mock_test_sessions").select("user_id").limit(5000),
     // 스크립트 1회+ 생성자 — 최대 5000건
     supabase.from("scripts").select("user_id").limit(5000),
-    // 튜터링 1회+ 사용자 — 최대 5000건
-    supabase.from("tutoring_sessions").select("user_id").limit(5000),
   ]);
 
   const totalUsers = totalUsersRes.count || 0;
@@ -130,7 +127,6 @@ export async function getConversionMetrics(): Promise<ConversionMetrics> {
   const paidUsers = new Set((paidUsersRes.data || []).map((r) => r.user_id)).size;
   const mockExamUsers = new Set((mockUsersRes.data || []).map((r) => r.user_id)).size;
   const scriptUsers = new Set((scriptUsersRes.data || []).map((r) => r.user_id)).size;
-  const tutoringUsers = new Set((tutoringUsersRes.data || []).map((r) => r.user_id)).size;
 
   const orders = avgOrderRes.data || [];
   const avgOrderValue = orders.length > 0
@@ -148,10 +144,8 @@ export async function getConversionMetrics(): Promise<ConversionMetrics> {
     avgOrderValue,
     mockExamUsers,
     scriptUsers,
-    tutoringUsers,
     mockExamRate: safe(mockExamUsers),
     scriptRate: safe(scriptUsers),
-    tutoringRate: safe(tutoringUsers),
   };
 }
 
@@ -166,7 +160,7 @@ export async function getDailyTrends(days: number = 30): Promise<DailyTrend[]> {
   startDate.setDate(startDate.getDate() - days);
   const startIso = startDate.toISOString();
 
-  const [signupsRes, ordersRes, mockRes, scriptsRes, tutoringRes] =
+  const [signupsRes, ordersRes, mockRes, scriptsRes] =
     await Promise.all([
       supabase
         .from("user_credits")
@@ -189,11 +183,6 @@ export async function getDailyTrends(days: number = 30): Promise<DailyTrend[]> {
         .select("created_at")
         .gte("created_at", startIso)
         .limit(10000),
-      supabase
-        .from("tutoring_sessions")
-        .select("created_at")
-        .gte("created_at", startIso)
-        .limit(10000),
     ]);
 
   // days일 동안의 날짜 배열 생성
@@ -208,7 +197,6 @@ export async function getDailyTrends(days: number = 30): Promise<DailyTrend[]> {
       revenue: 0,
       mockExams: 0,
       scripts: 0,
-      tutoring: 0,
     });
   }
 
@@ -234,12 +222,6 @@ export async function getDailyTrends(days: number = 30): Promise<DailyTrend[]> {
   for (const row of scriptsRes.data || []) {
     const key = row.created_at?.split("T")[0];
     if (key && dateMap.has(key)) dateMap.get(key)!.scripts++;
-  }
-
-  // tutoring_sessions
-  for (const row of tutoringRes.data || []) {
-    const key = row.created_at?.split("T")[0];
-    if (key && dateMap.has(key)) dateMap.get(key)!.tutoring++;
   }
 
   return [...dateMap.values()];

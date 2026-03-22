@@ -8,7 +8,6 @@ import {
   ClipboardList,
   FileText,
   CreditCard,
-  GraduationCap,
   User,
   Calendar,
   Loader2,
@@ -419,7 +418,7 @@ function UserDetailView({
     );
   }
 
-  const { user, summary, recentMockExams, recentScripts, recentOrders, recentTutoring } = detail;
+  const { user, summary, recentMockExams, recentScripts, recentOrders } = detail;
 
   return (
     <div className="space-y-6">
@@ -523,11 +522,6 @@ function UserDetailView({
           value={`${summary.confirmedScripts}/${summary.totalScripts}`}
         />
         <SummaryCard
-          icon={<GraduationCap size={18} className="text-violet-500" />}
-          label="튜터링"
-          value={`${summary.totalTutoringSessions}건`}
-        />
-        <SummaryCard
           icon={<CreditCard size={18} className="text-amber-500" />}
           label="결제"
           value={`${formatCurrency(summary.totalSpent)} (${summary.totalOrders}건)`}
@@ -603,29 +597,6 @@ function UserDetailView({
         )}
       </SectionCard>
 
-      {/* F. 최근 튜터링 */}
-      <SectionCard title="최근 튜터링">
-        {recentTutoring.length === 0 ? (
-          <EmptyRow />
-        ) : (
-          <div className="divide-y divide-border">
-            {recentTutoring.map((t) => (
-              <div key={t.id} className="flex items-center justify-between px-4 py-2.5 text-sm">
-                <div className="flex items-center gap-3">
-                  <span className="text-foreground-secondary">{formatDate(t.created_at)}</span>
-                  <GradeBadge level={t.target_grade} />
-                </div>
-                <div className="flex items-center gap-3">
-                  <StatusBadge status={t.status} />
-                  <span className="text-xs text-foreground-secondary">
-                    {t.completed_prescriptions}/{t.total_prescriptions}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </SectionCard>
     </div>
   );
 }

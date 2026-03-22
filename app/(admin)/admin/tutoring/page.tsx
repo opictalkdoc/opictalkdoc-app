@@ -2,87 +2,56 @@
 
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, BookOpen, Loader2, Search, Trash2, X } from "lucide-react";
+import {
+  BookOpen,
+  Search,
+  Trash2,
+  X,
+  Loader2,
+  ArrowLeft,
+  ChevronDown,
+  ChevronRight,
+  CheckCircle2,
+  Clock,
+  Circle,
+} from "lucide-react";
 import {
   getAdminTutoringStats,
   getAdminTutoringSessions,
   getAdminTutoringDetail,
   deleteAdminTutoringSession,
 } from "@/lib/actions/admin/tutoring";
-import type { AdminTutoringStats, AdminTutoringDetail, AdminTutoringSession } from "@/lib/types/admin";
+import type { AdminTutoringSession, AdminTutoringDetail } from "@/lib/actions/admin/tutoring";
+import { TIER_LABELS, APPROACH_LABELS, CATEGORY_LABELS } from "@/lib/types/tutoring-v2";
+import type { TutoringTier, DrillCategory, TrainingApproach } from "@/lib/types/tutoring-v2";
 
 // ── 상수 ──
 
 const STATUS_OPTIONS = [
   { value: "all", label: "전체" },
-  { value: "active", label: "진행 중" },
+  { value: "pending", label: "대기" },
+  { value: "active", label: "활성" },
   { value: "completed", label: "완료" },
-  { value: "paused", label: "일시정지" },
 ];
 
-const LEVEL_OPTIONS = ["all", "AL", "IH", "IM3", "IM2", "IM1", "IL", "NH", "NM", "NL"];
-const LEVEL_LABELS: Record<string, string> = { all: "전체 등급" };
+const TIER_OPTIONS = [
+  { value: "all", label: "전체 티어" },
+  { value: "1", label: "T1 (→IL)" },
+  { value: "2", label: "T2 (→IM)" },
+  { value: "3", label: "T3 (→IH)" },
+  { value: "4", label: "T4 (→AL)" },
+];
 
-// 등급 색상 (모의고사와 동일)
-const LEVEL_COLORS: Record<string, string> = {
-  AL: "bg-purple-100 text-purple-800",
-  IH: "bg-blue-100 text-blue-800",
-  IM3: "bg-sky-100 text-sky-800",
-  IM2: "bg-teal-100 text-teal-700",
-  IM1: "bg-emerald-100 text-emerald-700",
-  IL: "bg-amber-100 text-amber-800",
-  NH: "bg-orange-100 text-orange-700",
-  NM: "bg-red-100 text-red-700",
-  NL: "bg-red-100 text-red-700",
-};
-
-// 질문 타입 한글 매핑
-const QUESTION_TYPE_LABELS: Record<string, string> = {
-  description: "묘사",
-  routine: "루틴",
-  comparison: "비교",
-  past_experience_memorable: "경험(기억)",
-  past_experience_change: "경험(변화)",
-  past_experience_childhood: "경험(어린시절)",
-  comparison_change: "비교변화",
-  social_issue: "사회적이슈",
-  ask_questions: "질문하기",
-  suggest_alternative: "대안제시",
-};
-
-// 질문 타입 색상
-const QUESTION_TYPE_COLORS: Record<string, string> = {
-  description: "bg-blue-50 text-blue-700",
-  routine: "bg-green-50 text-green-700",
-  comparison: "bg-purple-50 text-purple-700",
-  past_experience_memorable: "bg-amber-50 text-amber-700",
-  past_experience_change: "bg-orange-50 text-orange-700",
-  past_experience_childhood: "bg-rose-50 text-rose-700",
-  comparison_change: "bg-indigo-50 text-indigo-700",
-  social_issue: "bg-red-50 text-red-700",
-  ask_questions: "bg-cyan-50 text-cyan-700",
-  suggest_alternative: "bg-teal-50 text-teal-700",
-};
-
-// 세션 타입 한글
-const SESSION_TYPE_LABELS: Record<string, string> = {
-  guided: "가이드",
-  free: "자유",
-  simulation: "시뮬레이션",
-};
-
-// ── 상태 뱃지 ──
+// ── 뱃지 컴포넌트 ──
 
 function StatusBadge({ status }: { status: string }) {
   const config: Record<string, { label: string; bg: string; text: string }> = {
-    active: { label: "진행 중", bg: "bg-blue-50", text: "text-blue-700" },
     completed: { label: "완료", bg: "bg-green-50", text: "text-green-700" },
-    paused: { label: "일시정지", bg: "bg-amber-50", text: "text-amber-700" },
-    pending: { label: "대기", bg: "bg-gray-50", text: "text-gray-600" },
+    active: { label: "활성", bg: "bg-blue-50", text: "text-blue-700" },
+    pending: { label: "대기", bg: "bg-amber-50", text: "text-amber-700" },
     in_progress: { label: "진행 중", bg: "bg-blue-50", text: "text-blue-700" },
   };
   const c = config[status] || { label: status, bg: "bg-gray-100", text: "text-gray-500" };
-
   return (
     <span className={`inline-flex rounded px-1.5 py-0.5 text-xs font-medium ${c.bg} ${c.text}`}>
       {c.label}
@@ -90,15 +59,52 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-// ── 등급 뱃지 ──
+function TierBadge({ tier }: { tier: TutoringTier }) {
+  const colors: Record<number, string> = {
+    1: "bg-orange-100 text-orange-800",
+    2: "bg-amber-100 text-amber-800",
+    3: "bg-sky-100 text-sky-800",
+    4: "bg-purple-100 text-purple-800",
+  };
+  return (
+    <span className={`inline-flex rounded px-1.5 py-0.5 text-xs font-bold ${colors[tier] || "bg-gray-100 text-gray-700"}`}>
+      T{tier}
+    </span>
+  );
+}
 
-function GradeBadge({ level }: { level: string | null }) {
-  if (!level) return <span className="text-xs text-foreground-muted">-</span>;
-  const color = LEVEL_COLORS[level] || "bg-gray-100 text-gray-700";
-
+function GradeBadge({ grade }: { grade: string | null }) {
+  if (!grade) return <span className="text-xs text-foreground-muted">-</span>;
+  const gradeColor: Record<string, string> = {
+    AL: "bg-purple-100 text-purple-800",
+    IH: "bg-blue-100 text-blue-800",
+    IM3: "bg-sky-100 text-sky-800",
+    IM2: "bg-teal-100 text-teal-700",
+    IM1: "bg-emerald-100 text-emerald-700",
+    IL: "bg-amber-100 text-amber-800",
+    NH: "bg-orange-100 text-orange-700",
+    NM: "bg-red-100 text-red-700",
+    NL: "bg-red-100 text-red-700",
+  };
+  const color = gradeColor[grade] || "bg-gray-100 text-gray-700";
   return (
     <span className={`inline-flex rounded px-1.5 py-0.5 text-xs font-bold ${color}`}>
-      {level}
+      {grade}
+    </span>
+  );
+}
+
+function CategoryBadge({ category }: { category: string }) {
+  const colors: Record<string, string> = {
+    structure: "bg-blue-50 text-blue-700",
+    accuracy: "bg-green-50 text-green-700",
+    content: "bg-purple-50 text-purple-700",
+    delivery: "bg-amber-50 text-amber-700",
+    task: "bg-rose-50 text-rose-700",
+  };
+  return (
+    <span className={`inline-flex rounded px-1.5 py-0.5 text-[11px] font-medium ${colors[category] || "bg-gray-50 text-gray-600"}`}>
+      {CATEGORY_LABELS[category as DrillCategory] || category}
     </span>
   );
 }
@@ -151,122 +157,89 @@ function ConfirmDialog({
   );
 }
 
-// ── 통계 뷰 ──
+// ── 통계 카드 ──
 
-function TutoringStatsView({ stats }: { stats: AdminTutoringStats }) {
+function StatsSection({ stats }: { stats: ReturnType<typeof getAdminTutoringStats> extends Promise<infer T> ? T : never }) {
   return (
     <div className="space-y-4">
-      {/* 상단 5칸 요약 */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-        {[
-          { label: "전체 세션", value: stats.totalSessions },
-          { label: "진행 중", value: stats.activeSessions },
-          { label: "완료", value: stats.completedSessions },
-          { label: "총 처방", value: stats.totalPrescriptions },
-          { label: "총 훈련", value: stats.totalTrainings },
-        ].map((item) => (
-          <div
-            key={item.label}
-            className="rounded-xl border border-border bg-surface px-4 py-3"
-          >
-            <div className="text-xs text-foreground-muted">{item.label}</div>
-            <div className="mt-1 text-xl font-bold text-foreground">{item.value}</div>
-          </div>
-        ))}
+      {/* 상단 카드 */}
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <div className="rounded-xl border border-border bg-surface p-4">
+          <div className="text-xs text-foreground-muted">총 세션</div>
+          <div className="mt-1 text-2xl font-bold text-foreground">{stats.totalSessions}</div>
+        </div>
+        <div className="rounded-xl border border-border bg-surface p-4">
+          <div className="text-xs text-foreground-muted">완료</div>
+          <div className="mt-1 text-2xl font-bold text-green-600">{stats.completedSessions}</div>
+        </div>
+        <div className="rounded-xl border border-border bg-surface p-4">
+          <div className="text-xs text-foreground-muted">활성</div>
+          <div className="mt-1 text-2xl font-bold text-blue-600">{stats.activeSessions}</div>
+        </div>
+        <div className="rounded-xl border border-border bg-surface p-4">
+          <div className="text-xs text-foreground-muted">처방 완료율</div>
+          <div className="mt-1 text-2xl font-bold text-foreground">{stats.avgCompletionRate}%</div>
+        </div>
       </div>
 
-      {/* 하단 3칸 분포 */}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        {/* 등급별 분포 */}
+      {/* 하단: 티어 분포 + 인기 드릴 */}
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+        {/* 티어 분포 */}
         <div className="rounded-xl border border-border bg-surface p-4">
-          <div className="mb-2 text-xs font-medium text-foreground-secondary">목표 등급 분포</div>
-          <div className="flex flex-wrap gap-1.5">
-            {Object.entries(stats.levelDistribution)
-              .sort((a, b) => b[1] - a[1])
-              .map(([level, count]) => (
-                <span
-                  key={level}
-                  className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs font-medium ${
-                    LEVEL_COLORS[level] || "bg-gray-100 text-gray-700"
-                  }`}
-                >
-                  {level}
-                  <span className="font-bold">{count}</span>
-                </span>
-              ))}
-            {Object.keys(stats.levelDistribution).length === 0 && (
-              <span className="text-xs text-foreground-muted">데이터 없음</span>
-            )}
+          <div className="mb-3 text-xs font-medium text-foreground-muted">티어별 분포</div>
+          <div className="flex items-end gap-4">
+            {([1, 2, 3, 4] as const).map((tier) => {
+              const count = stats.tierDistribution[tier] || 0;
+              const maxCount = Math.max(...Object.values(stats.tierDistribution), 1);
+              const height = Math.max((count / maxCount) * 48, 4);
+              const colors = { 1: "bg-orange-400", 2: "bg-amber-400", 3: "bg-sky-400", 4: "bg-purple-400" };
+              return (
+                <div key={tier} className="flex flex-1 flex-col items-center gap-1">
+                  <span className="text-xs font-semibold text-foreground">{count}</span>
+                  <div className={`w-full rounded-t ${colors[tier]}`} style={{ height: `${height}px` }} />
+                  <span className="text-[11px] text-foreground-muted">T{tier}</span>
+                </div>
+              );
+            })}
           </div>
         </div>
 
-        {/* 상태별 분포 */}
+        {/* 인기 드릴 Top 5 */}
         <div className="rounded-xl border border-border bg-surface p-4">
-          <div className="mb-2 text-xs font-medium text-foreground-secondary">상태별 분포</div>
-          <div className="flex flex-wrap gap-1.5">
-            {Object.entries(stats.statusDistribution)
-              .sort((a, b) => b[1] - a[1])
-              .map(([st, count]) => {
-                const labels: Record<string, string> = {
-                  active: "진행 중",
-                  completed: "완료",
-                  paused: "일시정지",
-                };
-                return (
-                  <span
-                    key={st}
-                    className="inline-flex items-center gap-1 rounded bg-surface-secondary px-1.5 py-0.5 text-xs text-foreground-secondary"
-                  >
-                    {labels[st] || st}
-                    <span className="font-bold text-foreground">{count}</span>
-                  </span>
-                );
-              })}
-            {Object.keys(stats.statusDistribution).length === 0 && (
-              <span className="text-xs text-foreground-muted">데이터 없음</span>
-            )}
-          </div>
-        </div>
-
-        {/* 질문 타입별 분포 */}
-        <div className="rounded-xl border border-border bg-surface p-4">
-          <div className="mb-2 text-xs font-medium text-foreground-secondary">질문 타입 분포</div>
-          <div className="flex flex-wrap gap-1.5">
-            {Object.entries(stats.questionTypeDistribution)
-              .sort((a, b) => b[1] - a[1])
-              .map(([qt, count]) => (
-                <span
-                  key={qt}
-                  className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs font-medium ${
-                    QUESTION_TYPE_COLORS[qt] || "bg-gray-100 text-gray-700"
-                  }`}
-                >
-                  {QUESTION_TYPE_LABELS[qt] || qt}
-                  <span className="font-bold">{count}</span>
-                </span>
+          <div className="mb-3 text-xs font-medium text-foreground-muted">인기 드릴 Top 5</div>
+          {stats.topDrills.length === 0 ? (
+            <p className="text-xs text-foreground-muted">데이터 없음</p>
+          ) : (
+            <div className="space-y-1.5">
+              {stats.topDrills.map((drill, idx) => (
+                <div key={drill.drill_code} className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="w-4 text-right text-xs font-medium text-foreground-muted">{idx + 1}</span>
+                    <span className="text-sm text-foreground">{drill.name_ko}</span>
+                  </div>
+                  <span className="text-xs font-medium tabular-nums text-foreground-secondary">{drill.count}회</span>
+                </div>
               ))}
-            {Object.keys(stats.questionTypeDistribution).length === 0 && (
-              <span className="text-xs text-foreground-muted">데이터 없음</span>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
   );
 }
 
-// ── 상세 뷰 ──
+// ── 세션 상세 뷰 ──
 
-function TutoringDetailView({
+function SessionDetailView({
   sessionId,
-  userEmail,
   onBack,
 }: {
   sessionId: string;
-  userEmail: string;
   onBack: () => void;
 }) {
-  const { data: detail, isLoading } = useQuery({
+  const [expandedPrescription, setExpandedPrescription] = useState<string | null>(null);
+
+  const { data: result, isLoading } = useQuery({
     queryKey: ["admin-tutoring-detail", sessionId],
     queryFn: () => getAdminTutoringDetail(sessionId),
     staleTime: 5 * 60 * 1000,
@@ -280,7 +253,7 @@ function TutoringDetailView({
     );
   }
 
-  if (!detail) {
+  if (!result?.data || result?.error) {
     return (
       <div className="py-10 text-center text-sm text-foreground-secondary">
         세션 데이터를 불러올 수 없습니다.
@@ -288,11 +261,7 @@ function TutoringDetailView({
     );
   }
 
-  // 처방 진행률 계산
-  const prescProgress =
-    detail.session.total_prescriptions > 0
-      ? Math.round((detail.session.completed_prescriptions / detail.session.total_prescriptions) * 100)
-      : 0;
+  const { session, prescriptions } = result.data;
 
   return (
     <div className="space-y-4">
@@ -306,150 +275,138 @@ function TutoringDetailView({
           목록
         </button>
         <div className="flex items-center gap-2 text-sm text-foreground-muted">
-          <span>{userEmail}</span>
+          <span>{session.user_email}</span>
           <span className="text-border">·</span>
-          <GradeBadge level={detail.session.target_grade} />
-          <span className="text-border">·</span>
-          <StatusBadge status={detail.session.status} />
-          <span className="text-border">·</span>
-          <span className="text-xs">진행률 {prescProgress}%</span>
+          <span className="font-mono text-xs">{session.id}</span>
         </div>
+      </div>
+
+      {/* 세션 정보 */}
+      <div className="rounded-xl border border-border bg-surface p-5">
+        <div className="flex flex-wrap items-center gap-3">
+          <TierBadge tier={session.current_tier} />
+          <GradeBadge grade={session.current_grade} />
+          {session.target_grade && (
+            <>
+              <span className="text-xs text-foreground-muted">→</span>
+              <GradeBadge grade={session.target_grade} />
+            </>
+          )}
+          <StatusBadge status={session.status} />
+          <span className="text-xs text-foreground-muted">
+            {new Date(session.created_at).toLocaleString("ko-KR")}
+          </span>
+        </div>
+
+        {/* 진단 텍스트 */}
+        {session.diagnosis_text && typeof session.diagnosis_text === "object" ? (
+          <div className="mt-4 rounded-lg bg-surface-secondary p-3">
+            <div className="text-xs font-medium text-foreground-muted">진단</div>
+            <p className="mt-1 text-sm text-foreground">
+              {(session.diagnosis_text as Record<string, string>).one_liner || "-"}
+            </p>
+          </div>
+        ) : null}
       </div>
 
       {/* 처방 목록 */}
-      <div className="rounded-xl border border-border bg-surface">
-        <div className="border-b border-border px-4 py-2.5">
-          <span className="text-sm font-medium text-foreground">
-            처방 목록 ({detail.prescriptions.length}건)
-          </span>
-        </div>
-        {detail.prescriptions.length === 0 ? (
-          <div className="py-8 text-center text-sm text-foreground-muted">
-            처방이 없습니다.
-          </div>
+      <div className="space-y-2">
+        <h3 className="text-sm font-semibold text-foreground">처방 ({prescriptions.length}개)</h3>
+
+        {prescriptions.length === 0 ? (
+          <p className="py-6 text-center text-sm text-foreground-muted">처방 없음</p>
         ) : (
-          detail.prescriptions.map((p, idx) => (
-            <div
-              key={p.id}
-              className={`flex items-center gap-3 px-4 py-3 ${
-                idx < detail.prescriptions.length - 1 ? "border-b border-border/50" : ""
-              }`}
-            >
-              {/* 우선순위 */}
-              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-surface-secondary text-xs font-bold text-foreground-secondary">
-                {p.priority}
-              </span>
-
-              {/* 질문 타입 */}
-              <span
-                className={`shrink-0 rounded px-1.5 py-0.5 text-xs font-medium ${
-                  QUESTION_TYPE_COLORS[p.question_type] || "bg-gray-100 text-gray-700"
-                }`}
-              >
-                {QUESTION_TYPE_LABELS[p.question_type] || p.question_type}
-              </span>
-
-              {/* 약점 태그 */}
-              <div className="flex min-w-0 flex-1 flex-wrap gap-1">
-                {p.weakness_tags.slice(0, 3).map((tag, i) => (
-                  <span
-                    key={i}
-                    className="rounded bg-red-50 px-1 py-0.5 text-[10px] text-red-600"
-                  >
-                    {String(tag)}
-                  </span>
-                ))}
-              </div>
-
-              {/* 훈련 횟수 + 최고 점수 */}
-              <div className="flex shrink-0 items-center gap-2 text-xs text-foreground-muted">
-                <span>훈련 {p.training_count}회</span>
-                {p.best_score !== null && (
-                  <span className="font-medium text-foreground-secondary">
-                    최고 {typeof p.best_score === "object" ? JSON.stringify(p.best_score) : p.best_score}
-                  </span>
-                )}
-              </div>
-
-              {/* 상태 */}
-              <StatusBadge status={p.status} />
-            </div>
-          ))
-        )}
-      </div>
-
-      {/* 최근 훈련 기록 */}
-      <div className="rounded-xl border border-border bg-surface">
-        <div className="border-b border-border px-4 py-2.5">
-          <span className="text-sm font-medium text-foreground">
-            최근 훈련 기록 ({detail.recentTrainings.length}건)
-          </span>
-        </div>
-        {detail.recentTrainings.length === 0 ? (
-          <div className="py-8 text-center text-sm text-foreground-muted">
-            훈련 기록이 없습니다.
-          </div>
-        ) : (
-          detail.recentTrainings.map((t, idx) => {
-            // 소요 시간 포맷
-            const durationMin = t.duration_seconds
-              ? Math.round(t.duration_seconds / 60)
-              : null;
-
+          prescriptions.map((p) => {
+            const isExpanded = expandedPrescription === p.id;
             return (
-              <div
-                key={t.id}
-                className={`flex items-center gap-3 px-4 py-3 ${
-                  idx < detail.recentTrainings.length - 1 ? "border-b border-border/50" : ""
-                }`}
-              >
-                {/* 날짜 */}
-                <div className="shrink-0 text-xs text-foreground-muted">
-                  {new Date(t.started_at).toLocaleString("ko-KR", {
-                    month: "short",
-                    day: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </div>
-
-                {/* 질문 타입 */}
-                <span
-                  className={`shrink-0 rounded px-1.5 py-0.5 text-xs font-medium ${
-                    QUESTION_TYPE_COLORS[t.question_type] || "bg-gray-100 text-gray-700"
-                  }`}
+              <div key={p.id} className="rounded-xl border border-border bg-surface">
+                {/* 처방 헤더 */}
+                <button
+                  onClick={() => setExpandedPrescription(isExpanded ? null : p.id)}
+                  className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-surface-secondary/50"
                 >
-                  {QUESTION_TYPE_LABELS[t.question_type] || t.question_type}
-                </span>
+                  {isExpanded ? <ChevronDown size={14} className="shrink-0 text-foreground-muted" /> : <ChevronRight size={14} className="shrink-0 text-foreground-muted" />}
+                  <span className="w-6 text-center text-xs font-bold text-foreground-muted">#{p.priority}</span>
+                  <CategoryBadge category={p.drill_category} />
+                  <span className="flex-1 text-sm font-medium text-foreground">{p.drill_name}</span>
+                  <span className="text-xs text-foreground-muted">{p.wp_code}</span>
+                  <StatusBadge status={p.status} />
+                </button>
 
-                {/* 세션 타입 */}
-                <span className="shrink-0 rounded bg-surface-secondary px-1.5 py-0.5 text-xs text-foreground-secondary">
-                  {SESSION_TYPE_LABELS[t.session_type] || t.session_type}
-                </span>
+                {/* 확장 내용 */}
+                {isExpanded && (
+                  <div className="border-t border-border/50 px-4 py-3 space-y-3">
+                    {/* 처방 데이터 */}
+                    {p.prescription_data && typeof p.prescription_data === "object" ? (
+                      <div className="rounded-lg bg-surface-secondary p-3 space-y-2">
+                        {Object.entries(p.prescription_data as Record<string, string>).map(([key, val]) => (
+                          <div key={key}>
+                            <span className="text-[11px] font-medium text-foreground-muted">{key}</span>
+                            <p className="text-sm text-foreground">{val}</p>
+                          </div>
+                        ))}
+                      </div>
+                    ) : null}
 
-                {/* 진행도 */}
-                <span className="text-xs text-foreground-muted">
-                  {t.screens_completed}/6 화면
-                </span>
+                    {/* 훈련 정보 */}
+                    {p.training ? (
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-3 text-sm">
+                          <span className="text-xs text-foreground-muted">
+                            접근법: {APPROACH_LABELS[p.training.approach as TrainingApproach] || p.training.approach}
+                          </span>
+                          <span className="text-xs text-foreground-muted">
+                            라운드: {p.training.rounds_completed}/{p.training.max_rounds}
+                          </span>
+                          {p.training.passed ? (
+                            <span className="flex items-center gap-1 text-xs text-green-600">
+                              <CheckCircle2 size={12} /> 통과
+                            </span>
+                          ) : (
+                            <span className="flex items-center gap-1 text-xs text-foreground-muted">
+                              <Clock size={12} /> 미완
+                            </span>
+                          )}
+                        </div>
 
-                {/* 점수 */}
-                <div className="min-w-0 flex-1 text-right text-xs">
-                  {t.overall_score !== null ? (
-                    <span className="font-medium text-foreground">
-                      {typeof t.overall_score === "object"
-                        ? JSON.stringify(t.overall_score)
-                        : t.overall_score}
-                    </span>
-                  ) : (
-                    <span className="text-foreground-muted">-</span>
-                  )}
-                </div>
-
-                {/* 소요 시간 */}
-                {durationMin !== null && (
-                  <span className="shrink-0 text-xs text-foreground-muted">
-                    {durationMin}분
-                  </span>
+                        {/* 시도 목록 */}
+                        {p.attempts.length > 0 && (
+                          <div className="space-y-1">
+                            <div className="text-[11px] font-medium text-foreground-muted">시도 ({p.attempts.length}회)</div>
+                            {p.attempts.map((a) => (
+                              <div
+                                key={a.id}
+                                className="flex items-center gap-3 rounded-lg bg-surface-secondary px-3 py-2"
+                              >
+                                <span className="w-8 text-xs font-medium text-foreground-muted">R{a.round_number}</span>
+                                {a.passed ? (
+                                  <CheckCircle2 size={12} className="text-green-500" />
+                                ) : (
+                                  <Circle size={12} className="text-foreground-muted/50" />
+                                )}
+                                {a.duration_sec != null && (
+                                  <span className="text-xs tabular-nums text-foreground-secondary">{a.duration_sec}초</span>
+                                )}
+                                {a.word_count != null && (
+                                  <span className="text-xs tabular-nums text-foreground-secondary">{a.word_count}단어</span>
+                                )}
+                                {a.wpm != null && (
+                                  <span className="text-xs tabular-nums text-foreground-secondary">{a.wpm}wpm</span>
+                                )}
+                                {a.transcript && (
+                                  <span className="flex-1 truncate text-xs text-foreground-muted" title={a.transcript}>
+                                    {a.transcript.slice(0, 80)}{a.transcript.length > 80 ? "…" : ""}
+                                  </span>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-foreground-muted">훈련 기록 없음</p>
+                    )}
+                  </div>
                 )}
               </div>
             );
@@ -460,34 +417,35 @@ function TutoringDetailView({
   );
 }
 
-// ── 메인 페이지 ──
+// ═══════════════════════════════════════════════════
+// 메인 페이지
+// ═══════════════════════════════════════════════════
 
 export default function AdminTutoringPage() {
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const [status, setStatus] = useState("all");
-  const [level, setLevel] = useState("all");
+  const [tier, setTier] = useState("all");
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
-  const [selectedSession, setSelectedSession] = useState<{
-    id: string;
-    email: string;
-  } | null>(null);
+  const [selectedSession, setSelectedSession] = useState<string | null>(null);
 
-  // 삭제 모달 상태
+  // 삭제 모달
   const [deleteTarget, setDeleteTarget] = useState<AdminTutoringSession | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  // 통계
   const { data: stats } = useQuery({
     queryKey: ["admin-tutoring-stats"],
     queryFn: () => getAdminTutoringStats(),
     staleTime: 60_000,
   });
 
+  // 세션 목록
   const { data: sessionsResult, isLoading } = useQuery({
-    queryKey: ["admin-tutoring-sessions", page, status, level, search],
-    queryFn: () => getAdminTutoringSessions({ page, pageSize: 20, status, level, search }),
+    queryKey: ["admin-tutoring-sessions", page, status, tier, search],
+    queryFn: () => getAdminTutoringSessions({ page, pageSize: 20, status, tier, search }),
     staleTime: 30_000,
   });
 
@@ -520,10 +478,9 @@ export default function AdminTutoringPage() {
   if (selectedSession) {
     return (
       <div className="space-y-4">
-        <h1 className="text-xl font-bold text-foreground">튜터링 모니터링</h1>
-        <TutoringDetailView
-          sessionId={selectedSession.id}
-          userEmail={selectedSession.email}
+        <h1 className="text-xl font-bold text-foreground">튜터링 관리</h1>
+        <SessionDetailView
+          sessionId={selectedSession}
           onBack={() => setSelectedSession(null)}
         />
       </div>
@@ -532,9 +489,9 @@ export default function AdminTutoringPage() {
 
   return (
     <div className="space-y-5">
+      {/* 헤더 + 검색 */}
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-foreground">튜터링 모니터링</h1>
-        {/* 검색 바 */}
+        <h1 className="text-xl font-bold text-foreground">튜터링 관리</h1>
         <form onSubmit={handleSearch} className="flex gap-2">
           <div className="relative">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-foreground-muted" />
@@ -565,7 +522,7 @@ export default function AdminTutoringPage() {
         </form>
       </div>
 
-      {/* 에러 알림 */}
+      {/* 에러 */}
       {errorMsg && (
         <div className="flex items-center justify-between rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-700">
           <span>{errorMsg}</span>
@@ -576,19 +533,15 @@ export default function AdminTutoringPage() {
       )}
 
       {/* 통계 */}
-      {stats && <TutoringStatsView stats={stats} />}
+      {stats && <StatsSection stats={stats} />}
 
       {/* 필터 */}
       <div className="flex flex-wrap items-center gap-2">
-        {/* 상태 필터 */}
         <div className="flex gap-1">
           {STATUS_OPTIONS.map((opt) => (
             <button
               key={opt.value}
-              onClick={() => {
-                setStatus(opt.value);
-                setPage(1);
-              }}
+              onClick={() => { setStatus(opt.value); setPage(1); }}
               className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
                 status === opt.value
                   ? "bg-primary-500 text-white"
@@ -602,22 +555,21 @@ export default function AdminTutoringPage() {
 
         <span className="text-border">|</span>
 
-        {/* 등급 필터 */}
         <select
-          value={level}
-          onChange={(e) => { setLevel(e.target.value); setPage(1); }}
+          value={tier}
+          onChange={(e) => { setTier(e.target.value); setPage(1); }}
           className="rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs text-foreground"
         >
-          {LEVEL_OPTIONS.map((lv) => (
-            <option key={lv} value={lv}>
-              {LEVEL_LABELS[lv] || lv}
+          {TIER_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
             </option>
           ))}
         </select>
 
         {stats && (
           <span className="ml-auto text-sm text-foreground-muted">
-            총 <span className="font-semibold text-foreground">{stats.totalSessions}</span>건
+            총 <span className="font-semibold text-foreground">{total}</span>건
           </span>
         )}
       </div>
@@ -634,66 +586,63 @@ export default function AdminTutoringPage() {
             <span className="text-sm text-foreground-muted">튜터링 세션이 없습니다.</span>
           </div>
         ) : (
-          sessions.map((row, idx) => {
-            // 처방 진행률
-            const progress =
-              row.total_prescriptions > 0
-                ? `${row.completed_prescriptions}/${row.total_prescriptions}`
-                : "-";
-
-            return (
-              <div
-                key={row.id}
-                className={`group flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-surface-secondary ${
-                  idx < sessions.length - 1 ? "border-b border-border/50" : ""
-                }`}
-              >
-                {/* 왼쪽: 사용자+시간 */}
-                <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm font-medium text-foreground">
+          sessions.map((row, idx) => (
+            <div
+              key={row.id}
+              className={`group flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-surface-secondary ${
+                idx < sessions.length - 1 ? "border-b border-border/50" : ""
+              }`}
+            >
+              {/* 왼쪽: 사용자 정보 */}
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="truncate text-sm font-medium text-foreground">
                     {row.user_email}
-                  </div>
-                  <div className="mt-0.5 text-xs text-foreground-muted">
+                  </span>
+                  <TierBadge tier={row.current_tier} />
+                  <GradeBadge grade={row.current_grade} />
+                </div>
+                <div className="mt-0.5 flex items-center gap-2 text-xs text-foreground-muted">
+                  <span>
                     {new Date(row.created_at).toLocaleString("ko-KR", {
                       month: "long",
                       day: "numeric",
                       hour: "2-digit",
                       minute: "2-digit",
                     })}
-                  </div>
-                </div>
-
-                {/* 중앙: 등급+상태+진행률 */}
-                <div className="flex shrink-0 items-center gap-2">
-                  <GradeBadge level={row.target_grade} />
-                  <StatusBadge status={row.status} />
-                  <span className="rounded bg-surface-secondary px-1.5 py-0.5 text-xs tabular-nums text-foreground-secondary">
-                    {progress}
                   </span>
-                </div>
-
-                {/* 오른쪽: 액션 */}
-                <div className="flex shrink-0 items-center gap-1">
-                  <button
-                    onClick={() =>
-                      setSelectedSession({ id: row.id, email: row.user_email })
-                    }
-                    className="whitespace-nowrap rounded-md px-2.5 py-1 text-xs font-medium text-primary-600 transition-colors hover:bg-primary-50"
-                  >
-                    상세 보기
-                  </button>
-                  {/* 삭제 버튼 */}
-                  <button
-                    onClick={() => setDeleteTarget(row)}
-                    className="rounded-md p-1 text-foreground-muted/50 opacity-0 transition-all hover:bg-red-50 hover:text-red-500 group-hover:opacity-100"
-                    title="삭제"
-                  >
-                    <Trash2 size={14} />
-                  </button>
+                  {row.prescriptionCount > 0 && (
+                    <>
+                      <span className="text-border">·</span>
+                      <span>
+                        처방 {row.completedPrescriptions}/{row.prescriptionCount}
+                      </span>
+                    </>
+                  )}
                 </div>
               </div>
-            );
-          })
+
+              {/* 중앙: 상태 */}
+              <StatusBadge status={row.status} />
+
+              {/* 오른쪽: 액션 */}
+              <div className="flex shrink-0 items-center gap-1">
+                <button
+                  onClick={() => setSelectedSession(row.id)}
+                  className="whitespace-nowrap rounded-md px-2.5 py-1 text-xs font-medium text-primary-600 transition-colors hover:bg-primary-50"
+                >
+                  상세 보기
+                </button>
+                <button
+                  onClick={() => setDeleteTarget(row)}
+                  className="rounded-md p-1 text-foreground-muted/50 opacity-0 transition-all hover:bg-red-50 hover:text-red-500 group-hover:opacity-100"
+                  title="삭제"
+                >
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            </div>
+          ))
         )}
       </div>
 
@@ -724,7 +673,7 @@ export default function AdminTutoringPage() {
       <ConfirmDialog
         open={!!deleteTarget}
         title="튜터링 세션 삭제"
-        message={`${deleteTarget?.user_email || ""} 사용자의 세션을 삭제하시겠습니까? 처방, 훈련 기록, 녹음 파일이 모두 삭제됩니다.`}
+        message={`${deleteTarget?.user_email || ""} 사용자의 세션을 삭제하시겠습니까? 처방, 훈련, 시도, 녹음 파일이 모두 삭제됩니다.`}
         loading={deleting}
         onConfirm={handleDelete}
         onCancel={() => setDeleteTarget(null)}

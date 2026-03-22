@@ -197,15 +197,6 @@ export function AdminTrendCharts() {
                   dot={{ r: 2, fill: "#2563EB" }}
                   activeDot={{ r: 4 }}
                 />
-                <Line
-                  type="monotone"
-                  dataKey="tutoring"
-                  name="튜터링"
-                  stroke="#0D9488"
-                  strokeWidth={2}
-                  dot={{ r: 2, fill: "#0D9488" }}
-                  activeDot={{ r: 4 }}
-                />
               </LineChart>
             </ResponsiveContainer>
           </div>
