@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import {
   ClipboardCheck,
   ChevronRight,
@@ -268,6 +269,8 @@ export function TabPrescriptionV2({
   isLoading,
   diagnosisData,
 }: TabPrescriptionV2Props) {
+  const router = useRouter();
+
   // 세션 없을 때
   if (!sessionId) {
     return (
@@ -374,8 +377,7 @@ export function TabPrescriptionV2({
                   bottleneck={bottleneckMap.get(prescription.wp_code) ?? null}
                   isLocked={isLocked(prescription.priority)}
                   onStart={() => {
-                    // TODO: 훈련 세션 시작 → 훈련 페이지로 이동
-                    alert("훈련 시작 기능은 추후 구현됩니다.");
+                    router.push(`/tutoring/training?prescription_id=${prescription.id}`);
                   }}
                 />
               </div>

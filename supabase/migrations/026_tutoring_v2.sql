@@ -53,7 +53,7 @@ CREATE TABLE tutoring_wp_drill_mapping (
 CREATE TABLE tutoring_sessions_v2 (
   id TEXT PRIMARY KEY,
   user_id UUID NOT NULL REFERENCES auth.users(id),
-  mock_session_id UUID REFERENCES mock_test_sessions(id),
+  mock_session_id TEXT,                  -- mock_test_sessions.session_id (TEXT: mt_xxxxxxxx)
   current_tier INTEGER NOT NULL,
   current_grade TEXT NOT NULL,
   target_grade TEXT,

@@ -32,14 +32,13 @@ export function Footer() {
             <p>대표자: 전다영</p>
             <p>사업자등록번호: 757-18-02318</p>
             <p>소재지: 경상북도 구미시 해마루공원로 80, 104동 1903호</p>
-            <p>업태: 정보통신업 / 응용 소프트웨어 개발 및 공급업</p>
             <p>
               대표전화: 010-4715-8846 | 이메일:{" "}
               <a href="mailto:opictalkdoc@gmail.com">
                 opictalkdoc@gmail.com
               </a>
             </p>
-            <p>통신판매업 신고번호: 준비 중</p>
+            <p>통신판매업 신고번호: 제 2026-경북구미-0236 호</p>
           </div>
           <p className="mt-4 text-[#6E6358]">
             &copy; {new Date().getFullYear()} 오픽톡닥. All rights reserved.

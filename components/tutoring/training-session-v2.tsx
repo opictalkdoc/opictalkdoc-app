@@ -128,7 +128,10 @@ export function TrainingSessionV2({
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     recognition.onerror = (event: any) => {
-      console.error("Speech recognition error:", event.error);
+      // not-allowed, aborted 등은 무시 (녹음은 별도로 진행됨)
+      if (event.error !== "aborted") {
+        console.warn("Speech recognition:", event.error);
+      }
     };
 
     recognition.start();

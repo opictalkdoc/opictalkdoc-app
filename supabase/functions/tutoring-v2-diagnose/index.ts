@@ -75,15 +75,25 @@ function substituteVariables(
   return result;
 }
 
-/** JWT 인증 */
+/** 인증: JWT 또는 Service Role Key + body.user_id */
 async function authenticateUser(
   req: Request,
   supabase: ReturnType<typeof createClient>,
+  body?: Record<string, unknown>,
 ): Promise<string> {
   const authHeader = req.headers.get("Authorization");
   if (!authHeader) throw new Error("Authorization 헤더 없음");
 
   const token = authHeader.replace("Bearer ", "");
+
+  // Service Role Key로 호출된 경우 body.user_id 사용
+  if (token === SUPABASE_SERVICE_ROLE_KEY) {
+    const userId = body?.user_id as string | undefined;
+    if (!userId) throw new Error("Service Role 호출 시 user_id 필수");
+    return userId;
+  }
+
+  // 일반 JWT 인증
   const {
     data: { user },
     error,
@@ -262,21 +272,25 @@ Deno.serve(async (req: Request) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // JWT 인증
-    const userId = await authenticateUser(req, supabase);
-
     // ── 1. DB 병렬 로드 ──
 
-    const [sessionRes, promptsRes, profileRes] = await Promise.all([
-      // 튜터링 세션 (user_id 검증)
-      supabase
-        .from("tutoring_sessions_v2")
-        .select(
-          "id, user_id, mock_session_id, current_tier, current_grade, target_grade, bottleneck_results",
-        )
-        .eq("id", session_id)
-        .single(),
-      // 프롬프트 3행
+    // 세션 먼저 조회 (user_id 획득)
+    const { data: session, error: sessionErr } = await supabase
+      .from("tutoring_sessions_v2")
+      .select(
+        "id, user_id, mock_session_id, current_tier, current_grade, target_grade, bottleneck_results",
+      )
+      .eq("id", session_id)
+      .single();
+
+    if (sessionErr || !session) {
+      throw new Error(`세션 조회 실패: ${sessionErr?.message}`);
+    }
+
+    const userId = session.user_id;
+
+    // 프롬프트 + 프로필 병렬 로드
+    const [promptsRes, profileRes] = await Promise.all([
       supabase
         .from("evaluation_prompts")
         .select("key, prompt_text")
@@ -285,26 +299,8 @@ Deno.serve(async (req: Request) => {
           "tutoring_diagnosis_user",
           "tutoring_diagnosis_schema",
         ]),
-      // 프로필 (target_grade)
       supabase.from("profiles").select("target_grade").eq("id", userId).single(),
     ]);
-
-    if (sessionRes.error || !sessionRes.data) {
-      throw new Error(`세션 조회 실패: ${sessionRes.error?.message}`);
-    }
-
-    const session = sessionRes.data;
-
-    // user_id 검증
-    if (session.user_id !== userId) {
-      return new Response(
-        JSON.stringify({ error: "본인 세션만 접근 가능" }),
-        {
-          status: 403,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        },
-      );
-    }
 
     if (promptsRes.error || !promptsRes.data || promptsRes.data.length < 3) {
       throw new Error(

@@ -49,8 +49,10 @@ export function TutoringV2Content({
     tabParam && tabs.some((t) => t.id === tabParam) ? tabParam : "diagnosis";
   const [activeTab, setActiveTabState] = useState<TabId>(initialTab);
 
-  // 활성 세션 ID (튜터링 시작 후 설정)
-  const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
+  // 활성 세션 ID (초기 로드 시 진단 데이터에서 가져오거나, 튜터링 시작 후 설정)
+  const [activeSessionId, setActiveSessionId] = useState<string | null>(
+    initialDiagnosis?.activeSessionId ?? null
+  );
 
   const setActiveTab = useCallback((id: TabId) => {
     setActiveTabState(id);

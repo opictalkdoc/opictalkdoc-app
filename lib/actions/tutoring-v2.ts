@@ -57,6 +57,7 @@ export interface DiagnosisV2Result {
   latestSessionDate: string;
   latestSessionMode: string;
   hasActiveSession: boolean;
+  activeSessionId: string | null;
 }
 
 export async function getDiagnosisV2(): Promise<ActionResult<DiagnosisV2Result>> {
@@ -72,6 +73,7 @@ export async function getDiagnosisV2(): Promise<ActionResult<DiagnosisV2Result>>
       .limit(1);
 
     const hasActiveSession = (activeSessions?.length ?? 0) > 0;
+    const activeSessionId = hasActiveSession ? activeSessions![0].id : null;
 
     // 2. 가장 최근 completed 모의고사 세션 조회
     const { data: latestSession, error: sessionErr } = await supabase
@@ -153,6 +155,7 @@ export async function getDiagnosisV2(): Promise<ActionResult<DiagnosisV2Result>>
         latestSessionDate: latestSession.started_at,
         latestSessionMode: latestSession.mode,
         hasActiveSession,
+        activeSessionId,
       },
     };
   } catch (err) {
@@ -315,8 +318,45 @@ export async function startTutoringV2(
 
       if (prescErr) {
         console.error('처방 생성 실패:', prescErr);
-        // 세션은 이미 생성됨 — 처방은 나중에 재생성 가능
       }
+    }
+
+    // 7. GPT 콘텐츠 생성 EF 호출 (진단 → 처방 순차)
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+
+    // 진단 EF — 한줄 진단 + 티어 설명 생성 → sessions.diagnosis_text 저장
+    try {
+      const diagnoseRes = await fetch(`${supabaseUrl}/functions/v1/tutoring-v2-diagnose`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${serviceKey}`,
+        },
+        body: JSON.stringify({ session_id: sessionId }),
+      });
+      if (!diagnoseRes.ok) {
+        console.error('진단 EF 실패:', await diagnoseRes.text());
+      }
+    } catch (e) {
+      console.error('진단 EF 호출 에러:', e);
+    }
+
+    // 처방 EF — 병목별 GPT 맞춤 콘텐츠 생성 → prescriptions.gpt_result 저장
+    try {
+      const prescribeRes = await fetch(`${supabaseUrl}/functions/v1/tutoring-v2-prescribe`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${serviceKey}`,
+        },
+        body: JSON.stringify({ session_id: sessionId }),
+      });
+      if (!prescribeRes.ok) {
+        console.error('처방 EF 실패:', await prescribeRes.text());
+      }
+    } catch (e) {
+      console.error('처방 EF 호출 에러:', e);
     }
 
     return { data: { sessionId } };
@@ -426,22 +466,18 @@ export async function getSessionV2(
 // 6. startTrainingV2() — 훈련 세션 생성
 // ═══════════════════════════════════════════════════
 
-export interface StartTrainingResult {
-  trainingId: string;
-  drillInfo: DrillDefinition;
-  prescriptionData: TutoringPrescriptionV2;
-}
+// startTrainingV2는 TrainingForPrescriptionResult를 직접 반환 (재조회 불필요)
 
 export async function startTrainingV2(
   prescriptionId: string,
-): Promise<ActionResult<StartTrainingResult>> {
+): Promise<ActionResult<TrainingForPrescriptionResult>> {
   try {
     const { supabase, userId } = await requireUser();
 
     // 1. 처방 조회
     const { data: prescription, error: prescErr } = await supabase
       .from('tutoring_prescriptions_v2')
-      .select('*, tutoring_sessions_v2:session_id(id, user_id)')
+      .select('*, tutoring_sessions_v2:session_id(*)')
       .eq('id', prescriptionId)
       .single();
 
@@ -450,7 +486,7 @@ export async function startTrainingV2(
     }
 
     // 소유권 검증
-    const session = prescription.tutoring_sessions_v2 as { id: string; user_id: string } | null;
+    const session = prescription.tutoring_sessions_v2 as TutoringSessionV2 | null;
     if (!session || session.user_id !== userId) {
       return { error: '접근 권한이 없습니다' };
     }
@@ -464,21 +500,9 @@ export async function startTrainingV2(
       .limit(1);
 
     if (existingTraining && existingTraining.length > 0) {
-      // 기존 훈련 세션 반환
-      const existingId = existingTraining[0].id;
-      const { data: drill } = await supabase
-        .from('tutoring_drill_catalog')
-        .select('*')
-        .eq('code', prescription.drill_code)
-        .single();
-
-      return {
-        data: {
-          trainingId: existingId,
-          drillInfo: drill as DrillDefinition,
-          prescriptionData: prescription as TutoringPrescriptionV2,
-        },
-      };
+      // 기존 훈련 세션 — getTrainingForPrescriptionV2로 위임
+      const existing = await getTrainingForPrescriptionV2(prescriptionId);
+      return existing;
     }
 
     // 2. 드릴 카탈로그에서 훈련 정보 조회
@@ -521,11 +545,26 @@ export async function startTrainingV2(
       .update({ status: 'in_progress' })
       .eq('id', prescriptionId);
 
+    // 5. 생성된 훈련을 포함한 전체 데이터 반환 (재조회 불필요)
+    const createdTraining: TutoringTrainingV2 = {
+      id: trainingId,
+      prescription_id: prescriptionId,
+      approach,
+      current_screen: 0,
+      rounds_completed: 0,
+      max_rounds: maxRounds,
+      passed: false,
+      started_at: new Date().toISOString(),
+      completed_at: null,
+    };
+
     return {
       data: {
-        trainingId,
-        drillInfo: drill as DrillDefinition,
-        prescriptionData: prescription as TutoringPrescriptionV2,
+        training: createdTraining,
+        prescription: prescription as TutoringPrescriptionV2,
+        drill: drill as DrillDefinition,
+        attempts: [],
+        session: session as unknown as TutoringSessionV2,
       },
     };
   } catch (err) {
