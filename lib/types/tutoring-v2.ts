@@ -127,6 +127,12 @@ export interface TutoringPrescriptionV2 {
   created_at: string;
 }
 
+export interface TrainingQuestion {
+  id: string;
+  text: string;
+  topic: string;
+}
+
 export interface TutoringTrainingV2 {
   id: string;
   prescription_id: string;
@@ -137,6 +143,7 @@ export interface TutoringTrainingV2 {
   passed: boolean;
   started_at: string;
   completed_at: string | null;
+  question_ids?: TrainingQuestion[];
 }
 
 export interface TutoringAttemptV2 {

@@ -28,7 +28,7 @@ import type {
   TutoringSessionV2,
   EvaluationGptResult,
   TrainingApproach,
-  APPROACH_LABELS,
+  TrainingQuestion,
 } from "@/lib/types/tutoring-v2";
 
 // ── 상수 ──
@@ -353,6 +353,9 @@ export function TrainingSessionV2({
               drill={drill}
               currentRound={currentRound}
               maxRounds={training.max_rounds}
+              question={
+                training.question_ids?.[currentRound - 1] ?? null
+              }
               recorder={recorder}
               transcript={transcript}
               isEvaluating={isEvaluating}
@@ -681,6 +684,7 @@ function ScreenPractice({
   drill,
   currentRound,
   maxRounds,
+  question,
   recorder,
   transcript,
   isEvaluating,
@@ -692,6 +696,7 @@ function ScreenPractice({
   drill: DrillDefinition;
   currentRound: number;
   maxRounds: number;
+  question: { id: string; text: string; topic: string } | null;
   recorder: ReturnType<typeof useRecorder>;
   transcript: string;
   isEvaluating: boolean;
@@ -714,14 +719,30 @@ function ScreenPractice({
         <h2 className="text-lg font-bold text-foreground">
           {drill.name_ko} 연습
         </h2>
-        <p className="mt-1 text-sm text-foreground-secondary">
-          {drill.success_criteria?.metric}
-        </p>
       </div>
 
+      {/* 연습 질문 */}
+      {question ? (
+        <div className="rounded-xl border border-primary-200 bg-primary-50/50 p-4">
+          <div className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-primary-600">
+            <BookOpen size={14} />
+            {question.topic && <span>{question.topic}</span>}
+          </div>
+          <p className="text-[15px] font-medium leading-relaxed text-foreground">
+            {question.text}
+          </p>
+        </div>
+      ) : (
+        <div className="rounded-xl border border-border bg-surface-secondary/50 p-4">
+          <p className="text-sm text-foreground-secondary">
+            아래 목표에 맞게 자유롭게 말해보세요
+          </p>
+        </div>
+      )}
+
       {/* 성공 기준 리마인더 */}
-      <div className="rounded-lg bg-primary-50 px-4 py-3 text-center text-[13px] font-medium text-primary-700">
-        목표: {drill.success_criteria?.threshold}
+      <div className="rounded-lg bg-amber-50 px-4 py-2.5 text-center text-[13px] font-medium text-amber-700">
+        🎯 목표: {drill.success_criteria?.threshold}
       </div>
 
       {/* 녹음 UI */}

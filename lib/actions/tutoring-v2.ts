@@ -519,7 +519,71 @@ export async function startTrainingV2(
     const maxRounds = drill.training_method?.rounds ?? 3;
     const approach = drill.approach ?? 'frame_install';
 
-    // 3. 훈련 세션 생성
+    // 3. 연습 질문 선정 — 모의고사에서 해당 약점이 발견된 문항의 질문 사용
+    let trainingQuestions: Array<{ id: string; text: string; topic: string }> = [];
+    try {
+      // 병목 결과에서 해당 wp_code의 evidence_questions 가져오기
+      const bottlenecks = (session.bottleneck_results ?? []) as Array<{
+        wp_code: string;
+        evidence_questions: number[];
+      }>;
+      const targetBottleneck = bottlenecks.find(
+        (b) => b.wp_code === prescription.wp_code,
+      );
+      const evidenceQNums = targetBottleneck?.evidence_questions ?? [];
+
+      if (evidenceQNums.length > 0 && session.mock_session_id) {
+        // 모의고사 답변에서 question_id 가져오기
+        const { data: answers } = await supabase
+          .from('mock_test_answers')
+          .select('question_number, question_id')
+          .eq('session_id', session.mock_session_id)
+          .in('question_number', evidenceQNums);
+
+        const questionIds = (answers ?? [])
+          .map((a) => a.question_id)
+          .filter(Boolean);
+
+        if (questionIds.length > 0) {
+          // questions 테이블에서 질문 텍스트 가져오기
+          const { data: questions } = await supabase
+            .from('questions')
+            .select('id, question_text, topic')
+            .in('id', questionIds)
+            .limit(maxRounds);
+
+          trainingQuestions = (questions ?? []).map((q) => ({
+            id: q.id,
+            text: q.question_text,
+            topic: q.topic ?? '',
+          }));
+        }
+      }
+
+      // 질문이 부족하면 같은 카테고리에서 랜덤 보충
+      if (trainingQuestions.length < maxRounds) {
+        const existingIds = trainingQuestions.map((q) => q.id);
+        const { data: extraQuestions } = await supabase
+          .from('questions')
+          .select('id, question_text, topic')
+          .not('id', 'in', `(${existingIds.length > 0 ? existingIds.join(',') : '00000'})`)
+          .limit(maxRounds - trainingQuestions.length);
+
+        if (extraQuestions) {
+          trainingQuestions.push(
+            ...extraQuestions.map((q) => ({
+              id: q.id,
+              text: q.question_text,
+              topic: q.topic ?? '',
+            })),
+          );
+        }
+      }
+    } catch (e) {
+      console.error('질문 선정 실패 (무시하고 계속):', e);
+    }
+
+    // 4. 훈련 세션 생성
     const trainingId = generateTutoringId('tt');
 
     const { error: insertErr } = await supabase
@@ -532,6 +596,7 @@ export async function startTrainingV2(
         rounds_completed: 0,
         max_rounds: maxRounds,
         passed: false,
+        question_ids: trainingQuestions,
       });
 
     if (insertErr) {
@@ -556,6 +621,7 @@ export async function startTrainingV2(
       passed: false,
       started_at: new Date().toISOString(),
       completed_at: null,
+      question_ids: trainingQuestions,
     };
 
     return {
