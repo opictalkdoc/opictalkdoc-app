@@ -548,13 +548,13 @@ export async function startTrainingV2(
           // questions 테이블에서 질문 텍스트 가져오기
           const { data: questions } = await supabase
             .from('questions')
-            .select('id, question_text, topic')
+            .select('id, question_english, question_korean, topic')
             .in('id', questionIds)
             .limit(maxRounds);
 
           trainingQuestions = (questions ?? []).map((q) => ({
             id: q.id,
-            text: q.question_text,
+            text: q.question_english ?? q.question_korean ?? '',
             topic: q.topic ?? '',
           }));
         }
@@ -565,7 +565,7 @@ export async function startTrainingV2(
         const existingIds = trainingQuestions.map((q) => q.id);
         const { data: extraQuestions } = await supabase
           .from('questions')
-          .select('id, question_text, topic')
+          .select('id, question_english, question_korean, topic')
           .not('id', 'in', `(${existingIds.length > 0 ? existingIds.join(',') : '00000'})`)
           .limit(maxRounds - trainingQuestions.length);
 
@@ -573,7 +573,7 @@ export async function startTrainingV2(
           trainingQuestions.push(
             ...extraQuestions.map((q) => ({
               id: q.id,
-              text: q.question_text,
+              text: q.question_english ?? q.question_korean ?? '',
               topic: q.topic ?? '',
             })),
           );

@@ -733,9 +733,9 @@ function ScreenPractice({
           </p>
         </div>
       ) : (
-        <div className="rounded-xl border border-border bg-surface-secondary/50 p-4">
-          <p className="text-sm text-foreground-secondary">
-            아래 목표에 맞게 자유롭게 말해보세요
+        <div className="rounded-xl border border-red-200 bg-red-50 p-4">
+          <p className="text-sm font-medium text-red-600">
+            연습 질문을 불러올 수 없습니다. 튜터링을 다시 시작해주세요.
           </p>
         </div>
       )}
