@@ -112,7 +112,7 @@ export function DrillSessionWrapper({ focusId, targetLevel = "IM3" }: DrillSessi
       <div className="flex flex-1 flex-col items-center justify-center gap-3">
         <Loader2 className="h-10 w-10 animate-spin text-primary-500" />
         <p className="text-sm text-foreground-secondary">
-          {sessionPhase === "generating" ? "AI가 맞춤 드릴을 만들고 있어요..." : "로딩 중..."}
+          {sessionPhase === "generating" ? "맞춤 드릴을 만들고 있어요..." : "로딩 중..."}
         </p>
         {sessionPhase === "generating" && (
           <p className="text-xs text-foreground-muted">약 10~15초 소요됩니다</p>

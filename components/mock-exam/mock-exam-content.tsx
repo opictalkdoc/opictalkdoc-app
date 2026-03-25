@@ -89,27 +89,25 @@ export function MockExamContent({
 
   return (
     <div>
-      {/* 탭 네비게이션 */}
-      <div className="mb-4 overflow-x-auto sm:mb-6">
-        <div className="flex border-b border-border">
-          {tabs.map((tab) => {
-            const active = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex flex-1 items-center justify-center gap-1.5 border-b-2 px-3 py-3 text-sm font-medium transition-colors sm:min-w-[120px] sm:flex-none sm:gap-2 sm:px-4 ${
-                  active
-                    ? "border-primary-500 text-primary-600"
-                    : "border-transparent text-foreground-muted hover:border-border hover:text-foreground-secondary"
-                }`}
-              >
-                <tab.icon size={16} className="hidden sm:block" />
-                {tab.label}
-              </button>
-            );
-          })}
-        </div>
+      {/* 탭 네비게이션 — 카드형 */}
+      <div className="mb-4 flex gap-1 rounded-xl bg-surface-secondary p-1 sm:mb-6">
+        {tabs.map((tab) => {
+          const active = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-2.5 text-xs font-medium transition-all sm:gap-2 sm:px-3 sm:text-sm ${
+                active
+                  ? "bg-surface text-foreground shadow-sm"
+                  : "text-foreground-secondary hover:text-foreground"
+              }`}
+            >
+              <tab.icon className="h-4 w-4 shrink-0" />
+              <span className="truncate">{tab.label}</span>
+            </button>
+          );
+        })}
       </div>
 
       {/* 탭 콘텐츠 */}

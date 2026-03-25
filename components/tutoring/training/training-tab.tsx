@@ -1,11 +1,14 @@
 "use client";
 
+import { type ReactNode, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
+  ChevronDown,
   Dumbbell,
   ArrowRight,
   CheckCircle2,
   Clock,
+  Info,
   Loader2,
   Target,
 } from "lucide-react";
@@ -31,36 +34,69 @@ export function TrainingTab({ initialDiagnosis }: TrainingTabProps) {
     staleTime: 30 * 1000,
   });
 
+  const [bannerOpen, setBannerOpen] = useState(false);
   const session = data?.session;
   const focuses = data?.focuses ?? [];
 
+  // 공통 배너 + 상태별 콘텐츠
+  let content: ReactNode;
+
   if (!session || focuses.length === 0) {
-    return (
+    content = (
       <div className="rounded-xl border border-border bg-surface p-6 text-center">
         <Target className="mx-auto mb-3 h-10 w-10 text-foreground-muted" />
         <h3 className="text-lg font-semibold text-foreground">진단이 필요해요</h3>
         <p className="mt-1 text-sm text-foreground-secondary">
-          진단 탭에서 AI 진단을 먼저 시작해주세요.
+          진단 탭에서 진단을 먼저 시작해주세요.
         </p>
       </div>
+    );
+  } else {
+    content = (
+      <>
+        {/* 코치 메시지 */}
+        {session.prescription_json && (
+          <div className="rounded-xl border border-primary-200 bg-primary-50/50 p-4">
+            <p className="text-sm font-medium text-foreground">
+              {(session.prescription_json as { coach_message?: string }).coach_message}
+            </p>
+          </div>
+        )}
+
+        {/* Focus별 드릴 카드 */}
+        {focuses.map((focus) => (
+          <FocusDrillCard key={focus.id} focus={focus} />
+        ))}
+      </>
     );
   }
 
   return (
     <div className="space-y-4">
-      {/* 코치 메시지 */}
-      {session.prescription_json && (
-        <div className="rounded-xl border border-primary-200 bg-primary-50/50 p-4">
-          <p className="text-sm font-medium text-foreground">
-            {(session.prescription_json as { coach_message?: string }).coach_message}
-          </p>
+      {/* 접이식 안내 배너 */}
+      <button
+        onClick={() => setBannerOpen(!bannerOpen)}
+        className="flex w-full items-start gap-2.5 rounded-xl border border-primary-200 bg-primary-50/50 p-3 text-left sm:gap-3 sm:p-4"
+      >
+        <Info size={18} className="shrink-0 text-primary-500" />
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-medium text-foreground">맞춤 훈련 안내</p>
+          {bannerOpen && (
+            <p className="mt-0.5 text-xs text-foreground-secondary sm:mt-1 sm:text-sm">
+              진단에서 찾은 핵심 병목별로 맞춤 드릴을 제공합니다.
+              각 드릴은 3문항으로 구성되며, 구조를 익히고 → 적용하고 → 혼자 해보는 순서로 진행됩니다.
+              드릴 완료 후에는 힌트 없이 확인하는 미니 재평가가 이어집니다.
+            </p>
+          )}
         </div>
-      )}
+        <ChevronDown
+          size={16}
+          className={`shrink-0 text-primary-400 transition-transform ${bannerOpen ? "rotate-180" : ""}`}
+        />
+      </button>
 
-      {/* Focus별 드릴 카드 */}
-      {focuses.map((focus) => (
-        <FocusDrillCard key={focus.id} focus={focus} />
-      ))}
+      {/* 상태별 콘텐츠 */}
+      {content}
     </div>
   );
 }

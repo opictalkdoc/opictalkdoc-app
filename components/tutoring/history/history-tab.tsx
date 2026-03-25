@@ -1,10 +1,13 @@
 "use client";
 
+import { type ReactNode, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
+  ChevronDown,
   ClipboardList,
   CheckCircle2,
   Clock,
+  Info,
   TrendingUp,
   Calendar,
 } from "lucide-react";
@@ -13,6 +16,7 @@ import { TUTORING_STATUS_LABELS } from "@/lib/types/tutoring";
 import type { TutoringHistoryItem } from "@/lib/types/tutoring";
 
 export function HistoryTab() {
+  const [bannerOpen, setBannerOpen] = useState(false);
   const { data: history, isLoading } = useQuery({
     queryKey: ["tutoring-history"],
     queryFn: async () => {
@@ -22,16 +26,17 @@ export function HistoryTab() {
     staleTime: 5 * 60 * 1000,
   });
 
+  // 상태별 콘텐츠
+  let content: ReactNode;
+
   if (isLoading) {
-    return (
+    content = (
       <div className="flex justify-center py-12">
         <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary-500 border-t-transparent" />
       </div>
     );
-  }
-
-  if (!history || history.length === 0) {
-    return (
+  } else if (!history || history.length === 0) {
+    content = (
       <div className="rounded-xl border border-border bg-surface p-6 text-center">
         <ClipboardList className="mx-auto mb-3 h-10 w-10 text-foreground-muted" />
         <h3 className="text-lg font-semibold text-foreground">아직 이력이 없어요</h3>
@@ -40,21 +45,50 @@ export function HistoryTab() {
         </p>
       </div>
     );
+  } else {
+    content = (
+      <>
+        {/* 성장 요약 (2회 이상일 때) */}
+        {history.length >= 2 && (
+          <GrowthSummary current={history[0]} previous={history[1]} />
+        )}
+
+        {/* 세션 목록 */}
+        <div className="space-y-3">
+          {history.map((item, idx) => (
+            <SessionCard key={item.session_id} item={item} isLatest={idx === 0} />
+          ))}
+        </div>
+      </>
+    );
   }
 
   return (
     <div className="space-y-4">
-      {/* 성장 요약 (2회 이상일 때) */}
-      {history.length >= 2 && (
-        <GrowthSummary current={history[0]} previous={history[1]} />
-      )}
+      {/* 접이식 안내 배너 */}
+      <button
+        onClick={() => setBannerOpen(!bannerOpen)}
+        className="flex w-full items-start gap-2.5 rounded-xl border border-primary-200 bg-primary-50/50 p-3 text-left sm:gap-3 sm:p-4"
+      >
+        <Info size={18} className="shrink-0 text-primary-500" />
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-medium text-foreground">나의 튜터링 안내</p>
+          {bannerOpen && (
+            <p className="mt-0.5 text-xs text-foreground-secondary sm:mt-1 sm:text-sm">
+              튜터링 회차별 진단 결과와 병목 변화를 추적합니다.
+              이전 튜터링과 비교하여 어떤 병목이 졸업되었고,
+              어떤 영역이 아직 남아있는지 확인할 수 있습니다.
+            </p>
+          )}
+        </div>
+        <ChevronDown
+          size={16}
+          className={`shrink-0 text-primary-400 transition-transform ${bannerOpen ? "rotate-180" : ""}`}
+        />
+      </button>
 
-      {/* 세션 목록 */}
-      <div className="space-y-3">
-        {history.map((item, idx) => (
-          <SessionCard key={item.session_id} item={item} isLatest={idx === 0} />
-        ))}
-      </div>
+      {/* 상태별 콘텐츠 */}
+      {content}
     </div>
   );
 }

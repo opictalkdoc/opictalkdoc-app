@@ -62,7 +62,7 @@ export function TutoringContent({
 
   return (
     <div>
-      {/* 탭 네비게이션 */}
+      {/* 탭 네비게이션 — 카드형 (튜터링 고유 스타일) */}
       <div className="mb-4 flex gap-1 rounded-xl bg-surface-secondary p-1 sm:mb-6">
         {tabs.map((tab) => {
           const Icon = tab.icon;
@@ -71,14 +71,14 @@ export function TutoringContent({
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2.5 text-sm font-medium transition-all sm:gap-2 sm:text-base ${
+              className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-2.5 text-xs font-medium transition-all sm:gap-2 sm:px-3 sm:text-sm ${
                 isActive
                   ? "bg-surface text-foreground shadow-sm"
                   : "text-foreground-secondary hover:text-foreground"
               }`}
             >
-              <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
-              <span>{tab.label}</span>
+              <Icon className="h-4 w-4 shrink-0" />
+              <span className="truncate">{tab.label}</span>
             </button>
           );
         })}
