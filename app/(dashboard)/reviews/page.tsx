@@ -54,31 +54,30 @@ async function ReviewsDataLoader() {
   );
 }
 
-// Suspense Fallback: 탭 구조 플레이스홀더
+// Suspense Fallback: 카드형 세그먼트 탭 스켈레톤 (실제 레이아웃과 동일)
 function ReviewsPlaceholder() {
   return (
     <div>
-      {/* 탭 바 플레이스홀더 */}
-      <div className="mb-4 border-b border-border sm:mb-6">
-        <div className="flex gap-2">
-          {["빈도 분석", "후기 제출", "시험 후기"].map((label) => (
-            <div
-              key={label}
-              className="border-b-2 border-transparent px-3 py-3 text-sm font-medium text-foreground-muted sm:px-4"
-            >
-              {label}
-            </div>
-          ))}
-        </div>
+      {/* 탭 세그먼트 스켈레톤 */}
+      <div className="mb-4 flex gap-1 rounded-xl bg-surface-secondary p-1 sm:mb-6">
+        {["빈도 분석", "후기 제출", "시험 후기"].map((label) => (
+          <div
+            key={label}
+            className="flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-2.5 text-xs font-medium text-foreground-muted sm:gap-2 sm:px-3 sm:text-sm"
+          >
+            <div className="h-4 w-4 rounded bg-foreground-muted/20" />
+            <span>{label}</span>
+          </div>
+        ))}
       </div>
-      {/* 콘텐츠 영역 플레이스홀더 */}
+      {/* 콘텐츠 영역 스켈레톤 */}
       <div className="space-y-4">
-        <div className="h-[60px] rounded-[var(--radius-xl)] border border-border bg-surface" />
+        <div className="h-[60px] animate-pulse rounded-[var(--radius-xl)] border border-border bg-surface" />
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {[1, 2, 3].map((i) => (
             <div
               key={i}
-              className="h-[80px] rounded-[var(--radius-xl)] border border-border bg-surface"
+              className="h-[80px] animate-pulse rounded-[var(--radius-xl)] border border-border bg-surface"
             />
           ))}
         </div>
