@@ -85,7 +85,7 @@ export function TabOverview({ data }: TabOverviewProps = {}) {
         <div className="border-b border-[#d0d7e2] px-6 py-6 md:px-10">
           <SectionTitle>{gradeDef.full_name} 수행 요약</SectionTitle>
           <ul className="list-disc space-y-2.5 pl-5 marker:text-[#161b23]">
-            {performance_summary.map((item, i) => (
+            {(performance_summary ?? []).map((item, i) => (
               <li key={i} className="text-[14px] leading-[1.75] text-[#2f3644]">
                 {item}
               </li>
