@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "이용약관 | 오픽톡닥",
-  description: "오픽톡닥 서비스 이용약관",
+  title: "이용약관 | 하루오픽",
+  description: "하루오픽 서비스 이용약관",
 };
 
 export default function TermsPage() {
@@ -21,7 +21,7 @@ export default function TermsPage() {
           </h2>
           <p className="mt-2">
             이 약관은 스투스 OPIc(이하 &quot;회사&quot;)이 제공하는
-            오픽톡닥(OPIcTalkDoc) 서비스(이하 &quot;서비스&quot;)의 이용 조건 및
+            하루오픽(HaruOPIc) 서비스(이하 &quot;서비스&quot;)의 이용 조건 및
             절차, 회사와 회원 간의 권리·의무 및 책임사항을 규정함을 목적으로
             합니다.
           </p>
@@ -34,7 +34,7 @@ export default function TermsPage() {
           </h2>
           <ol className="mt-2 list-decimal space-y-1 pl-5">
             <li>
-              &quot;서비스&quot;란 회사가 제공하는 AI 기반 OPIc 영어 말하기 학습
+              &quot;서비스&quot;란 회사가 제공하는 OPIc 영어 말하기 학습
               플랫폼을 의미합니다.
             </li>
             <li>
@@ -99,8 +99,8 @@ export default function TermsPage() {
             <li>
               회사는 다음과 같은 서비스를 제공합니다.
               <ul className="mt-1 list-disc space-y-0.5 pl-5">
-                <li>AI 기반 OPIc 모의고사</li>
-                <li>AI 훈련소 (실시간 피드백)</li>
+                <li>실전 OPIc 모의고사</li>
+                <li>맞춤 튜터링 (실시간 피드백)</li>
                 <li>쉐도잉 학습</li>
                 <li>학습 분석 및 리포트</li>
               </ul>
@@ -200,7 +200,7 @@ export default function TermsPage() {
               지지 않습니다.
             </li>
             <li>
-              AI가 생성한 학습 피드백은 참고용이며, 실제 OPIc 시험 결과를
+              자동 생성된 학습 피드백은 참고용이며, 실제 OPIc 시험 결과를
               보장하지 않습니다.
             </li>
           </ol>

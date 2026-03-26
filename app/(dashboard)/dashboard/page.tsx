@@ -14,7 +14,7 @@ import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { DashboardStats } from "@/components/dashboard/dashboard-stats";
 
 export const metadata = {
-  title: "대시보드 | 오픽톡닥",
+  title: "대시보드 | 하루오픽",
 };
 
 /* ── 유틸 ── */
@@ -234,7 +234,7 @@ export default async function DashboardPage() {
       <div>
         <h1 className="text-xl font-bold text-foreground sm:text-2xl">대시보드</h1>
         <p className="mt-0.5 text-sm text-foreground-secondary sm:mt-1 sm:text-base">
-          오픽톡닥과 함께 OPIc 목표 등급을 달성해 보세요.
+          하루오픽과 함께 OPIc 목표 등급을 달성해 보세요.
         </p>
       </div>
 

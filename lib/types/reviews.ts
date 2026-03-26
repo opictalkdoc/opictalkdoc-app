@@ -174,7 +174,7 @@ export const SURVEY_CATEGORIES: SurveyCategory[] = [
   { title: '휴가/출장', name: 'survey_travel', type: 'checkbox', options: SURVEY_TRAVEL_OPTIONS },
 ];
 
-// 오픽톡닥 추천 서베이 (고정 조합)
+// 하루오픽 추천 서베이 (고정 조합)
 export const RECOMMENDED_SURVEY = {
   survey_occupation: '일 경험 없음',
   survey_student: '아니오',

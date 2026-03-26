@@ -2,8 +2,8 @@ import { getAuthClaims } from "@/lib/auth";
 import { StoreContent } from "@/components/store/store-content";
 
 export const metadata = {
-  title: "Store | 오픽톡닥",
-  description: "오픽톡닥 플랜 구매 및 횟수권 스토어",
+  title: "Store | 하루오픽",
+  description: "하루오픽 플랜 구매 및 횟수권 스토어",
 };
 
 export default async function StorePage() {

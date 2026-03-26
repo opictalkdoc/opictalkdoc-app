@@ -4,7 +4,7 @@ import { ReviewWizard } from "@/components/reviews/submit/review-wizard";
 import { getTopicsByCategory } from "@/lib/queries/master-questions";
 
 export const metadata = {
-  title: "후기 제출 | 오픽톡닥",
+  title: "후기 제출 | 하루오픽",
 };
 
 export default async function ReviewSubmitPage() {

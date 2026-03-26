@@ -124,7 +124,7 @@ const flywheelScaleEffects = [
 const modules = [
   { icon: BarChart3, name: "시험후기", desc: "시험 후기를 수집·분석하여 출제 빈도를 파악합니다.\n같은 서베이 기준의 데이터가 쌓일수록 전략이 정밀해집니다." },
   { icon: FileText, name: "스크립트", desc: "빈출 주제별로 내 경험이 담긴 스크립트를 생성하고, 쉐도잉으로 발음·억양까지 훈련합니다." },
-  { icon: ClipboardList, name: "모의고사", desc: "실제 OPIc과 동일한 5콤보 15문제로 실전을 재현합니다. AI가 답변을 평가하고 등급을 예측합니다." },
+  { icon: ClipboardList, name: "모의고사", desc: "실제 OPIc과 동일한 5콤보 15문제로 실전을 재현합니다. 답변을 분석하고 등급을 예측합니다." },
   { icon: Stethoscope, name: "튜터링", desc: "모의고사 결과를 기반으로 약점을 진단하고, 맞춤 처방과 레벨별 훈련을 제공합니다." },
 ];
 
@@ -161,7 +161,7 @@ export default function StrategyContent() {
             transition={{ duration: 0.5 }}
             className="inline-flex items-center gap-1.5 rounded-full bg-[#D4835E]/[0.1] px-3 py-1 text-[0.7rem] font-bold tracking-wide text-[#D4835E] sm:px-[18px] sm:py-2 sm:text-[0.85rem]"
           >
-            오픽톡닥 데이터 전략
+            하루오픽 데이터 전략
           </motion.span>
           <motion.h1
             initial={{ opacity: 0, y: 30 }}
@@ -189,7 +189,7 @@ export default function StrategyContent() {
             className="mt-10 w-full max-w-[560px] rounded-2xl border border-[#3A2E25]/10 bg-[#3A2E25] px-6 py-7 text-center sm:px-8"
           >
             <p className="text-[15px] font-semibold leading-[1.8] text-white/90">
-              오픽톡닥을 이용하지 않으셔도 됩니다.
+              하루오픽을 이용하지 않으셔도 됩니다.
             </p>
             <p className="mt-1 text-[15px] font-bold leading-[1.8] text-white">
               단, 이 글만큼은 끝까지 읽어 주세요.
@@ -608,7 +608,7 @@ export default function StrategyContent() {
               <p>3~4 단계는 롤플레이가 <strong className="text-[#BF5B43]">2회</strong> 출제되지만,<br />5-5를 선택하면 <strong className="text-primary-600">1회</strong>로 줄고 어드밴스는 건너뛰어도 IH까지 가능합니다.</p>
             </div>
             <p className="mx-auto mt-4 max-w-[560px] text-center text-sm font-semibold text-primary-600">
-              오픽톡닥의 모든 기출문제와 빈도 분석은<br className="sm:hidden" /> 난이도 5-5 기준으로 수집·제공됩니다.
+              하루오픽의 모든 기출문제와 빈도 분석은<br className="sm:hidden" /> 난이도 5-5 기준으로 수집·제공됩니다.
             </p>
           </ScrollReveal>
 
@@ -705,13 +705,13 @@ export default function StrategyContent() {
         </div>
       </section>
 
-      {/* ━━━ Section 9: 오픽톡닥이 하는 일 ━━━ */}
+      {/* ━━━ Section 9: 하루오픽이 하는 일 ━━━ */}
       <section className="border-b border-[#EAE0D5] bg-white py-20 sm:py-28">
         <div className="mx-auto max-w-4xl px-4 sm:px-6">
           <ScrollReveal preset="fade-up">
-            <SectionNum num="9" label="오픽톡닥" />
+            <SectionNum num="9" label="하루오픽" />
             <h2 className="mt-6 text-center font-serif text-[1.55rem] font-semibold italic leading-[1.3] tracking-tight text-[#3A2E25] sm:text-[36px]">
-              오픽톡닥은<br />이렇게 도와드립니다
+              하루오픽은<br />이렇게 도와드립니다
             </h2>
             <p className="mx-auto mt-4 max-w-[560px] text-center text-base leading-relaxed text-[#8B7E72]">
               빈도 분석으로 전략을 세우고, 스크립트로 준비하고,<br />모의고사로 실전을 재현하고, 튜터링으로 약점을 보강합니다.
@@ -753,7 +753,7 @@ export default function StrategyContent() {
               사용자가 쌓을수록<br />전략이 정밀해집니다
             </h2>
             <p className="mx-auto mt-4 max-w-[560px] text-center text-base leading-relaxed text-[#8B7E72]">
-              오픽톡닥의 전략은 데이터가 쌓일수록 강해지는 구조입니다.
+              하루오픽의 전략은 데이터가 쌓일수록 강해지는 구조입니다.
               <br className="hidden sm:block" />{" "}
               같은 서베이로 모인 데이터는 분산 없이 한 곳에 축적됩니다.
             </p>
@@ -772,14 +772,14 @@ export default function StrategyContent() {
                   { step: "6", text: "더 효율적인 학습 → 더 좋은 성적", Icon: Trophy },
                   { step: "7", text: "더 많은 사용자 → 더 많은 데이터", Icon: RefreshCw },
                 ].map((item, i) => (
-                  <div key={item.step} className="flex items-stretch gap-4">
-                    <div className="flex w-10 flex-col items-center">
+                  <div key={item.step} className="flex gap-4">
+                    <div className="flex w-10 flex-shrink-0 flex-col items-center">
                       <div className={`flex h-10 w-10 items-center justify-center rounded-full ${i === 6 ? "bg-primary-500 text-white" : "bg-white/10 text-white/70"}`}>
                         <item.Icon size={18} />
                       </div>
                       {i < 6 && <div className="h-4 w-px bg-white/20" />}
                     </div>
-                    <div className="flex items-center pb-4">
+                    <div className="flex h-10 items-center">
                       <p className={`text-sm ${i === 6 ? "font-bold text-primary-300" : "text-white/80"}`}>{item.text}</p>
                     </div>
                   </div>

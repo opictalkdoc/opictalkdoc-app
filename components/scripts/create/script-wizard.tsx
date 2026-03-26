@@ -1284,7 +1284,7 @@ function Step4Result({
       <div className="flex flex-col items-center justify-center py-12">
         <Loader2 size={32} className="animate-spin text-primary-500" />
         <p className="mt-3 text-sm text-foreground-secondary">
-          AI가 스크립트를 생성하고 있습니다...
+          스크립트를 생성하고 있습니다...
         </p>
       </div>
     );

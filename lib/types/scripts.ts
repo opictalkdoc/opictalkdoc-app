@@ -83,7 +83,7 @@ export const SHADOWING_STEP_DESCRIPTIONS: Record<ShadowingStep, string> = {
   listen: '원어민 음성을 듣고 전체 흐름을 파악합니다',
   shadow: '음성을 듣고 따라 읽으며 텍스트 힌트를 조절합니다',
   recite: '음성 없이 혼자 말해봅니다',
-  speak: '텍스트와 음성 없이 스스로 말합니다 (AI 평가)',
+  speak: '텍스트와 음성 없이 스스로 말합니다 (발화 평가)',
 };
 
 // ── 4계층 JSON 구조 (paragraphs > slots > sentences) ──

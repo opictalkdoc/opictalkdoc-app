@@ -129,7 +129,7 @@ export function StepSpeak() {
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({ error: "평가 실패" }));
-        setSubmitError(err.error || "AI 평가에 실패했습니다");
+        setSubmitError(err.error || "평가에 실패했습니다");
         setIsSubmitting(false);
         return;
       }
@@ -174,7 +174,7 @@ export function StepSpeak() {
       <div className="text-center">
         <p className="text-sm text-foreground-secondary">
           실전처럼 <span className="font-medium text-primary-600">텍스트 없이</span> 답변하세요.
-          AI가 발화를 분석하여 등급을 평가합니다.
+          발화를 분석하여 등급을 평가합니다.
         </p>
       </div>
 
@@ -254,7 +254,7 @@ export function StepSpeak() {
             className="inline-flex items-center gap-2 rounded-[var(--radius-lg)] bg-primary-500 px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary-600 disabled:opacity-50"
           >
             <Upload size={16} />
-            AI 평가 받기 (1크레딧)
+            평가 받기 (1크레딧)
           </button>
         </div>
       )}
@@ -264,7 +264,7 @@ export function StepSpeak() {
         <div className="flex flex-col items-center gap-2 py-4">
           <Loader2 size={24} className="animate-spin text-primary-500" />
           <p className="text-sm text-foreground-secondary">
-            AI가 발화를 분석하고 있습니다...
+            발화를 분석하고 있습니다...
           </p>
         </div>
       )}

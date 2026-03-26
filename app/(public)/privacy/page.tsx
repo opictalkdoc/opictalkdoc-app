@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "개인정보처리방침 | 오픽톡닥",
-  description: "오픽톡닥 개인정보처리방침",
+  title: "개인정보처리방침 | 하루오픽",
+  description: "하루오픽 개인정보처리방침",
 };
 
 export default function PrivacyPage() {
@@ -27,7 +27,7 @@ export default function PrivacyPage() {
           </p>
           <ul className="mt-2 list-disc space-y-1 pl-5">
             <li>회원가입 및 관리: 본인 확인, 서비스 부정이용 방지</li>
-            <li>서비스 제공: AI 학습 서비스, 학습 리포트 생성, 맞춤 학습</li>
+            <li>서비스 제공: 말하기 학습 서비스, 학습 리포트 생성, 맞춤 학습</li>
             <li>유료서비스: 결제 처리, 요금 정산</li>
             <li>마케팅: 이벤트·광고성 정보 제공 (별도 동의 시)</li>
           </ul>
@@ -61,7 +61,7 @@ export default function PrivacyPage() {
               </p>
               <ul className="mt-1 list-disc space-y-0.5 pl-5">
                 <li>학습 기록 (모의고사 응시, 훈련 이력)</li>
-                <li>음성 녹음 데이터 (AI 피드백 생성 목적)</li>
+                <li>음성 녹음 데이터 (학습 피드백 생성 목적)</li>
                 <li>접속 IP, 브라우저 정보, 접속 시간</li>
               </ul>
             </div>

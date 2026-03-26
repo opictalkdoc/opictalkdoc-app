@@ -45,7 +45,7 @@ export function Footer() {
             <p>통신판매업 신고번호: 제 2026-경북구미-0236 호</p>
           </div>
           <p className="mt-4 text-[#6E6358]">
-            &copy; {new Date().getFullYear()} 오픽톡닥. All rights reserved.
+            &copy; {new Date().getFullYear()} 하루오픽. All rights reserved.
           </p>
         </div>
       </div>

@@ -4,7 +4,7 @@ import { getUser } from "@/lib/auth";
 import { MyPageContent } from "@/components/mypage/mypage-content";
 
 export const metadata = {
-  title: "마이페이지 | 오픽톡닥",
+  title: "마이페이지 | 하루오픽",
 };
 
 // 비동기 서버 컴포넌트: 유저 데이터를 가져와 콘텐츠에 전달

@@ -10,7 +10,7 @@ import {
 } from "@/components/trial/trial-data/script-trial-data";
 
 export const metadata = {
-  title: "쉐도잉 훈련 | 오픽톡닥",
+  title: "쉐도잉 훈련 | 하루오픽",
 };
 
 interface PageProps {

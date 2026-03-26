@@ -33,17 +33,17 @@ const notoSerifKR = Noto_Serif_KR({
 
 export const metadata: Metadata = {
   title: {
-    template: "%s | 오픽톡닥",
-    default: "오픽톡닥 - AI 기반 OPIc 말하기 학습",
+    template: "%s | 하루오픽",
+    default: "하루오픽 - 나의 경험으로 준비하는 OPIc",
   },
   description:
-    "AI와 함께하는 OPIc 영어 말하기 학습 플랫폼. 모의고사, AI 훈련소, 쉐도잉으로 목표 등급을 달성하세요.",
+    "나의 일상이 영어 답변이 되는 OPIc 말하기 학습 플랫폼. 기출 분석, 맞춤 스크립트, 실전 모의고사, 약점 튜터링까지.",
   openGraph: {
-    title: "오픽톡닥 - AI 기반 OPIc 말하기 학습",
+    title: "하루오픽 - 나의 경험으로 준비하는 OPIc",
     description:
-      "AI와 함께하는 OPIc 영어 말하기 학습 플랫폼. 모의고사, AI 훈련소, 쉐도잉으로 목표 등급을 달성하세요.",
+      "나의 일상이 영어 답변이 되는 OPIc 말하기 학습 플랫폼. 기출 분석, 맞춤 스크립트, 실전 모의고사, 약점 튜터링까지.",
     url: "https://opictalkdoc.com",
-    siteName: "오픽톡닥",
+    siteName: "하루오픽",
     locale: "ko_KR",
     type: "website",
   },

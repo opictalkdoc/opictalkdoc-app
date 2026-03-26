@@ -9,7 +9,7 @@ import {
 } from "@/lib/actions/mock-exam-result";
 
 export const metadata = {
-  title: "나의 모의고사 | 오픽톡닥",
+  title: "나의 모의고사 | 하루오픽",
 };
 
 interface Props {

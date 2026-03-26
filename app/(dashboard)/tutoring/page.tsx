@@ -9,7 +9,7 @@ import {
 import { getAuthClaims } from "@/lib/auth";
 
 export const metadata = {
-  title: "튜터링 | 오픽톡닥",
+  title: "튜터링 | 하루오픽",
 };
 
 // 서버에서 사전 병렬 조회

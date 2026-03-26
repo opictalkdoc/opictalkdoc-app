@@ -4,7 +4,7 @@ import { ScriptWizard } from "@/components/scripts/create/script-wizard";
 import { getAuthClaims } from "@/lib/auth";
 
 export const metadata = {
-  title: "스크립트 생성 | 오픽톡닥",
+  title: "스크립트 생성 | 하루오픽",
 };
 
 export default async function ScriptCreatePage() {

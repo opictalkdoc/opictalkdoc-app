@@ -92,7 +92,7 @@ export function ShadowingContent({ data, isTrialMode = false }: ShadowingContent
       {/* Step 설명 */}
       <p className="mt-3 text-center text-xs text-foreground-muted">
         {currentStep === "speak" && isTrialMode
-          ? "체험판에서는 AI 평가를 제공하지 않습니다."
+          ? "체험판에서는 발화 평가를 제공하지 않습니다."
           : SHADOWING_STEP_DESCRIPTIONS[currentStep]}
       </p>
 

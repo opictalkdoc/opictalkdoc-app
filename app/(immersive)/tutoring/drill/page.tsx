@@ -2,7 +2,7 @@ import { ImmersiveHeader } from "@/components/layout/immersive-header";
 import { DrillSessionWrapper } from "@/components/tutoring/drill/drill-session-wrapper";
 
 export const metadata = {
-  title: "튜터링 드릴 | 오픽톡닥",
+  title: "튜터링 드릴 | 하루오픽",
 };
 
 interface Props {
