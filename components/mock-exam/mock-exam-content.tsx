@@ -477,6 +477,7 @@ function HistoryTab({
   targetGrade?: string;
 }) {
   const [modeFilter, setModeFilter] = useState<"all" | MockExamMode>("all");
+  const [loadingSessionId, setLoadingSessionId] = useState<string | null>(null);
   const [showExpired, setShowExpired] = useState(false);
 
   const { data: historyResult, isLoading } = useQuery({
@@ -628,15 +629,26 @@ function HistoryTab({
         </div>
       </div>
 
-      {filtered.map((item) => (
+      {filtered.map((item) => {
+        const isLoading = loadingSessionId === item.session_id;
+        const isClickable = item.status === "completed" && !!item.final_level;
+        return (
         <button
           key={item.session_id}
+          disabled={!!loadingSessionId}
           onClick={() => {
-            if (item.status === "completed" && item.final_level) {
+            if (isClickable) {
+              setLoadingSessionId(item.session_id);
               onViewResult(item.session_id);
             }
           }}
-          className="mt-2.5 w-full rounded-xl border border-border bg-surface p-3 text-left transition-colors hover:border-primary-200 sm:mt-3 sm:p-4"
+          className={`mt-2.5 w-full rounded-xl border p-3 text-left transition-all sm:mt-3 sm:p-4 ${
+            isLoading
+              ? "border-primary-300 bg-primary-50/50 ring-1 ring-primary-200"
+              : isClickable
+                ? "border-border bg-surface hover:border-primary-200 active:scale-[0.99] active:bg-primary-50/30"
+                : "border-border bg-surface opacity-60"
+          }`}
         >
           <div className="flex items-center gap-3 sm:gap-4">
             {/* 등급 배지 */}
@@ -685,13 +697,18 @@ function HistoryTab({
               </span>
             </div>
 
-            {/* 화살표 */}
-            {item.status === "completed" && item.final_level && (
-              <ChevronRight size={16} className="hidden shrink-0 text-foreground-muted sm:block" />
+            {/* 화살표 / 로딩 */}
+            {isClickable && (
+              isLoading ? (
+                <Loader2 size={16} className="shrink-0 animate-spin text-primary-500" />
+              ) : (
+                <ChevronRight size={16} className="hidden shrink-0 text-foreground-muted sm:block" />
+              )
             )}
           </div>
         </button>
-      ))}
+        );
+      })}
       </div>
     </div>
   );
