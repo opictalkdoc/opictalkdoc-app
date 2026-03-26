@@ -418,11 +418,11 @@ function StartTab({
 
       {/* CTA 버튼 — 크레딧 있고 기출+모드 선택 완료 시 */}
       {hasCredit === true && selectedPoolId && selectedMode && selectedMode !== "trial" && (
-        <div className="flex justify-center">
+        <div>
           <button
             onClick={handleStart}
             disabled={isCreating}
-            className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-primary-500 px-8 text-base font-semibold text-white transition-colors hover:bg-primary-600 disabled:opacity-50"
+            className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary-500 px-8 text-base font-semibold text-white transition-colors hover:bg-primary-600 disabled:opacity-50"
           >
             {isCreating ? (
               <Loader2 size={18} className="animate-spin" />
