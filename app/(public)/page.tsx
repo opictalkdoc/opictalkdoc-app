@@ -24,37 +24,37 @@ import { useRef, useEffect, useState } from "react";
 const services = [
   {
     num: "01",
-    title: "조명을 켜는 데이터",
+    title: "어떤 질문이 나올까, 더 이상 불안하지 않도록",
     badge: "시험후기",
-    desc: "어떤 질문이 나올지 몰라 남의 대본을 뒤적이지 마세요. 오픽톡닥의 데이터가 내일 시험에 나올 진짜 질문들만 선별해, 당신이 서야 할 무대에 정확히 조명을 비춰줍니다.",
+    desc: "기출 질문의 출제 빈도를 분석합니다. 막연한 불안 대신, 데이터로 준비 범위를 좁히세요.",
     featured: false,
   },
   {
     num: "02",
-    title: "나의 일상이 스크립트로",
+    title: "내 하루가 영어 답변이 되는 순간",
     badge: "스크립트",
-    desc: '"퇴근 후 마시는 맥주 한 캔" 같은 당신의 평범한 일상을 가져오세요. 그 진심 어린 경험을 가장 자연스럽고 돋보이는 영어 대사로 다듬어 드립니다.',
+    desc: '"퇴근 후 맥주 한 캔" 같은 소소한 일상을 입력하면, 목표 등급에 맞는 스크립트가 만들어집니다. 내 이야기니까 외우지 않아도 입에서 나옵니다.',
     featured: true,
   },
   {
     num: "03",
-    title: "주인공의 완벽한 리허설",
+    title: "긴장되는 40분, 미리 겪어보세요",
     badge: "모의고사",
-    desc: "내 진짜 이야기이기에 입에 맴돌지 않고 가슴에서 나옵니다. 내 삶이 담긴 대본으로 실전과 똑같은 무대에서 리허설하며, 긴장감을 완벽한 자신감으로 바꿉니다.",
+    desc: "실제 OPIc과 동일한 15문항을 동일한 순서로 연습합니다. 실전을 미리 경험하면, 시험장의 긴장이 익숙함으로 바뀝니다.",
     featured: true,
   },
   {
     num: "04",
-    title: "디테일을 살리는 튜터링",
+    title: "못하는 건 정확히 알아야 고칠 수 있으니까",
     badge: "튜터링",
-    desc: "모의고사 결과에서 약점을 진단하고, 미세한 빈틈을 잡아줍니다. 당신의 진심이 채점관에게 더 깊이 닿도록 돕는 섬세한 디렉팅입니다.",
-    featured: false,
+    desc: "모의고사 결과에서 가장 약한 유형을 자동 진단하고, 맞춤 드릴로 반복 훈련합니다. 약점만 집중하니 빠르게 달라집니다.",
+    featured: true,
   },
   {
     num: "05",
-    title: "큐 사인, 그리고 나다운 40분",
+    title: "이제 시험장에서, 나의 이야기를 하세요",
     badge: null,
-    desc: "이제 시험장에 남의 이야기를 멈추고, 그냥 당신의 진짜 모습을 보여주세요. 가장 나다울 때, 당신의 점수는 가장 빛납니다.",
+    desc: "남의 모범답안이 아닌 내 경험으로 준비한 당신은 다릅니다. 가장 나다울 때, 가장 높은 점수가 나옵니다.",
     featured: false,
   },
 ];
@@ -150,7 +150,7 @@ export default function HomePage() {
             transition={{ duration: 0.5, ease: "easeOut" }}
             className="inline-flex items-center gap-1.5 rounded-full bg-[#D4835E]/[0.1] px-3 py-1 text-[0.7rem] font-bold tracking-wide text-[#D4835E] sm:px-[18px] sm:py-2 sm:text-[clamp(0.75rem,0.9vw,0.85rem)]"
           >
-            나의 스토리로 채우는 OPIc
+            나의 이야기로 준비하는 OPIc
           </motion.span>
 
           <motion.h1
@@ -162,18 +162,18 @@ export default function HomePage() {
             {/* 모바일 축약 */}
             <span className="sm:hidden">
               <span className="text-[#D4835E]">
-                나의 일상과 경험으로
+                당신의 평범한 하루가
               </span>
               <br />
-              나다운 오픽을 완성합니다
+              가장 완벽한 스토리입니다
             </span>
             {/* PC 풀버전 */}
             <span className="hidden sm:inline">
               <span className="text-[#D4835E]">
-                나의 소소한 일상과 경험으로
+                당신의 평범한 하루가
               </span>
               <br />
-              가장 나다운 오픽을 완성합니다
+              가장 완벽한 스토리입니다
             </span>
           </motion.h1>
           <motion.p
@@ -182,11 +182,9 @@ export default function HomePage() {
             transition={{ duration: 0.7, delay: 0.3, ease: "easeOut" }}
             className="mt-[clamp(8px,1.5vh,16px)] text-sm leading-relaxed text-[#8B7E72] sm:text-base"
           >
-            외운 말은 잊히지만, 당신의 삶은 기록이 됩니다.
+            내 경험 입력 → 맞춤 스크립트 생성 → 실전 모의고사 → 튜터링.
             <br />
-            평범한 하루가 가장 강력한 무기가 되는 경험.
-            <br />
-            이제 오직 당신만의 목소리로 말해보세요.
+            외우지 않아도 말할 수 있는 OPIc.
           </motion.p>
         </div>
 
@@ -249,7 +247,7 @@ export default function HomePage() {
               href="/signup"
               className="inline-flex items-center gap-2 rounded-full bg-[#D4835E] px-[clamp(24px,2.5vw,32px)] py-[clamp(10px,1.2vh,15px)] text-[clamp(13px,1vw,15px)] font-bold text-white shadow-[0_4px_20px_rgba(212,131,94,0.25)] transition-all hover:-translate-y-px hover:bg-[#C07350]"
             >
-              나만의 첫 이야기 시작하기 <ArrowRight className="h-4 w-4" />
+              내 스크립트 만들기 <ArrowRight className="h-4 w-4" />
             </Link>
           </motion.div>
         </div>
@@ -323,9 +321,9 @@ export default function HomePage() {
       <section id="features" className="rounded-t-[32px] bg-[#F3ECE4] py-20 sm:rounded-t-[48px] sm:py-[120px]">
         <div className="mx-auto max-w-[1080px] px-6">
           <ScrollReveal preset="fade-up" className="mb-14 text-center sm:mb-16">
-            <Pill>막이 오르기 전</Pill>
+            <Pill>학습 과정</Pill>
             <h2 className="mt-4 text-[1.8rem] font-extrabold tracking-[-0.03em] text-[#3A2E25] [word-break:keep-all] sm:text-[2.4rem]">
-              이렇게 준비합니다
+              나만의 무대를 준비하는 5단계
             </h2>
           </ScrollReveal>
 
@@ -347,8 +345,8 @@ export default function HomePage() {
                   <span
                     className={`font-serif text-[2rem] font-bold leading-[0.85] sm:text-[3rem] ${
                       s.featured
-                        ? "text-[rgba(212,131,94,0.35)]"
-                        : "text-[rgba(212,131,94,0.15)]"
+                        ? "text-[rgba(212,131,94,0.45)]"
+                        : "text-[rgba(212,131,94,0.3)]"
                     }`}
                   >
                     {s.num}
