@@ -109,14 +109,19 @@ Deno.serve(async (req: Request) => {
               question_id: a.question_id,
               answer_type: q?.question_type_eng ?? null,
               topic: q?.topic ?? null,
-              transcript: a.transcript ?? "",
+              transcript: (a.transcript ?? "").slice(0, 500),
               audio_duration: a.audio_duration,
               word_count: a.word_count,
               wpm: a.wpm,
               filler_word_count: a.filler_word_count,
               filler_ratio: a.filler_ratio,
               long_pause_count: a.long_pause_count,
-              pronunciation_assessment: a.pronunciation_assessment,
+              // pronunciation_assessment → 요약 점수만 (단어별 상세 제외)
+              pronunciation_summary: a.pronunciation_assessment ? {
+                accuracy: (a.pronunciation_assessment as Record<string, unknown>).accuracyScore ?? null,
+                fluency: (a.pronunciation_assessment as Record<string, unknown>).fluencyScore ?? null,
+                prosody: (a.pronunciation_assessment as Record<string, unknown>).prosodyScore ?? null,
+              } : null,
               skipped: a.skipped,
               meta_only: a.meta_only,
               unfinished_end: a.unfinished_end,
@@ -249,7 +254,7 @@ Deno.serve(async (req: Request) => {
 
 async function callGPT(
   messages: { role: string; content: string }[],
-  model = "gpt-4.1"
+  model = "gpt-4.1-mini"
 ) {
   const response = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",

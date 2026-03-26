@@ -16,12 +16,14 @@ export const metadata = {
 async function TutoringLoader() {
   const [eligibilityResult, creditResult, diagnosisResult, activeResult, claims] =
     await Promise.all([
-      checkTutoringEligibility().catch(() => ({ data: undefined })),
-      checkTutoringCredit().catch(() => ({ data: undefined })),
-      getDiagnosisData().catch(() => ({ data: undefined })),
-      getActiveSession().catch(() => ({ data: undefined })),
+      checkTutoringEligibility().catch((e) => { console.error("[tutoring] eligibility error:", e); return { data: undefined }; }),
+      checkTutoringCredit().catch((e) => { console.error("[tutoring] credit error:", e); return { data: undefined }; }),
+      getDiagnosisData().catch((e) => { console.error("[tutoring] diagnosis error:", e); return { data: undefined }; }),
+      getActiveSession().catch((e) => { console.error("[tutoring] active error:", e); return { data: undefined }; }),
       getAuthClaims(),
     ]);
+
+  console.log("[tutoring] eligibility:", JSON.stringify(eligibilityResult));
 
   const targetGrade = (claims?.user_metadata?.target_grade as string) || "";
 

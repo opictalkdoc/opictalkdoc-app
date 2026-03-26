@@ -86,7 +86,7 @@ export function DiagnosisTab({
   });
 
   // 활성 세션 (diagnosing 상태 폴링)
-  const { data: activeData } = useQuery({
+  const { data: activeData, refetch: refetchActive } = useQuery({
     queryKey: ["tutoring-active-session"],
     queryFn: async () => {
       const res = await getActiveSession();
@@ -115,7 +115,8 @@ export function DiagnosisTab({
         alert(result.error);
         return;
       }
-      // 폴링 시작을 위해 refetch
+      // 폴링 시작을 위해 active session + diagnosis 모두 refetch
+      await refetchActive();
       await refetchDiagnosis();
     } catch {
       alert("진단 시작에 실패했습니다.");
@@ -403,6 +404,12 @@ function DiagnosisResultView({
   const summary = session.student_summary;
   const gapSummary = session.target_gap_summary;
 
+  // session_id → "N회차" 매핑 생성
+  const sessionIdMap: Record<string, string> = {};
+  (session.analyzed_session_ids ?? []).forEach((sid, idx) => {
+    sessionIdMap[sid] = `${idx + 1}회차`;
+  });
+
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* 등급 상태 카드 */}
@@ -495,43 +502,27 @@ function DiagnosisResultView({
         </div>
       )}
 
-      {/* Type Mastery (간략) */}
+      {/* Type Mastery (클릭 시 상세) */}
       {session.diagnosis_internal?.type_mastery && (
-        <div className="rounded-xl border border-border bg-surface p-4 sm:p-6">
-          <h3 className="mb-3 text-sm font-semibold text-foreground sm:text-base">유형별 상태</h3>
-          <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 sm:gap-2 lg:grid-cols-5">
-            {Object.entries(session.diagnosis_internal.type_mastery).map(([type, level]) => (
-              <div
-                key={type}
-                className="flex items-center justify-between rounded-lg bg-surface-secondary px-2.5 py-1.5 sm:px-3 sm:py-2"
-              >
-                <span className="text-[11px] text-foreground-secondary sm:text-xs">{TYPE_LABELS[type] ?? type}</span>
-                <MasteryBadge level={level as string} />
-              </div>
-            ))}
-          </div>
-        </div>
+        <MasterySection
+          title="유형별 상태"
+          entries={session.diagnosis_internal.type_mastery}
+          details={session.diagnosis_internal.type_details}
+          labelMap={TYPE_LABELS}
+          sessionIdMap={sessionIdMap}
+        />
       )}
 
-      {/* Topic Mastery */}
+      {/* Topic Mastery (클릭 시 상세) */}
       {session.diagnosis_internal?.topic_mastery && (
-        <div className="rounded-xl border border-border bg-surface p-4 sm:p-6">
-          <h3 className="mb-1 text-sm font-semibold text-foreground sm:text-base">주제별 상태</h3>
-          <p className="mb-3 text-[11px] text-foreground-muted sm:text-xs">
-            같은 주제에서 반복 취약하면 해당 이야기 세계의 훈련이 더 필요합니다
-          </p>
-          <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 sm:gap-2 lg:grid-cols-4">
-            {Object.entries(session.diagnosis_internal.topic_mastery).map(([topic, level]) => (
-              <div
-                key={topic}
-                className="flex items-center justify-between rounded-lg bg-surface-secondary px-2.5 py-1.5 sm:px-3 sm:py-2"
-              >
-                <span className="truncate text-[11px] text-foreground-secondary sm:text-xs">{topic}</span>
-                <MasteryBadge level={level as string} />
-              </div>
-            ))}
-          </div>
-        </div>
+        <MasterySection
+          title="주제별 상태"
+          subtitle="같은 주제에서 반복 취약하면 해당 이야기 세계의 훈련이 더 필요합니다"
+          entries={session.diagnosis_internal.topic_mastery}
+          details={session.diagnosis_internal.topic_details}
+          columns="topic"
+          sessionIdMap={sessionIdMap}
+        />
       )}
     </div>
   );
@@ -599,3 +590,109 @@ const TYPE_LABELS: Record<string, string> = {
   adv_14: "고급변화",
   adv_15: "고급이슈",
 };
+
+/* ── Mastery 섹션 (클릭 시 상세 근거 표시) ── */
+
+function MasterySection({
+  title,
+  subtitle,
+  entries,
+  details,
+  labelMap,
+  columns = "type",
+  sessionIdMap,
+}: {
+  title: string;
+  subtitle?: string;
+  entries: Record<string, string>;
+  details?: Record<string, { mastery: string; reason: string; evidence: string[] }>;
+  labelMap?: Record<string, string>;
+  columns?: "type" | "topic";
+  sessionIdMap?: Record<string, string>; // session_id → "N회차" 매핑
+}) {
+  const [expanded, setExpanded] = useState<string | null>(null);
+
+  // evidence 텍스트에서 session_id를 "N회차"로 치환
+  const formatEvidence = (text: string) => {
+    if (!sessionIdMap) return text;
+    let result = text;
+    for (const [sid, label] of Object.entries(sessionIdMap)) {
+      result = result.replace(sid, label);
+    }
+    return result;
+  };
+
+  const gridCols = columns === "type"
+    ? "grid-cols-2 sm:grid-cols-3 lg:grid-cols-5"
+    : "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4";
+
+  return (
+    <div className="rounded-xl border border-border bg-surface p-4 sm:p-6">
+      <h3 className="mb-1 text-sm font-semibold text-foreground sm:text-base">{title}</h3>
+      {subtitle && (
+        <p className="mb-3 text-[11px] text-foreground-muted sm:text-xs">{subtitle}</p>
+      )}
+      {!subtitle && <div className="mb-3" />}
+
+      <div className={`grid gap-1.5 sm:gap-2 ${gridCols}`}>
+        {Object.entries(entries).map(([key, level]) => {
+          const hasDetail = details?.[key];
+          const isExpanded = expanded === key;
+          const displayLabel = labelMap?.[key] ?? key;
+
+          return (
+            <button
+              key={key}
+              onClick={() => hasDetail ? setExpanded(isExpanded ? null : key) : undefined}
+              className={`flex items-center justify-between rounded-lg px-2.5 py-1.5 text-left transition-colors sm:px-3 sm:py-2 ${
+                isExpanded
+                  ? "bg-primary-50 ring-1 ring-primary-200"
+                  : hasDetail
+                    ? "bg-surface-secondary hover:bg-surface-secondary/80 cursor-pointer"
+                    : "bg-surface-secondary cursor-default"
+              }`}
+            >
+              <span className="truncate text-[11px] text-foreground-secondary sm:text-xs">{displayLabel}</span>
+              <MasteryBadge level={level as string} />
+            </button>
+          );
+        })}
+      </div>
+
+      {/* 상세 근거 패널 */}
+      {expanded && details?.[expanded] && (
+        <div className="mt-3 rounded-lg border border-primary-200 bg-primary-50/30 p-3 sm:p-4">
+          <div className="mb-2 flex items-center justify-between">
+            <h4 className="text-xs font-semibold text-foreground sm:text-sm">
+              {labelMap?.[expanded] ?? expanded}
+              <MasteryBadge level={details[expanded].mastery} />
+            </h4>
+            <button
+              onClick={() => setExpanded(null)}
+              className="text-xs text-foreground-muted hover:text-foreground"
+            >
+              닫기
+            </button>
+          </div>
+
+          {/* 이유 */}
+          <p className="text-xs leading-relaxed text-foreground-secondary sm:text-sm">
+            {details[expanded].reason}
+          </p>
+
+          {/* 근거 */}
+          {details[expanded].evidence?.length > 0 && (
+            <ul className="mt-2 space-y-1">
+              {details[expanded].evidence.map((ev, i) => (
+                <li key={i} className="flex items-start gap-1.5 text-[11px] text-foreground-secondary sm:text-xs">
+                  <span className="mt-0.5 h-1 w-1 shrink-0 rounded-full bg-primary-400" />
+                  {formatEvidence(ev)}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}

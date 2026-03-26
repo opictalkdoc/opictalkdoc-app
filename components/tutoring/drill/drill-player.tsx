@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import {
   Mic,
   Square,
@@ -12,6 +12,8 @@ import {
   ChevronUp,
   Loader2,
   Puzzle,
+  Sparkles,
+  ArrowRight,
 } from "lucide-react";
 import { useRecorder } from "@/lib/hooks/use-recorder";
 import { submitDrillAttempt, getDrillData } from "@/lib/actions/tutoring";
@@ -38,15 +40,22 @@ const LEVEL_FRAME_CONFIG: Record<string, {
   AL:  { showKorean: false, showExample: false, allowSlotRescueQ1: false, allowSlotRescueQ2: false },
 };
 
+const Q_LABELS = ["학습", "적용", "독립 수행"] as const;
+const HINT_LABELS: Record<string, string> = {
+  full: "가이드 제공",
+  reduced: "힌트 축소",
+  minimal: "혼자 하기",
+};
+
 interface DrillPlayerProps {
   drill: TutoringDrill;
-  drillIndex: number; // 1, 2, 3
+  drillIndex: number;
   totalDrills: number;
   attempts: TutoringAttempt[];
-  targetLevel: string; // 현재 학생의 next_step_level
+  targetLevel: string;
   onAttemptComplete: () => void;
-  onDrillPassed: () => void; // Q 자동 전환용
-  onAllDrillsComplete: () => void; // 전체 완료 → retest 연결
+  onDrillPassed: () => void;
+  onAllDrillsComplete: () => void;
 }
 
 type DrillPhase = "ready" | "recording" | "submitting" | "feedback" | "slot_rescue" | "passed";
@@ -66,19 +75,19 @@ export function DrillPlayer({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [rescueSlots, setRescueSlots] = useState<string[]>([]);
 
-  const recorder = useRecorder({
-    maxDuration: 120,
-    minDuration: 3,
-  });
+  const recorder = useRecorder({ maxDuration: 120, minDuration: 3 });
 
   const retryCount = attempts.length;
   const lastAttempt = attempts[attempts.length - 1];
   const levelConfig = LEVEL_FRAME_CONFIG[targetLevel] ?? LEVEL_FRAME_CONFIG.IM3;
+  const qLabel = Q_LABELS[drillIndex - 1] ?? "";
+  const hintLabel = HINT_LABELS[drill.hint_level] ?? "";
 
-  // Slot rescue 허용 여부
   const canSlotRescue =
     (drillIndex === 1 && levelConfig.allowSlotRescueQ1) ||
     (drillIndex === 2 && levelConfig.allowSlotRescueQ2);
+
+  const frameSlots = (drill.frame_slots ?? []) as { slot: string; frame_en: string; label_ko: string }[];
 
   // ── 녹음 시작 ──
   const handleStartRecording = useCallback(async () => {
@@ -106,10 +115,8 @@ export function DrillPlayer({
         console.error("제출 실패:", result.error);
         setPhase("ready");
       } else {
-        // EF 처리 대기 (약 3~5초)
         await new Promise((r) => setTimeout(r, 4000));
         onAttemptComplete();
-        // 결과 확인을 위해 refetch 후 상태 결정
         const drillData = await getDrillData(drill.focus_id);
         const updatedAttempts = (drillData.data?.attempts ?? []).filter(
           (a) => a.drill_id === drill.id
@@ -118,7 +125,6 @@ export function DrillPlayer({
 
         if (latest?.result === "pass") {
           setPhase("passed");
-          // 1.5초 후 자동 전환
           setTimeout(() => {
             if (drillIndex >= totalDrills) {
               onAllDrillsComplete();
@@ -127,7 +133,6 @@ export function DrillPlayer({
             }
           }, 1500);
         } else {
-          // 실패 시 slot rescue 판단
           const layer1 = latest?.layer1_result as Layer1Result | null;
           if (layer1 && canSlotRescue && layer1.failed_flags.length >= 2 && retryCount >= 1) {
             setRescueSlots(layer1.failed_flags);
@@ -143,64 +148,69 @@ export function DrillPlayer({
     }
   }, [recorder, drill.id, drill.focus_id, drillIndex, totalDrills, retryCount, canSlotRescue, onAttemptComplete, onDrillPassed, onAllDrillsComplete]);
 
-  // ── 다시 말하기 ──
   const handleRetry = useCallback(() => {
     setPhase("ready");
     setRescueSlots([]);
     recorder.reset();
   }, [recorder]);
 
-  // ── Slot Rescue 모드 진입 ──
-  const handleSlotRescue = useCallback(() => {
-    setPhase("slot_rescue");
-  }, []);
-
-  // ── Slot Rescue 완료 → 전체 재녹음 ──
+  const handleSlotRescue = useCallback(() => setPhase("slot_rescue"), []);
   const handleSlotRescueComplete = useCallback(() => {
     setPhase("ready");
     setRescueSlots([]);
   }, []);
 
-  // ── Q 라벨 ──
-  const qLabels = ["학습", "적용", "독립 수행"];
-  const qLabel = qLabels[drillIndex - 1] ?? "";
-
-  // ── Frame slots 타입 변환 ──
-  const frameSlots = (drill.frame_slots ?? []) as { slot: string; frame_en: string; label_ko: string }[];
-
   return (
-    <div className="flex flex-1 flex-col">
-      {/* 상단: 진행 바 + 목표 */}
-      <div className="border-b border-border bg-surface px-4 py-3 sm:px-6">
+    <div className="flex h-dvh flex-col bg-background">
+      {/* ── 상단: 진행 상태 바 ── */}
+      <div className="border-b border-border bg-surface px-4 pb-3 pt-4 sm:px-6">
         <div className="mx-auto max-w-2xl">
-          <div className="mb-2 flex items-center justify-between text-xs text-foreground-secondary">
-            <span>Q{drillIndex} / {totalDrills} — {qLabel}</span>
-            <span className="rounded-full bg-primary-50 px-2 py-0.5 text-primary-600">
-              {drill.hint_level === "full" ? "가이드 제공" : drill.hint_level === "reduced" ? "힌트 축소" : "혼자 하기"}
+          {/* Q 라벨 + 힌트 레벨 */}
+          <div className="mb-2 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="rounded-md bg-primary-500 px-2 py-0.5 text-xs font-bold text-white">
+                Q{drillIndex}
+              </span>
+              <span className="text-sm font-medium text-foreground">{qLabel}</span>
+            </div>
+            <span className="rounded-full border border-primary-200 bg-primary-50 px-2.5 py-0.5 text-xs font-medium text-primary-700">
+              {hintLabel}
             </span>
           </div>
+
+          {/* 진행 바 */}
           <div className="h-1.5 overflow-hidden rounded-full bg-surface-secondary">
             <div
-              className="h-full rounded-full bg-primary-500 transition-all"
+              className="h-full rounded-full bg-primary-500 transition-all duration-500"
               style={{ width: `${(drillIndex / totalDrills) * 100}%` }}
             />
           </div>
+
+          {/* 목표 */}
           {drill.goal && (
-            <p className="mt-2 text-sm font-medium text-foreground">🎯 {drill.goal}</p>
+            <p className="mt-2.5 text-sm text-foreground-secondary">
+              <Sparkles className="mr-1 inline h-3.5 w-3.5 text-primary-500" />
+              {drill.goal}
+            </p>
           )}
         </div>
       </div>
 
-      {/* 메인 콘텐츠 */}
+      {/* ── 메인 콘텐츠 (스크롤 영역) ── */}
       <div className="relative h-0 flex-grow">
-        <div className="absolute inset-0 overflow-y-auto max-md:[scrollbar-width:none] max-md:[&::-webkit-scrollbar]:hidden">
-          <div className="mx-auto max-w-2xl space-y-4 px-4 py-4 sm:px-6">
+        <div className="absolute inset-0 overflow-y-auto px-4 py-5 sm:px-6 max-md:[scrollbar-width:none] max-md:[&::-webkit-scrollbar]:hidden">
+          <div className="mx-auto max-w-2xl space-y-4">
 
-            {/* 질문 */}
-            <div className="rounded-xl border border-border bg-surface p-4">
-              <p className="text-base font-medium leading-relaxed text-foreground">
+            {/* 질문 카드 */}
+            <div className="rounded-[var(--radius-xl)] border border-border bg-surface p-4 sm:p-5">
+              <p className="text-base font-medium leading-relaxed text-foreground sm:text-lg">
                 {drill.question_english}
               </p>
+              {drill.topic && (
+                <span className="mt-2 inline-block rounded-full bg-surface-secondary px-2.5 py-0.5 text-xs text-foreground-muted">
+                  {drill.topic}
+                </span>
+              )}
             </div>
 
             {/* Slot Rescue 모드 */}
@@ -225,8 +235,11 @@ export function DrillPlayer({
 
             {/* Q3 규칙 1줄 */}
             {phase !== "slot_rescue" && drill.hint_level === "minimal" && drill.rule_only_hint && (
-              <div className="rounded-lg border border-primary-200 bg-primary-50/50 p-3">
-                <p className="text-sm text-primary-700">💡 {drill.rule_only_hint}</p>
+              <div className="rounded-[var(--radius-lg)] border border-primary-200 bg-primary-50/50 p-3 sm:p-4">
+                <p className="text-sm font-medium text-primary-700">
+                  <Sparkles className="mr-1 inline h-3.5 w-3.5" />
+                  {drill.rule_only_hint}
+                </p>
               </div>
             )}
 
@@ -235,13 +248,13 @@ export function DrillPlayer({
               <div>
                 <button
                   onClick={() => setShowExample(!showExample)}
-                  className="flex items-center gap-1 text-xs text-foreground-secondary hover:text-foreground"
+                  className="flex items-center gap-1.5 text-xs font-medium text-foreground-secondary transition-colors hover:text-foreground"
                 >
-                  {showExample ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-                  예시 보기
+                  {showExample ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                  예시 답변 보기
                 </button>
                 {showExample && (
-                  <div className="mt-2 rounded-lg bg-surface-secondary p-3">
+                  <div className="mt-2 rounded-[var(--radius-lg)] border border-border bg-surface-secondary p-3 sm:p-4">
                     <p className="text-sm italic leading-relaxed text-foreground-secondary">
                       {drill.sample_answer}
                     </p>
@@ -260,14 +273,14 @@ export function DrillPlayer({
               />
             )}
 
-            {/* PASS 전환 애니메이션 */}
+            {/* PASS 전환 */}
             {phase === "passed" && (
-              <div className="rounded-xl border border-green-200 bg-green-50 p-4 text-center">
-                <CheckCircle2 className="mx-auto mb-2 h-8 w-8 text-green-500" />
-                <p className="text-sm font-semibold text-green-700">PASS!</p>
-                <p className="mt-1 text-xs text-green-600">
+              <div className="rounded-[var(--radius-xl)] border border-green-200 bg-green-50 p-5 text-center">
+                <CheckCircle2 className="mx-auto mb-2 h-10 w-10 text-green-500" />
+                <p className="text-base font-semibold text-green-700">통과!</p>
+                <p className="mt-1 text-sm text-green-600">
                   {drillIndex >= totalDrills
-                    ? "모든 드릴을 완료했어요!"
+                    ? "모든 드릴을 완료했어요"
                     : "다음 문항으로 넘어갑니다..."}
                 </p>
               </div>
@@ -277,69 +290,82 @@ export function DrillPlayer({
         </div>
       </div>
 
-      {/* 하단: 녹음 컨트롤 */}
+      {/* ── 하단: 녹음 컨트롤 (고정) ── */}
       <div className="border-t border-border bg-surface px-4 py-4 sm:px-6">
-        <div className="mx-auto flex max-w-2xl items-center justify-center gap-4">
-          {(phase === "ready" || phase === "slot_rescue") && phase !== "slot_rescue" && (
+        <div className="mx-auto flex max-w-2xl flex-col items-center gap-2">
+          {/* 녹음 버튼 — ready 상태 */}
+          {phase === "ready" && (
             <button
               onClick={handleStartRecording}
-              className="flex items-center gap-2 rounded-full bg-primary-500 px-8 py-3 text-sm font-medium text-white shadow-lg transition-all hover:bg-primary-700 active:scale-95"
+              className="flex w-full max-w-xs items-center justify-center gap-2 rounded-full bg-primary-500 py-3.5 text-sm font-semibold text-white shadow-lg transition-all hover:bg-primary-700 active:scale-[0.97] sm:max-w-sm sm:py-4"
             >
               <Mic className="h-5 w-5" />
               답변 녹음하기
             </button>
           )}
 
+          {/* Slot Rescue 완료 → 전체 재녹음 */}
           {phase === "slot_rescue" && (
             <button
               onClick={handleSlotRescueComplete}
-              className="flex items-center gap-2 rounded-full bg-primary-500 px-8 py-3 text-sm font-medium text-white shadow-lg transition-all hover:bg-primary-700 active:scale-95"
+              className="flex w-full max-w-xs items-center justify-center gap-2 rounded-full bg-primary-500 py-3.5 text-sm font-semibold text-white shadow-lg transition-all hover:bg-primary-700 active:scale-[0.97] sm:max-w-sm sm:py-4"
             >
-              <Mic className="h-5 w-5" />
+              <ArrowRight className="h-5 w-5" />
               전체 답변으로 돌아가기
             </button>
           )}
 
+          {/* 녹음 중 */}
           {phase === "recording" && (
-            <div className="flex items-center gap-4">
+            <div className="flex w-full max-w-xs flex-col items-center gap-3 sm:max-w-sm">
               <div className="flex items-center gap-2">
                 <div className="h-3 w-3 animate-pulse rounded-full bg-red-500" />
-                <span className="text-sm text-foreground-secondary">
+                <span className="text-sm font-medium tabular-nums text-foreground-secondary">
                   {Math.floor(recorder.duration)}초
                 </span>
               </div>
               <button
                 onClick={handleStopAndSubmit}
-                className="flex items-center gap-2 rounded-full bg-red-500 px-8 py-3 text-sm font-medium text-white shadow-lg transition-all hover:bg-red-600 active:scale-95"
+                className="flex w-full items-center justify-center gap-2 rounded-full bg-red-500 py-3.5 text-sm font-semibold text-white shadow-lg transition-all hover:bg-red-600 active:scale-[0.97] sm:py-4"
               >
                 <Square className="h-4 w-4" />
-                완료
+                녹음 완료
               </button>
             </div>
           )}
 
+          {/* 제출/분석 중 */}
           {phase === "submitting" && (
-            <div className="flex items-center gap-2 text-sm text-foreground-secondary">
-              <Loader2 className="h-5 w-5 animate-spin" />
-              분석 중...
+            <div className="flex items-center gap-2 py-3 text-sm text-foreground-secondary">
+              <Loader2 className="h-5 w-5 animate-spin text-primary-500" />
+              답변을 분석하고 있어요...
             </div>
           )}
 
+          {/* 피드백 후 다시 말하기 */}
           {phase === "feedback" && lastAttempt?.result !== "pass" && (
             <button
               onClick={handleRetry}
-              className="flex items-center gap-2 rounded-full bg-primary-500 px-8 py-3 text-sm font-medium text-white shadow-lg transition-all hover:bg-primary-700 active:scale-95"
+              className="flex w-full max-w-xs items-center justify-center gap-2 rounded-full bg-primary-500 py-3.5 text-sm font-semibold text-white shadow-lg transition-all hover:bg-primary-700 active:scale-[0.97] sm:max-w-sm sm:py-4"
             >
               <RefreshCw className="h-4 w-4" />
               다시 말하기
             </button>
           )}
 
+          {/* PASS 전환 중 */}
           {phase === "passed" && (
-            <div className="flex items-center gap-2 text-sm text-green-600">
+            <div className="flex items-center gap-2 py-3 text-sm text-green-600">
               <CheckCircle2 className="h-5 w-5" />
               다음으로 이동 중...
             </div>
+          )}
+
+          {/* 시도 횟수 */}
+          {retryCount > 0 && phase !== "passed" && phase !== "submitting" && (
+            <p className="text-xs text-foreground-muted">
+              시도 {retryCount}회
+            </p>
           )}
         </div>
       </div>
@@ -347,7 +373,7 @@ export function DrillPlayer({
   );
 }
 
-/* ── Frame 카드 (레벨별 한국어 표시 + 실패 slot 하이라이트) ── */
+/* ── Frame 카드 ── */
 
 function FrameCards({
   slots,
@@ -363,16 +389,16 @@ function FrameCards({
   const [isExpanded, setIsExpanded] = useState(!collapsed);
 
   return (
-    <div className="rounded-xl border border-border bg-surface">
+    <div className="rounded-[var(--radius-xl)] border border-border bg-surface">
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="flex w-full items-center justify-between px-4 py-3 text-sm font-medium text-foreground"
+        className="flex w-full items-center justify-between px-4 py-3 text-sm font-semibold text-foreground"
       >
-        <span>📝 말하기 구조</span>
-        {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+        <span>말하기 구조</span>
+        {isExpanded ? <ChevronUp className="h-4 w-4 text-foreground-muted" /> : <ChevronDown className="h-4 w-4 text-foreground-muted" />}
       </button>
       {isExpanded && (
-        <div className="space-y-2 border-t border-border px-4 pb-4 pt-2">
+        <div className="space-y-2 border-t border-border px-4 pb-4 pt-3">
           {slots.map((slot, idx) => {
             const isFailed = failedSlots.some((f) =>
               f.toLowerCase().includes(slot.slot.toLowerCase().replace(/_/g, ""))
@@ -380,16 +406,16 @@ function FrameCards({
             return (
               <div
                 key={slot.slot}
-                className={`flex items-start gap-3 rounded-lg p-3 ${
+                className={`flex items-start gap-3 rounded-[var(--radius-lg)] p-3 transition-colors ${
                   isFailed
-                    ? "border border-red-200 bg-red-50"
+                    ? "border border-accent-300 bg-accent-50"
                     : "bg-surface-secondary"
                 }`}
               >
                 <span
                   className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
                     isFailed
-                      ? "bg-red-100 text-red-600"
+                      ? "bg-accent-100 text-accent-600"
                       : "bg-primary-100 text-primary-600"
                   }`}
                 >
@@ -398,10 +424,10 @@ function FrameCards({
                 <div>
                   <p className="text-sm font-medium text-foreground">{slot.frame_en}</p>
                   {showKorean && (
-                    <p className="text-xs text-foreground-secondary">{slot.label_ko}</p>
+                    <p className="mt-0.5 text-xs text-foreground-secondary">{slot.label_ko}</p>
                   )}
                   {isFailed && (
-                    <p className="mt-0.5 text-xs font-medium text-red-500">← 이 부분이 빠졌어요</p>
+                    <p className="mt-0.5 text-xs font-medium text-accent-600">← 이 부분이 빠졌어요</p>
                   )}
                 </div>
               </div>
@@ -413,7 +439,7 @@ function FrameCards({
   );
 }
 
-/* ── Slot Rescue 패널 (빠진 slot만 집중 연습) ── */
+/* ── Slot Rescue 패널 ── */
 
 function SlotRescuePanel({
   allSlots,
@@ -426,32 +452,29 @@ function SlotRescuePanel({
   showKorean: boolean;
   onComplete: () => void;
 }) {
-  // failedFlags에 매칭되는 slot만 표시
   const rescueSlots = allSlots.filter((slot) =>
     failedFlags.some((f) =>
       f.toLowerCase().includes(slot.slot.toLowerCase().replace(/_/g, ""))
     )
   );
 
-  if (rescueSlots.length === 0) {
-    return null;
-  }
+  if (rescueSlots.length === 0) return null;
 
   return (
-    <div className="rounded-xl border-2 border-yellow-300 bg-yellow-50 p-4">
+    <div className="rounded-[var(--radius-xl)] border-2 border-yellow-300 bg-yellow-50 p-4 sm:p-5">
       <div className="mb-3 flex items-center gap-2">
         <Puzzle className="h-5 w-5 text-yellow-600" />
         <h4 className="text-sm font-semibold text-yellow-800">빠진 부분 연습하기</h4>
       </div>
-      <p className="mb-3 text-xs text-yellow-700">
+      <p className="mb-4 text-xs text-yellow-700">
         아래 구조를 머릿속에 넣고, 전체 답변으로 돌아가서 다시 말해보세요.
       </p>
       <div className="space-y-2">
         {rescueSlots.map((slot) => (
-          <div key={slot.slot} className="rounded-lg bg-white p-3">
+          <div key={slot.slot} className="rounded-[var(--radius-lg)] border border-yellow-200 bg-white p-3">
             <p className="text-sm font-medium text-foreground">{slot.frame_en}</p>
             {showKorean && (
-              <p className="text-xs text-foreground-secondary">{slot.label_ko}</p>
+              <p className="mt-0.5 text-xs text-foreground-secondary">{slot.label_ko}</p>
             )}
           </div>
         ))}
@@ -460,7 +483,7 @@ function SlotRescuePanel({
   );
 }
 
-/* ── 피드백 패널 (Slot Rescue 버튼 포함) ── */
+/* ── 피드백 패널 ── */
 
 function FeedbackPanel({
   attempt,
@@ -477,10 +500,10 @@ function FeedbackPanel({
   const layer2 = attempt.layer2_result as Layer2Result | null;
   const isPassed = attempt.result === "pass";
 
-  // Layer 2 우선 표시
+  // Layer 2 우선
   if (layer2) {
     return (
-      <div className="space-y-3 rounded-xl border border-border bg-surface p-4">
+      <div className="space-y-3 rounded-[var(--radius-xl)] border border-border bg-surface p-4 sm:p-5">
         <div className="flex items-center gap-2">
           {layer2.pass_or_retry === "pass" ? (
             <CheckCircle2 className="h-5 w-5 text-green-500" />
@@ -493,14 +516,14 @@ function FeedbackPanel({
         </div>
         <p className="text-sm text-foreground">{layer2.praise_one}</p>
         {layer2.fix_one_or_two.length > 0 && (
-          <div className="space-y-1">
+          <div className="space-y-1.5">
             {layer2.fix_one_or_two.map((fix, i) => (
               <p key={i} className="text-sm text-foreground-secondary">⚠️ {fix}</p>
             ))}
           </div>
         )}
         {layer2.correction_examples?.length > 0 && (
-          <div className="rounded-lg bg-surface-secondary p-3">
+          <div className="rounded-[var(--radius-lg)] bg-surface-secondary p-3">
             {layer2.correction_examples.map((ex, i) => (
               <p key={i} className="text-sm italic text-foreground-secondary">{ex}</p>
             ))}
@@ -516,10 +539,10 @@ function FeedbackPanel({
     );
   }
 
-  // Layer 1 피드백
+  // Layer 1
   if (layer1) {
     return (
-      <div className="space-y-3 rounded-xl border border-border bg-surface p-4">
+      <div className="space-y-3 rounded-[var(--radius-xl)] border border-border bg-surface p-4 sm:p-5">
         <div className="flex items-center gap-2">
           {isPassed ? (
             <CheckCircle2 className="h-5 w-5 text-green-500" />
@@ -531,15 +554,15 @@ function FeedbackPanel({
           </span>
         </div>
         <p className="text-sm text-foreground">{layer1.student_feedback.praise}</p>
-        <div className="space-y-1">
+        <div className="space-y-1.5">
           {layer1.student_feedback.checklist.map((item: ChecklistItem, i: number) => (
             <div key={i} className="flex items-center gap-2 text-sm">
               {item.status === "pass" ? (
-                <CheckCircle2 className="h-4 w-4 text-green-500" />
+                <CheckCircle2 className="h-4 w-4 shrink-0 text-green-500" />
               ) : (
-                <XCircle className="h-4 w-4 text-red-400" />
+                <XCircle className="h-4 w-4 shrink-0 text-accent-500" />
               )}
-              <span className={item.status === "pass" ? "text-foreground" : "text-red-600"}>
+              <span className={item.status === "pass" ? "text-foreground" : "text-accent-600 font-medium"}>
                 {item.label}
               </span>
             </div>
@@ -550,12 +573,10 @@ function FeedbackPanel({
             👉 {layer1.student_feedback.retry_instruction}
           </p>
         )}
-
-        {/* Slot Rescue 버튼 (조건부) */}
         {!isPassed && canSlotRescue && (
           <button
             onClick={onSlotRescue}
-            className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg border border-yellow-300 bg-yellow-50 px-4 py-2 text-xs font-medium text-yellow-700 transition-colors hover:bg-yellow-100"
+            className="mt-1 flex w-full items-center justify-center gap-2 rounded-[var(--radius-lg)] border border-yellow-300 bg-yellow-50 px-4 py-2.5 text-xs font-medium text-yellow-700 transition-colors hover:bg-yellow-100"
           >
             <Puzzle className="h-3.5 w-3.5" />
             빠진 부분 연습하기

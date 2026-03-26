@@ -124,6 +124,10 @@ function FocusDrillCard({ focus }: { focus: TutoringFocus }) {
     <Dumbbell className="h-5 w-5 text-primary-500" />
   );
 
+  const totalSteps = 4; // drill 2 + transfer 1 + retest 1
+  const completedSteps = focus.drill_pass_count + focus.transfer_pass_count + focus.retest_pass_count;
+  const progressPercent = Math.round((completedSteps / totalSteps) * 100);
+
   return (
     <div
       className={`rounded-xl border p-4 sm:p-5 ${
@@ -132,49 +136,70 @@ function FocusDrillCard({ focus }: { focus: TutoringFocus }) {
           : "border-border bg-surface"
       }`}
     >
-      <div className="flex items-start gap-3">
-        <div className="mt-0.5">{statusIcon}</div>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <h3 className="text-sm font-semibold text-foreground">
-              {focus.label}
-            </h3>
-            <span
-              className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
-                isGraduated
-                  ? "bg-green-100 text-green-700"
-                  : isImproving
-                    ? "bg-yellow-100 text-yellow-700"
-                    : "bg-primary-100 text-primary-700"
-              }`}
-            >
-              {FOCUS_STATUS_LABELS[focus.status]}
-            </span>
-          </div>
-
-          {focus.reason && (
-            <p className="mt-1 text-xs text-foreground-secondary">{focus.reason}</p>
-          )}
-
-          {/* 졸업 진행률 */}
-          <div className="mt-3 flex items-center gap-4 text-xs text-foreground-secondary">
-            <span>드릴 {focus.drill_pass_count}/2</span>
-            <span>전이 {focus.transfer_pass_count}/1</span>
-            <span>재평가 {focus.retest_pass_count}/1</span>
-          </div>
-
-          {/* CTA */}
-          {isActive && (
-            <a
-              href={`/tutoring/drill?focusId=${focus.id}`}
-              className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-primary-500 px-4 py-2 text-xs font-medium text-white transition-colors hover:bg-primary-700"
-            >
-              {hasDrill ? "이어서 훈련하기" : "훈련 시작하기"}
-              <ArrowRight className="h-3 w-3" />
-            </a>
-          )}
-        </div>
+      {/* 상단: 아이콘 + 제목 + 상태 */}
+      <div className="flex items-center gap-2.5">
+        <div>{statusIcon}</div>
+        <h3 className="text-sm font-semibold text-foreground sm:text-base">{focus.label}</h3>
+        <span
+          className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${
+            isGraduated
+              ? "bg-green-100 text-green-700"
+              : isImproving
+                ? "bg-yellow-100 text-yellow-700"
+                : "bg-primary-100 text-primary-700"
+          }`}
+        >
+          {FOCUS_STATUS_LABELS[focus.status]}
+        </span>
       </div>
+
+      {/* 설명 */}
+      {focus.reason && (
+        <p className="mt-2 text-xs leading-relaxed text-foreground-secondary sm:text-sm">{focus.reason}</p>
+      )}
+      {focus.why_now_for_target && (
+        <p className="mt-1 text-xs leading-relaxed text-primary-600">{focus.why_now_for_target}</p>
+      )}
+
+      {/* 졸업 진행률 — 심플 인라인 */}
+      <div className="mt-3 flex items-center gap-3 text-xs text-foreground-secondary sm:mt-4">
+        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-surface-secondary">
+          <div
+            className={`h-full rounded-full transition-all duration-500 ${isGraduated ? "bg-green-500" : "bg-primary-500"}`}
+            style={{ width: `${Math.max(progressPercent, 3)}%` }}
+          />
+        </div>
+        <span className="shrink-0">드릴 {focus.drill_pass_count}/2</span>
+        <span className="shrink-0">전이 {focus.transfer_pass_count}/1</span>
+        <span className="shrink-0">재평가 {focus.retest_pass_count}/1</span>
+      </div>
+
+      {/* CTA */}
+      {isActive && (
+        <a
+          href={`/tutoring/drill?focusId=${focus.id}`}
+          className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-primary-500 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary-700 sm:py-3"
+        >
+          {hasDrill ? "이어서 훈련하기" : "훈련 시작하기"}
+          <ArrowRight className="h-4 w-4" />
+        </a>
+      )}
+    </div>
+  );
+}
+
+/* ── 졸업 진행 아이템 ── */
+
+function ProgressItem({ label, current, total }: { label: string; current: number; total: number }) {
+  const done = current >= total;
+  return (
+    <div className={`flex flex-col items-center rounded-lg px-2 py-1.5 ${done ? "bg-green-100/50" : "bg-surface"}`}>
+      <span className={`text-sm font-semibold ${done ? "text-green-600" : "text-foreground"}`}>
+        {current}/{total}
+      </span>
+      <span className={`mt-0.5 text-[10px] ${done ? "text-green-600" : "text-foreground-muted"}`}>
+        {done ? "✓ " : ""}{label}
+      </span>
     </div>
   );
 }

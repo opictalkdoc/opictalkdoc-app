@@ -191,10 +191,18 @@ export interface TargetGapSummary {
   next_to_final: string;
 }
 
+export interface MasteryDetail {
+  mastery: MasteryLevel;
+  reason: string;       // 한국어, 1~2문장: 왜 이 상태인지
+  evidence: string[];   // 한국어, 구체적 문항 근거 1~3개
+}
+
 export interface DiagnosisInternal {
   level_rationale: string[];
   type_mastery: Record<string, MasteryLevel>;
   topic_mastery: Record<string, MasteryLevel>;
+  type_details?: Record<string, MasteryDetail>;   // 유형별 상세 근거
+  topic_details?: Record<string, MasteryDetail>;   // 주제별 상세 근거
 }
 
 export interface Bottleneck {

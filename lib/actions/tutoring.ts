@@ -95,11 +95,13 @@ export async function checkTutoringEligibility(): Promise<ActionResult<TutoringE
   try {
     const { supabase, userId } = await requireUser();
 
-    // 가장 최근 튜터링 세션 조회
+    // 가장 최근 **완료된** 튜터링 세션 조회
+    // (diagnosing/diagnosed/active 중인 세션은 제외 — 현재 진행 중이므로)
     const { data: lastTutoring } = await supabase
       .from("tutoring_sessions")
       .select("id, analyzed_session_ids, created_at")
       .eq("user_id", userId)
+      .eq("status", "completed")
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
