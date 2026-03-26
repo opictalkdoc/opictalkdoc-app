@@ -97,8 +97,8 @@ export function Navbar({ serverAuth }: { serverAuth?: NavbarServerAuth } = {}) {
           className="flex items-center gap-2"
         >
           <Image
-            src="/images/logo-bandaid-terracotta.png"
-            alt="오픽톡닥"
+            src="/images/logo-sunrise-terracotta.png"
+            alt="하루오픽"
             width={130}
             height={34}
             priority

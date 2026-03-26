@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 export function AuthLayout({ children }: { children: React.ReactNode }) {
@@ -6,10 +7,14 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
       <div className="w-full max-w-md">
         {/* 로고 */}
         <div className="mb-8 text-center">
-          <Link href="/">
-            <span className="font-display text-2xl text-primary-500">
-              오픽톡닥
-            </span>
+          <Link href="/" className="inline-block">
+            <Image
+              src="/images/logo-sunrise-terracotta.png"
+              alt="하루오픽"
+              width={140}
+              height={26}
+              priority
+            />
           </Link>
         </div>
 

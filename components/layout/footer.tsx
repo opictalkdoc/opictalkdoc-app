@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 export function Footer() {
@@ -7,9 +8,12 @@ export function Footer() {
         <div className="flex flex-col gap-8 md:flex-row md:justify-between md:items-start">
           {/* 브랜드 */}
           <div className="flex flex-col gap-2">
-            <span className="text-lg font-extrabold text-primary-300">
-              오픽톡닥
-            </span>
+            <Image
+              src="/images/logo-sunrise-dark.png"
+              alt="하루오픽"
+              width={120}
+              height={22}
+            />
             <p className="text-sm">
               당신의 하루가 이미 완벽한 스토리입니다.
             </p>
