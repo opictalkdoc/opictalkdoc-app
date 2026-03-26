@@ -46,6 +46,21 @@ export const metadata: Metadata = {
     siteName: "하루오픽",
     locale: "ko_KR",
     type: "website",
+    images: [
+      {
+        url: "/images/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "하루오픽 - 당신의 평범한 하루가 가장 완벽한 스토리입니다",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "하루오픽 - 나의 경험으로 준비하는 OPIc",
+    description:
+      "나의 일상이 영어 답변이 되는 OPIc 말하기 학습 플랫폼.",
+    images: ["/images/og-image.png"],
   },
 };
 

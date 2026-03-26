@@ -15,7 +15,7 @@ export function Footer() {
               height={22}
             />
             <p className="text-sm">
-              당신의 하루가 이미 완벽한 스토리입니다.
+              당신의 하루를 응원합니다. 오늘도, 내일도.
             </p>
           </div>
 
