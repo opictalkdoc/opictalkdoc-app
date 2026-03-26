@@ -43,12 +43,19 @@ export function TrainingTab({ initialDiagnosis }: TrainingTabProps) {
 
   if (!session || focuses.length === 0) {
     content = (
-      <div className="rounded-xl border border-border bg-surface p-6 text-center">
-        <Target className="mx-auto mb-3 h-10 w-10 text-foreground-muted" />
-        <h3 className="text-lg font-semibold text-foreground">진단이 필요해요</h3>
-        <p className="mt-1 text-sm text-foreground-secondary">
-          진단 탭에서 진단을 먼저 시작해주세요.
-        </p>
+      <div className="rounded-[var(--radius-xl)] border border-border bg-surface p-4 sm:p-6">
+        <h3 className="text-sm font-semibold text-foreground sm:text-base">맞춤 훈련</h3>
+        <div className="mt-4 flex flex-col items-center py-6 text-center sm:mt-6 sm:py-8">
+          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-surface-secondary">
+            <Target size={24} className="text-foreground-muted" />
+          </div>
+          <p className="mt-3 text-sm font-medium text-foreground-secondary">
+            진단이 필요해요
+          </p>
+          <p className="mt-1 text-xs text-foreground-muted">
+            진단 탭에서 먼저 진단을 시작하면 맞춤 훈련이 여기에 표시됩니다
+          </p>
+        </div>
       </div>
     );
   } else {

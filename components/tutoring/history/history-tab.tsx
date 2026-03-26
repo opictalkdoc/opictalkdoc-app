@@ -37,12 +37,19 @@ export function HistoryTab() {
     );
   } else if (!history || history.length === 0) {
     content = (
-      <div className="rounded-xl border border-border bg-surface p-6 text-center">
-        <ClipboardList className="mx-auto mb-3 h-10 w-10 text-foreground-muted" />
-        <h3 className="text-lg font-semibold text-foreground">아직 이력이 없어요</h3>
-        <p className="mt-1 text-sm text-foreground-secondary">
-          첫 튜터링을 시작하면 이력이 여기에 표시됩니다.
-        </p>
+      <div className="rounded-[var(--radius-xl)] border border-border bg-surface p-4 sm:p-6">
+        <h3 className="text-sm font-semibold text-foreground sm:text-base">나의 튜터링</h3>
+        <div className="mt-4 flex flex-col items-center py-6 text-center sm:mt-6 sm:py-8">
+          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-surface-secondary">
+            <ClipboardList size={24} className="text-foreground-muted" />
+          </div>
+          <p className="mt-3 text-sm font-medium text-foreground-secondary">
+            아직 튜터링 이력이 없습니다
+          </p>
+          <p className="mt-1 text-xs text-foreground-muted">
+            첫 튜터링을 시작하면 이력이 여기에 표시됩니다
+          </p>
+        </div>
       </div>
     );
   } else {

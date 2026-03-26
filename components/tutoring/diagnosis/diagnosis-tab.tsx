@@ -5,14 +5,11 @@ import { useQuery } from "@tanstack/react-query";
 import {
   AlertTriangle,
   ArrowRight,
-  CheckCircle2,
   ChevronDown,
   Info,
   Loader2,
   Sparkles,
   Target,
-  TrendingUp,
-  Zap,
 } from "lucide-react";
 import {
   checkTutoringEligibility,
@@ -191,6 +188,53 @@ export function DiagnosisTab({
   );
 }
 
+/* ── 공통: 3단계 안내 (시험후기 후기제출 패턴) ── */
+
+const TUTORING_STEPS = [
+  { step: 1, title: "반복 약점 진단", desc: "여러 회차 데이터에서 패턴 분석" },
+  { step: 2, title: "맞춤 훈련 처방", desc: "핵심 병목 3개와 드릴 추천" },
+  { step: 3, title: "재발화 훈련", desc: "직접 말하고 개선 확인하는 루프" },
+];
+
+function StepsGuide() {
+  return (
+    <>
+      {/* 모바일: 세로 타임라인 */}
+      <div className="relative mt-4 sm:hidden">
+        {TUTORING_STEPS.map((s, i) => (
+          <div key={s.step} className="relative flex gap-3 pb-4 last:pb-0">
+            {i < 2 && (
+              <div className="absolute left-3.5 top-7 bottom-0 w-px bg-border" />
+            )}
+            <div className="relative z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 border-border bg-surface-secondary text-xs font-bold text-foreground-muted">
+              {s.step}
+            </div>
+            <div className="pt-0.5">
+              <p className="text-sm font-semibold text-foreground">{s.title}</p>
+              <p className="text-xs text-foreground-secondary">{s.desc}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+      {/* PC: 가로 그리드 + 화살표 */}
+      <div className="hidden sm:mt-6 sm:grid sm:grid-cols-[1fr_auto_1fr_auto_1fr] sm:items-center sm:gap-3">
+        {TUTORING_STEPS.flatMap((s, i) => [
+          <div key={s.step} className="flex flex-col items-center text-center">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-border bg-surface-secondary text-sm font-bold text-foreground-muted">
+              {s.step}
+            </div>
+            <p className="mt-2 text-sm font-semibold text-foreground">{s.title}</p>
+            <p className="mt-0.5 text-xs text-foreground-secondary">{s.desc}</p>
+          </div>,
+          ...(i < 2
+            ? [<div key={`arrow-${i}`}><ArrowRight size={20} className="text-foreground-muted" /></div>]
+            : []),
+        ])}
+      </div>
+    </>
+  );
+}
+
 /* ── 자격 미충족 화면 ── */
 
 function IneligibleView({
@@ -203,104 +247,60 @@ function IneligibleView({
   const remaining = requiredCount - completedCount;
 
   return (
-    <div className="rounded-xl border border-border bg-surface p-5 sm:p-8">
-      {/* 튜터링 진행 과정 (상단) */}
-      <div>
-        <h4 className="mb-3 text-center text-sm font-semibold text-foreground sm:text-base">튜터링 진행 과정</h4>
-        <p className="mb-4 text-center text-xs text-foreground-secondary sm:mb-5">
+    <>
+      {/* 진행 과정 카드 */}
+      <div className="rounded-[var(--radius-xl)] border border-border bg-surface p-4 sm:p-6">
+        <h3 className="text-sm font-semibold text-foreground sm:text-base">튜터링 진행 과정</h3>
+        <p className="mt-0.5 text-xs text-foreground-secondary sm:mt-1 sm:text-sm">
           모의고사 결과에서 반복 병목을 찾고, 맞춤 드릴로 훈련합니다
         </p>
-        <div className="flex items-start justify-center gap-2 sm:gap-4">
-          {/* Step 1 */}
-          <div className="flex flex-1 flex-col items-center text-center">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-100 text-sm font-bold text-primary-600 sm:h-10 sm:w-10">
-              1
-            </div>
-            <p className="mt-2 text-xs font-medium text-foreground sm:text-sm">반복 약점 진단</p>
-            <p className="mt-0.5 hidden text-[11px] text-foreground-secondary sm:block">
-              여러 회차 데이터에서 패턴 분석
-            </p>
-          </div>
-          <ArrowRight className="mt-3 h-4 w-4 shrink-0 text-foreground-muted sm:mt-4" />
-          {/* Step 2 */}
-          <div className="flex flex-1 flex-col items-center text-center">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-100 text-sm font-bold text-primary-600 sm:h-10 sm:w-10">
-              2
-            </div>
-            <p className="mt-2 text-xs font-medium text-foreground sm:text-sm">맞춤 훈련 처방</p>
-            <p className="mt-0.5 hidden text-[11px] text-foreground-secondary sm:block">
-              핵심 병목 3개와 드릴 추천
-            </p>
-          </div>
-          <ArrowRight className="mt-3 h-4 w-4 shrink-0 text-foreground-muted sm:mt-4" />
-          {/* Step 3 */}
-          <div className="flex flex-1 flex-col items-center text-center">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-100 text-sm font-bold text-primary-600 sm:h-10 sm:w-10">
-              3
-            </div>
-            <p className="mt-2 text-xs font-medium text-foreground sm:text-sm">재발화 훈련</p>
-            <p className="mt-0.5 hidden text-[11px] text-foreground-secondary sm:block">
-              직접 말하고 개선 확인하는 루프
-            </p>
-          </div>
-        </div>
+        <StepsGuide />
       </div>
 
-      {/* 구분선 */}
-      <hr className="my-6 border-border sm:my-8" />
-
-      {/* 미자격 안내 (하단) */}
-      <div className="mx-auto max-w-lg text-center">
-        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-primary-50 sm:h-16 sm:w-16">
-          <Target className="h-7 w-7 text-primary-500 sm:h-8 sm:w-8" />
-        </div>
-        <h3 className="text-base font-semibold text-foreground sm:text-lg">
+      {/* 미자격 안내 카드 */}
+      <div className="rounded-[var(--radius-xl)] border border-border bg-surface p-4 sm:p-6">
+        <h3 className="text-sm font-semibold text-foreground sm:text-base">
           모의고사 {remaining}회 더 필요해요
         </h3>
-        <p className="mt-2 text-xs leading-relaxed text-foreground-secondary sm:text-sm">
-          튜터링은 모의고사 {requiredCount}회 이상의 데이터를 분석하여
-          반복되는 약점을 정확히 잡아냅니다.
+        <p className="mt-0.5 text-xs text-foreground-secondary sm:mt-1 sm:text-sm">
+          튜터링은 모의고사 {requiredCount}회 이상의 데이터를 분석하여 반복되는 약점을 정확히 잡아냅니다.
         </p>
-      </div>
 
-      {/* 진행률 — 3회 시작, 5회 최대 분석 */}
-      <div className="mx-auto mt-5 max-w-md sm:mt-6">
-        <div className="mb-2 flex items-end justify-between text-xs text-foreground-secondary">
-          <span>현재 <span className="font-semibold text-foreground">{completedCount}</span>회 완료</span>
-          <span>최소 {requiredCount}회 · 최대 5회 분석</span>
+        {/* 진행률 */}
+        <div className="mt-4 sm:mt-5">
+          <div className="mb-2 flex items-end justify-between text-xs text-foreground-secondary">
+            <span>현재 <span className="font-semibold text-foreground">{completedCount}</span>회 완료</span>
+            <span>최소 {requiredCount}회 · 최대 5회 분석</span>
+          </div>
+          <div className="relative h-2.5 overflow-hidden rounded-full bg-surface-secondary sm:h-3">
+            <div
+              className="h-full rounded-full bg-primary-500 transition-all"
+              style={{ width: `${Math.min(100, (completedCount / 5) * 100)}%` }}
+            />
+            <div
+              className="absolute top-0 h-full w-px bg-primary-700/40"
+              style={{ left: `${(3 / 5) * 100}%` }}
+            />
+          </div>
+          <div className="mt-1.5 flex text-[10px] text-foreground-muted sm:text-xs">
+            <span>0회</span>
+            <span className="ml-auto mr-8">3회 (시작 가능)</span>
+            <span>5회</span>
+          </div>
         </div>
-        <div className="relative h-2.5 overflow-hidden rounded-full bg-surface-secondary sm:h-3">
-          {/* 현재 진행 */}
-          <div
-            className="h-full rounded-full bg-primary-500 transition-all"
-            style={{
-              width: `${Math.min(100, (completedCount / 5) * 100)}%`,
-            }}
-          />
-          {/* 3회 기준선 */}
-          <div
-            className="absolute top-0 h-full w-px bg-primary-700/40"
-            style={{ left: `${(3 / 5) * 100}%` }}
-          />
-        </div>
-        <div className="mt-1.5 flex justify-between text-[10px] text-foreground-muted sm:text-xs">
-          <span>0회</span>
-          <span style={{ marginLeft: `${(3 / 5) * 100 - 8}%` }}>3회 (시작 가능)</span>
-          <span>5회</span>
-        </div>
-      </div>
 
-      {/* CTA */}
-      <div className="mt-5 text-center sm:mt-6">
-        <a
-          href="/mock-exam"
-          className="inline-flex items-center gap-2 rounded-lg bg-primary-500 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary-700"
-        >
-          모의고사 응시하기
-          <ArrowRight className="h-4 w-4" />
-        </a>
+        {/* CTA */}
+        <div className="mt-4 border-t border-border pt-3 sm:mt-5 sm:pt-4">
+          <a
+            href="/mock-exam"
+            className="flex h-9 w-full items-center justify-center gap-2 rounded-[var(--radius-lg)] bg-primary-500 px-4 text-sm font-medium text-white transition-colors hover:bg-primary-600 sm:h-10"
+          >
+            <Target size={16} />
+            모의고사 응시하기
+          </a>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 
@@ -339,80 +339,49 @@ function StartDiagnosisView({
   const hasCredit = credit?.available ?? false;
 
   return (
-    <div className="rounded-xl border border-border bg-surface p-5 sm:p-8">
-      {/* 헤더 */}
-      <div className="mx-auto max-w-lg text-center">
-        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-primary-50 sm:h-16 sm:w-16">
-          <Sparkles className="h-7 w-7 text-primary-500 sm:h-8 sm:w-8" />
-        </div>
-        <h3 className="text-base font-semibold text-foreground sm:text-lg">튜터링 시작하기</h3>
-        <p className="mt-2 text-xs leading-relaxed text-foreground-secondary sm:text-sm">
-          최근 모의고사 데이터를 분석하여 목표 등급
-          {targetGrade && (
-            <span className="font-semibold text-primary-500"> {targetGrade}</span>
-          )}
-          까지 막고 있는 핵심 병목을 찾아드립니다.
-        </p>
-      </div>
+    <div className="rounded-[var(--radius-xl)] border border-border bg-surface p-4 sm:p-6">
+      <h3 className="text-sm font-semibold text-foreground sm:text-base">튜터링 시작하기</h3>
+      <p className="mt-0.5 text-xs text-foreground-secondary sm:mt-1 sm:text-sm">
+        최근 모의고사 데이터를 분석하여 목표 등급
+        {targetGrade && (
+          <span className="font-semibold text-primary-500"> {targetGrade}</span>
+        )}
+        까지 막고 있는 핵심 병목을 찾아드립니다.
+      </p>
 
-      {/* 구분선 */}
-      <hr className="my-5 border-border sm:my-6" />
-
-      {/* 스텝 안내 — 스크립트 페이지와 동일 패턴 */}
-      <div>
-        <h4 className="mb-3 text-center text-sm font-semibold text-foreground sm:text-base">이런 순서로 진행돼요</h4>
-        <div className="flex items-start justify-center gap-2 sm:gap-4">
-          <div className="flex flex-1 flex-col items-center text-center">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-100 text-sm font-bold text-primary-600 sm:h-10 sm:w-10">1</div>
-            <p className="mt-2 text-xs font-medium text-foreground sm:text-sm">반복 약점 진단</p>
-            <p className="mt-0.5 hidden text-[11px] text-foreground-secondary sm:block">여러 회차에서 반복 패턴 분석</p>
-          </div>
-          <ArrowRight className="mt-3 h-4 w-4 shrink-0 text-foreground-muted sm:mt-4" />
-          <div className="flex flex-1 flex-col items-center text-center">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-100 text-sm font-bold text-primary-600 sm:h-10 sm:w-10">2</div>
-            <p className="mt-2 text-xs font-medium text-foreground sm:text-sm">맞춤 훈련 처방</p>
-            <p className="mt-0.5 hidden text-[11px] text-foreground-secondary sm:block">핵심 병목 3개와 드릴 추천</p>
-          </div>
-          <ArrowRight className="mt-3 h-4 w-4 shrink-0 text-foreground-muted sm:mt-4" />
-          <div className="flex flex-1 flex-col items-center text-center">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-100 text-sm font-bold text-primary-600 sm:h-10 sm:w-10">3</div>
-            <p className="mt-2 text-xs font-medium text-foreground sm:text-sm">재발화 훈련</p>
-            <p className="mt-0.5 hidden text-[11px] text-foreground-secondary sm:block">직접 말하고 개선 확인하는 루프</p>
-          </div>
-        </div>
-      </div>
+      <StepsGuide />
 
       {/* CTA */}
-      <div className="mt-6 text-center sm:mt-8">
+      <div className="mt-4 border-t border-border pt-3 sm:mt-6 sm:pt-4">
         {hasCredit ? (
           <button
             onClick={onStart}
             disabled={isStarting}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary-500 px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-primary-700 disabled:opacity-50 sm:w-auto"
+            className="flex h-9 w-full items-center justify-center gap-2 rounded-[var(--radius-lg)] bg-primary-500 px-4 text-sm font-medium text-white transition-colors hover:bg-primary-600 disabled:opacity-50 sm:h-10"
           >
             {isStarting ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
-              <Sparkles className="h-4 w-4" />
+              <Sparkles size={16} />
             )}
             진단 시작하기
           </button>
         ) : (
-          <div>
-            <div className="mb-3 flex items-center justify-center gap-2 text-xs text-foreground-secondary sm:text-sm">
-              <AlertTriangle className="h-4 w-4 text-accent-500" />
+          <>
+            <div className="mb-3 flex items-center gap-2 text-xs text-foreground-secondary sm:text-sm">
+              <AlertTriangle className="h-4 w-4 shrink-0 text-accent-500" />
               튜터링 크레딧이 없습니다
             </div>
             <a
               href="/store"
-              className="inline-flex items-center gap-2 rounded-lg bg-primary-500 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary-700"
+              className="flex h-9 w-full items-center justify-center gap-2 rounded-[var(--radius-lg)] bg-primary-500 px-4 text-sm font-medium text-white transition-colors hover:bg-primary-600 sm:h-10"
             >
               크레딧 구매하기
-              <ArrowRight className="h-4 w-4" />
+              <ArrowRight size={16} />
             </a>
-          </div>
+          </>
         )}
-        <p className="mt-3 text-xs text-foreground-muted">
+        <p className="mt-2 text-center text-[11px] text-foreground-muted sm:text-xs">
           크레딧 1회 소모 · 진단 + 훈련 전체 포함
         </p>
       </div>
