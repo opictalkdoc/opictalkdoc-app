@@ -9,7 +9,7 @@ import {
   TrendingUp,
   Target,
 } from "lucide-react";
-import { getAuthClaims } from "@/lib/auth";
+import { getAuthClaims, getUser } from "@/lib/auth";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { DashboardStats } from "@/components/dashboard/dashboard-stats";
 
@@ -95,18 +95,17 @@ const learningSteps = [
   },
 ];
 
-/* ── 사이드 패널 (JWT claims만 읽음, DB 쿼리 없음) ── */
+/* ── 사이드 패널 (getUser()로 최신 user_metadata 읽기) ── */
 
-interface ClaimsMetadata {
-  target_grade?: string;
-  current_grade?: string;
-  exam_date?: string;
+async function SidePanelLoader() {
+  const user = await getUser();
+  const targetGrade = user?.user_metadata?.target_grade || "";
+  const currentGrade = user?.user_metadata?.current_grade || "";
+  const examDate = user?.user_metadata?.exam_date || "";
+  return <SidePanelContent targetGrade={targetGrade} currentGrade={currentGrade} examDate={examDate} />;
 }
 
-function SidePanel({ claims }: { claims: { user_metadata?: ClaimsMetadata } | null }) {
-  const targetGrade = claims?.user_metadata?.target_grade || "";
-  const currentGrade = claims?.user_metadata?.current_grade || "";
-  const examDate = claims?.user_metadata?.exam_date || "";
+function SidePanelContent({ targetGrade, currentGrade, examDate }: { targetGrade: string; currentGrade: string; examDate: string }) {
   const dDay = getDday(examDate || null);
 
   return (
@@ -114,37 +113,48 @@ function SidePanel({ claims }: { claims: { user_metadata?: ClaimsMetadata } | nu
       {/* 목표 등급 요약 */}
       {(targetGrade || currentGrade) ? (
         <div className="rounded-[var(--radius-xl)] border border-primary-200 bg-primary-50/50 p-4 sm:p-5">
-          <div className="flex items-center gap-2">
-            <Target size={18} className="text-primary-500" />
-            <p className="font-semibold text-foreground">나의 목표</p>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Target size={18} className="text-primary-500" />
+              <p className="font-semibold text-foreground">나의 목표</p>
+            </div>
+            <Link
+              href="/mypage?tab=goal"
+              className="text-xs text-primary-500 hover:text-primary-600"
+            >
+              수정
+            </Link>
           </div>
-          <div className="mt-3 grid grid-cols-2 gap-3">
-            {currentGrade && (
-              <div className="rounded-[var(--radius-lg)] bg-white p-3 text-center">
-                <p className="text-xs text-foreground-muted">현재</p>
-                <p className="mt-0.5 text-lg font-bold text-foreground">
-                  {currentGrade}
-                </p>
-              </div>
-            )}
-            {targetGrade && (
-              <div className="rounded-[var(--radius-lg)] bg-white p-3 text-center">
-                <p className="text-xs text-foreground-muted">목표</p>
-                <p className="mt-0.5 text-lg font-bold text-primary-600">
-                  {targetGrade}
-                </p>
-              </div>
-            )}
+          <div className="mt-3 grid grid-cols-3 gap-2">
+            <div className="rounded-[var(--radius-lg)] bg-white p-3 text-center">
+              <p className="text-xs text-foreground-muted">현재</p>
+              <p className="mt-0.5 text-lg font-bold text-foreground">
+                {currentGrade || "—"}
+              </p>
+            </div>
+            <div className="rounded-[var(--radius-lg)] bg-white p-3 text-center">
+              <p className="text-xs text-foreground-muted">목표</p>
+              <p className="mt-0.5 text-lg font-bold text-primary-600">
+                {targetGrade || "—"}
+              </p>
+            </div>
+            <div className="rounded-[var(--radius-lg)] bg-white p-3 text-center">
+              <p className="text-xs text-foreground-muted">시험까지</p>
+              <p className={`mt-0.5 text-lg font-bold ${
+                dDay === "D-Day"
+                  ? "text-accent-600"
+                  : dDay?.startsWith("D+")
+                    ? "text-foreground-muted"
+                    : "text-primary-600"
+              }`}>
+                {dDay || "—"}
+              </p>
+            </div>
           </div>
-          {dDay && (
-            <p className="mt-3 text-center text-sm font-semibold text-primary-600">
-              시험까지 {dDay}
-            </p>
-          )}
         </div>
       ) : (
         <Link
-          href="/mypage"
+          href="/mypage?tab=goal"
           className="block rounded-[var(--radius-xl)] border border-border bg-surface p-4 transition-all hover:border-border-hover hover:shadow-[var(--shadow-card)] sm:p-5"
         >
           <div className="flex items-center gap-3">
@@ -156,7 +166,7 @@ function SidePanel({ claims }: { claims: { user_metadata?: ClaimsMetadata } | nu
                 목표 등급 설정하기
               </p>
               <p className="text-xs text-foreground-secondary">
-                마이페이지에서 목표를 설정하세요
+                현재 등급, 목표 등급, 시험 예정일을 설정하세요
               </p>
             </div>
             <ArrowRight
@@ -334,8 +344,15 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-        {/* 사이드 패널 — JWT claims만 사용 (DB 쿼리 없음, 즉시 렌더) */}
-        <SidePanel claims={claims} />
+        {/* 사이드 패널 — getUser()로 최신 데이터 (Suspense 스트리밍) */}
+        <Suspense fallback={
+          <div className="space-y-3 sm:space-y-4 md:col-span-2">
+            <div className="h-[160px] animate-pulse rounded-[var(--radius-xl)] border border-border bg-surface" />
+            <div className="h-[120px] animate-pulse rounded-[var(--radius-xl)] border border-border bg-surface" />
+          </div>
+        }>
+          <SidePanelLoader />
+        </Suspense>
       </div>
     </div>
   );
