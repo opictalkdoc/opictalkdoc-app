@@ -8,7 +8,10 @@ export function createClient() {
 }
 
 // 서버 측 signout API 호출 → 세션 무효화 + 전체 Supabase 쿠키 삭제 (PKCE 포함)
+// + React Query 캐시 전체 삭제 (이전 사용자 데이터 노출 방지)
 export async function serverSignOut() {
+  const { getQueryClient } = await import('@/lib/react-query')
+  getQueryClient().clear()
   await fetch('/api/auth/signout', { method: 'POST' })
   window.location.href = '/'
 }

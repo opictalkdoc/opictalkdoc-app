@@ -8,6 +8,9 @@ import { createClient } from "@/lib/supabase";
 import { UserMenu } from "./user-menu";
 import { MobileNav } from "./mobile-nav";
 
+// Supabase 브라우저 클라이언트 — 모듈 레벨 싱글턴 (useEffect 내 재생성 방지)
+const supabase = createClient();
+
 /* ── 네비게이션 항목 ── */
 
 type NavItem = { label: string; href: string; soon?: boolean };
@@ -27,11 +30,18 @@ const appNav: NavItem[] = [
   { label: "Store", href: "/store" },
 ];
 
-export function Navbar() {
+/** 서버에서 전달하는 인증 정보 (선택적). 전달 시 클라이언트 getSession() 스킵 → 깜빡임 제거 */
+export interface NavbarServerAuth {
+  isLoggedIn: boolean;
+  userName: string;
+  isAdmin: boolean;
+}
+
+export function Navbar({ serverAuth }: { serverAuth?: NavbarServerAuth } = {}) {
   const pathname = usePathname();
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
-  const [userName, setUserName] = useState("");
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(serverAuth?.isLoggedIn ?? null);
+  const [userName, setUserName] = useState(serverAuth?.userName ?? "");
+  const [isAdmin, setIsAdmin] = useState(serverAuth?.isAdmin ?? false);
 
   const handleLogoClick = useCallback((e: React.MouseEvent) => {
     if (pathname === "/") {
@@ -49,21 +59,20 @@ export function Navbar() {
   }, [pathname]);
 
   useEffect(() => {
-    const supabase = createClient();
-
     const extractSession = (session: import("@supabase/supabase-js").Session | null) => {
       setIsLoggedIn(!!session);
       setUserName(session?.user?.user_metadata?.display_name || session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.name || "");
       setIsAdmin(session?.user?.app_metadata?.role === "admin");
     };
 
-    // 초기 세션 확인 (로컬 쿠키에서 읽기 — 네트워크 호출 없음)
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      extractSession(session);
-    }).catch(() => {
-      // 세션 확인 실패 시 비로그인으로 처리 (영구 null 방지)
-      setIsLoggedIn(false);
-    });
+    // 서버에서 인증 정보를 받지 않은 경우에만 클라이언트에서 세션 확인
+    if (!serverAuth) {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        extractSession(session);
+      }).catch(() => {
+        setIsLoggedIn(false);
+      });
+    }
 
     // 인증 상태 변경 구독 (로그인/로그아웃 시 즉시 반영)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -73,7 +82,7 @@ export function Navbar() {
     );
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [serverAuth]);
 
   // 초기 상태 확인 전: 최소한의 레이아웃 유지 (깜빡임 방지)
   const navItems = isLoggedIn ? appNav : publicNav;

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   getAdminQuestions,
   getPromptTemplates,
@@ -66,23 +67,13 @@ export default function AdminContentPage() {
 
 // ── 질문 DB 탭 ──
 function QuestionsTab() {
-  const [data, setData] = useState<AdminTableRow[]>([]);
-  const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
-  const [loading, setLoading] = useState(true);
 
-  const fetch = useCallback(async () => {
-    setLoading(true);
-    try {
-      const result = await getAdminQuestions({ page, pageSize: 30 });
-      setData(result.data);
-      setTotal(result.total);
-    } finally {
-      setLoading(false);
-    }
-  }, [page]);
-
-  useEffect(() => { fetch(); }, [fetch]);
+  const { data: result, isLoading } = useQuery({
+    queryKey: ["admin-questions", page],
+    queryFn: () => getAdminQuestions({ page, pageSize: 30 }),
+    staleTime: 5 * 60 * 1000,
+  });
 
   const columns = [
     { key: "id", label: "ID", className: "w-24" },
@@ -93,12 +84,12 @@ function QuestionsTab() {
     { key: "survey_type", label: "서베이" },
   ];
 
-  if (loading) return <LoadingSkeleton />;
+  if (isLoading) return <LoadingSkeleton />;
   return (
     <AdminDataTable
       columns={columns}
-      data={data}
-      total={total}
+      data={(result?.data ?? []) as AdminTableRow[]}
+      total={result?.total ?? 0}
       page={page}
       pageSize={30}
       onPageChange={setPage}
@@ -108,17 +99,13 @@ function QuestionsTab() {
 
 // ── AI 프롬프트 탭 ──
 function PromptsTab() {
-  const [templates, setTemplates] = useState<{ id: string; name: string; content: string }[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: templates = [], isLoading } = useQuery({
+    queryKey: ["admin-prompt-templates"],
+    queryFn: getPromptTemplates,
+    staleTime: 5 * 60 * 1000,
+  });
 
-  useEffect(() => {
-    getPromptTemplates().then((data) => {
-      setTemplates(data);
-      setLoading(false);
-    });
-  }, []);
-
-  if (loading) return <LoadingSkeleton />;
+  if (isLoading) return <LoadingSkeleton />;
 
   return (
     <div className="space-y-4">
@@ -140,17 +127,13 @@ function PromptsTab() {
 
 // ── 평가 프롬프트 탭 ──
 function EvalPromptsTab() {
-  const [prompts, setPrompts] = useState<{ id: string; name: string; content: string }[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: prompts = [], isLoading } = useQuery({
+    queryKey: ["admin-eval-prompts"],
+    queryFn: getEvalPrompts,
+    staleTime: 5 * 60 * 1000,
+  });
 
-  useEffect(() => {
-    getEvalPrompts().then((data) => {
-      setPrompts(data);
-      setLoading(false);
-    });
-  }, []);
-
-  if (loading) return <LoadingSkeleton />;
+  if (isLoading) return <LoadingSkeleton />;
 
   return (
     <div className="space-y-4">
@@ -173,17 +156,13 @@ function EvalPromptsTab() {
 
 // ── 튜터링 프롬프트 탭 ──
 function TutoringPromptsTab() {
-  const [prompts, setPrompts] = useState<{ id: string; name: string; content: string }[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: prompts = [], isLoading } = useQuery({
+    queryKey: ["admin-tutoring-prompts"],
+    queryFn: getTutoringPrompts,
+    staleTime: 5 * 60 * 1000,
+  });
 
-  useEffect(() => {
-    getTutoringPrompts().then((data) => {
-      setPrompts(data);
-      setLoading(false);
-    });
-  }, []);
-
-  if (loading) return <LoadingSkeleton />;
+  if (isLoading) return <LoadingSkeleton />;
 
   return (
     <div className="space-y-4">
@@ -209,23 +188,13 @@ function TutoringPromptsTab() {
 
 // ── 학습 팁 탭 ──
 function TipsTab() {
-  const [data, setData] = useState<AdminTableRow[]>([]);
-  const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
-  const [loading, setLoading] = useState(true);
 
-  const fetch = useCallback(async () => {
-    setLoading(true);
-    try {
-      const result = await getOpicTips({ page, pageSize: 30 });
-      setData(result.data);
-      setTotal(result.total);
-    } finally {
-      setLoading(false);
-    }
-  }, [page]);
-
-  useEffect(() => { fetch(); }, [fetch]);
+  const { data: result, isLoading } = useQuery({
+    queryKey: ["admin-opic-tips", page],
+    queryFn: () => getOpicTips({ page, pageSize: 30 }),
+    staleTime: 5 * 60 * 1000,
+  });
 
   const columns = [
     { key: "category", label: "카테고리" },
@@ -240,12 +209,12 @@ function TipsTab() {
     },
   ];
 
-  if (loading) return <LoadingSkeleton />;
+  if (isLoading) return <LoadingSkeleton />;
   return (
     <AdminDataTable
       columns={columns}
-      data={data}
-      total={total}
+      data={(result?.data ?? []) as AdminTableRow[]}
+      total={result?.total ?? 0}
       page={page}
       pageSize={30}
       onPageChange={setPage}
@@ -255,23 +224,13 @@ function TipsTab() {
 
 // ── 스크립트 규격서 탭 ──
 function SpecsTab() {
-  const [data, setData] = useState<AdminTableRow[]>([]);
-  const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
-  const [loading, setLoading] = useState(true);
 
-  const fetch = useCallback(async () => {
-    setLoading(true);
-    try {
-      const result = await getScriptSpecs({ page, pageSize: 30 });
-      setData(result.data);
-      setTotal(result.total);
-    } finally {
-      setLoading(false);
-    }
-  }, [page]);
-
-  useEffect(() => { fetch(); }, [fetch]);
+  const { data: result, isLoading } = useQuery({
+    queryKey: ["admin-script-specs", page],
+    queryFn: () => getScriptSpecs({ page, pageSize: 30 }),
+    staleTime: 5 * 60 * 1000,
+  });
 
   const columns = [
     { key: "target_grade", label: "등급" },
@@ -286,12 +245,12 @@ function SpecsTab() {
     },
   ];
 
-  if (loading) return <LoadingSkeleton />;
+  if (isLoading) return <LoadingSkeleton />;
   return (
     <AdminDataTable
       columns={columns}
-      data={data}
-      total={total}
+      data={(result?.data ?? []) as AdminTableRow[]}
+      total={result?.total ?? 0}
       page={page}
       pageSize={30}
       onPageChange={setPage}

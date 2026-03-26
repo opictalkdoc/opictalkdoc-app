@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import * as PortOne from "@portone/browser-sdk/v2";
 import { createClient } from "@/lib/supabase";
 import {
   Check,
@@ -413,7 +412,8 @@ export function StoreContent({ userId }: { userId: string }) {
         ? process.env.NEXT_PUBLIC_PORTONE_CHANNEL_KEY_KAKAOPAY!
         : process.env.NEXT_PUBLIC_PORTONE_CHANNEL_KEY!;
 
-      // 포트원 결제창 호출
+      // 포트원 SDK 동적 로드 (결제 시점에만 ~40KB 로드)
+      const PortOne = await import("@portone/browser-sdk/v2");
       const response = await PortOne.requestPayment({
         storeId: process.env.NEXT_PUBLIC_PORTONE_STORE_ID!,
         channelKey,
@@ -648,6 +648,7 @@ export function StoreContent({ userId }: { userId: string }) {
                 ) : plan.productId ? (
                   <button
                     onClick={() => setPendingProduct(plan.productId!)}
+                    onMouseEnter={() => import("@portone/browser-sdk/v2")}
                     className="mt-5 inline-flex h-10 items-center justify-center gap-1.5 rounded-[var(--radius-lg)] bg-primary-500 text-sm font-medium text-white transition-colors hover:bg-primary-600"
                   >
                     <ShoppingCart size={15} />
@@ -703,6 +704,7 @@ export function StoreContent({ userId }: { userId: string }) {
                 </div>
                 <button
                   onClick={() => setPendingProduct(addon.productId)}
+                  onMouseEnter={() => import("@portone/browser-sdk/v2")}
                   className="mt-4 w-full inline-flex h-10 items-center justify-center gap-1.5 rounded-[var(--radius-lg)] border border-border text-sm font-medium text-foreground transition-colors hover:bg-surface-secondary"
                 >
                   <ShoppingCart size={15} />

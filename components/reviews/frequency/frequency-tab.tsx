@@ -53,10 +53,14 @@ export function FrequencyTab({ initialStats, initialFrequency, isPaidUser = fals
     const uniqueTopics = [...new Set(frequencyData.map((item) => item.topic))];
     // 무료 사용자는 어드밴스만 접근 가능 → 어드밴스만 prefetch
     const categoriesToPrefetch = isPaidUser ? FREQUENCY_CATEGORIES : (["어드밴스"] as const);
+    // 네트워크 요청 과다 방지: 상위 5개 토픽만 prefetch + 캐시 중복 제거
+    const topicsToFetch = uniqueTopics.slice(0, 5);
     for (const cat of categoriesToPrefetch) {
-      for (const topic of uniqueTopics) {
+      for (const topic of topicsToFetch) {
+        const key = ["question-frequency", topic, cat];
+        if (queryClient.getQueryData(key)) continue; // 이미 캐시에 있으면 스킵
         queryClient.prefetchQuery({
-          queryKey: ["question-frequency", topic, cat],
+          queryKey: key,
           queryFn: async () => {
             const result = await getQuestionFrequency(topic, cat);
             return result.data || [];

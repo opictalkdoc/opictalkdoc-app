@@ -629,25 +629,27 @@ export async function createMiniRetest(
   try {
     const { supabase } = await requireUser();
 
-    // focus 조회 + selection_policy에서 질문 선택
-    const { data: focus } = await supabase
-      .from("tutoring_focuses")
-      .select("id, focus_code, selection_policy")
-      .eq("id", focusId)
-      .single();
+    // focus 조회 + 기존 드릴 조회 병렬 실행
+    const [focusRes, existingDrillsRes] = await Promise.all([
+      supabase
+        .from("tutoring_focuses")
+        .select("id, focus_code, selection_policy")
+        .eq("id", focusId)
+        .single(),
+      supabase
+        .from("tutoring_drills")
+        .select("question_id")
+        .eq("focus_id", focusId),
+    ]);
 
+    const focus = focusRes.data;
     if (!focus) return { error: "Focus를 찾을 수 없습니다." };
 
     const policy = focus.selection_policy as { question_type?: string; primary_topic?: string } | null;
     const questionType = policy?.question_type ?? "comparison";
     const topic = policy?.primary_topic;
 
-    // 기존 드릴에 사용된 질문 제외
-    const { data: existingDrills } = await supabase
-      .from("tutoring_drills")
-      .select("question_id")
-      .eq("focus_id", focusId);
-    const usedIds = (existingDrills ?? []).map((d: { question_id: string }) => d.question_id);
+    const usedIds = (existingDrillsRes.data ?? []).map((d: { question_id: string }) => d.question_id);
 
     // 다른 topic에서 2문항 선택 (transfer 확인 목적)
     let query = supabase

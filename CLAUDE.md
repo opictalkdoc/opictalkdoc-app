@@ -196,6 +196,47 @@ docs/
 | **인증** | Supabase Auth |
 | **배포** | Vercel (프론트) + Supabase (백엔드) |
 
+## 🔌 MCP 서버
+
+### Supabase MCP (설정 완료)
+- **설정 파일**: `.claude/settings.local.json`
+- **타입**: HTTP (원격)
+- **URL**: `https://mcp.supabase.com/mcp?project_ref=rwdsyqnrrpwkureqfxwb`
+- **인증**: Supabase Access Token
+
+**사용 가능한 도구**:
+| 도구 | 용도 |
+|------|------|
+| `execute_sql` | SQL 쿼리 실행 (SELECT/INSERT/UPDATE/DELETE) |
+| `list_tables` | 테이블 목록 조회 |
+| `get_table_schema` | 테이블 스키마 확인 |
+| `apply_migration` | 마이그레이션 적용 |
+| `generate_typescript_types` | DB → TypeScript 타입 자동 생성 |
+| `list_edge_functions` | Edge Function 목록 |
+| `search_documentation` | Supabase 공식 문서 검색 |
+
+**사용 원칙**:
+- DB 조회/탐색/스키마 확인 → **MCP 우선** (자연어 요청)
+- 복잡한 스크립트/반복 작업 → **psql** (기존 방식 유지)
+- 마이그레이션 설계/타입 생성 → **MCP 활용**
+
+## 🛠️ Skills (설치됨)
+
+| 스킬 | 출처 | 용도 | 위치 |
+|------|------|------|------|
+| `deploy-ef` | 직접 작성 | Edge Function 배포 자동화 | `.claude/skills/` |
+| `find-skills` | Vercel Labs | 스킬 검색/설치 도우미 | `.claude/skills/` (심링크) |
+| `vercel-react-best-practices` | Vercel Labs | React/Next.js 베스트 프랙티스 적용 | `.claude/skills/` (심링크) |
+| `frontend-design` | Anthropic 공식 | 프론트엔드 디자인/UI 구현 가이드 | `.claude/skills/` (심링크) |
+| `web-design-guidelines` | Vercel Labs | 웹 디자인 가이드라인 | `.claude/skills/` (심링크) |
+| `nano-banana-2` | inferen-sh | 코드 품질 최적화 | `.claude/skills/` (심링크) |
+
+**스킬 관리**:
+- 설치: `npx skills add <github-url> --skill <name> -y`
+- 검색: `npx skills find [query]`
+- 업데이트: `npx skills update`
+- 원본 저장: `.agents/skills/` → `.claude/skills/`에 심링크
+
 ## 🔑 인프라 정보
 
 ### GitHub
@@ -679,9 +720,13 @@ Stage C: mock-test-report (평가엔진 7-Step + overview/growth GPT)
 | 네이버페이 | ❌ 직가맹 거절 (2026-02-23) | 고위험군(횟수권 판매) + 매출 이력 없음. PG사 인증형 대안 |
 | 토스페이 | 입점 정보 회신 완료 | MID 발급 대기 |
 
-### Supabase DB 접속 (psql)
+### DB 접속 방식
+
+**1순위: Supabase MCP** (자연어 요청 → 자동 SQL 실행)
+- 일상적 DB 조회, 스키마 확인, 마이그레이션, 타입 생성 등 모든 DB 작업에 MCP 우선 사용
+
+**2순위 (폴백): psql 직접 실행** — MCP 연결 실패 또는 대량 데이터 작업 시
 ```bash
-# Claude Code에서 psql 직접 실행
 PGPASSWORD='opictalk2026' PGCLIENTENCODING='UTF8' "/c/Program Files/PostgreSQL/16/bin/psql" \
   -h aws-1-ap-northeast-2.pooler.supabase.com \
   -p 6543 \

@@ -148,7 +148,7 @@ export function ScriptWizard({
       if (result.error) throw new Error(result.error);
       return result.data;
     },
-    staleTime: isTrialMode ? Infinity : 60 * 1000,
+    staleTime: isTrialMode ? Infinity : 5 * 60 * 1000,
   });
 
   // ── 내 스크립트 목록 (기존 스크립트 존재 여부 확인용) ──

@@ -18,7 +18,16 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { GradeProgressChart, CurrentStateCard } from "./history/grade-progress-chart";
+import dynamic from "next/dynamic";
+
+const GradeProgressChart = dynamic(
+  () => import("./history/grade-progress-chart").then((mod) => ({ default: mod.GradeProgressChart })),
+  { loading: () => <div className="animate-pulse h-64 rounded-xl bg-surface-secondary" /> }
+);
+const CurrentStateCard = dynamic(
+  () => import("./history/grade-progress-chart").then((mod) => ({ default: mod.CurrentStateCard })),
+  { loading: () => <div className="animate-pulse h-32 rounded-xl bg-surface-secondary" /> }
+);
 import { ExamPoolSelector } from "./start/exam-pool-selector";
 import { ModeSelector, TestModeConfirm, type ExtendedMockExamMode } from "./start/mode-selector";
 import { NoCreditCard } from "@/components/trial/no-credit-card";
@@ -152,7 +161,7 @@ function StartTab({
   const { data: activeResult } = useQuery({
     queryKey: ["mock-active-session"],
     queryFn: () => getActiveSession(),
-    staleTime: 30 * 1000, // 30초
+    staleTime: 60 * 1000, // 60초
     initialData: initialActive,
   });
 

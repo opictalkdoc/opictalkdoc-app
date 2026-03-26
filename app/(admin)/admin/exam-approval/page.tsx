@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   getExamApprovalCounts,
   getExamApprovalList,
@@ -19,89 +20,74 @@ const TAB_CONFIG: { key: Tab; label: string }[] = [
 ];
 
 export default function ExamApprovalPage() {
+  const queryClient = useQueryClient();
   const [tab, setTab] = useState<Tab>("pending");
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [data, setData] = useState<any[]>([]);
-  const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
-  const [loading, setLoading] = useState(true);
 
   // 상세 보기
   const [expandedId, setExpandedId] = useState<number | null>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [detail, setDetail] = useState<any>(null);
-  const [detailLoading, setDetailLoading] = useState(false);
-  const [actionLoading, setActionLoading] = useState(false);
 
   // 전체 건수
-  const [counts, setCounts] = useState({ pending: 0, approved: 0, rejected: 0 });
+  const { data: counts = { pending: 0, approved: 0, rejected: 0 } } = useQuery({
+    queryKey: ["admin-exam-approval-counts"],
+    queryFn: getExamApprovalCounts,
+    staleTime: 60 * 1000,
+  });
 
-  const fetchCounts = useCallback(async () => {
-    const result = await getExamApprovalCounts();
-    setCounts(result);
-  }, []);
+  // 목록
+  const { data: listResult, isLoading: loading } = useQuery({
+    queryKey: ["admin-exam-approval-list", tab, page],
+    queryFn: () => getExamApprovalList({ status: tab, page, pageSize: 20 }),
+    staleTime: 60 * 1000,
+  });
+  const data = listResult?.data ?? [];
+  const total = listResult?.total ?? 0;
 
-  const fetchList = useCallback(async () => {
-    setLoading(true);
-    try {
-      const result = await getExamApprovalList({ status: tab, page, pageSize: 20 });
-      setData(result.data);
-      setTotal(result.total);
-    } finally {
-      setLoading(false);
-    }
-  }, [tab, page]);
+  // 상세 조회
+  const { data: detail, isLoading: detailLoading } = useQuery({
+    queryKey: ["admin-exam-approval-detail", expandedId],
+    queryFn: () => getSubmissionForReview(expandedId!),
+    enabled: expandedId !== null,
+    staleTime: 5 * 60 * 1000,
+  });
 
-  useEffect(() => {
-    fetchCounts();
-  }, [fetchCounts]);
+  // 승인/반려 뮤테이션
+  const invalidateAll = () => {
+    queryClient.invalidateQueries({ queryKey: ["admin-exam-approval-counts"] });
+    queryClient.invalidateQueries({ queryKey: ["admin-exam-approval-list"] });
+  };
 
-  useEffect(() => {
-    fetchList();
-  }, [fetchList]);
+  const approveMutation = useMutation({
+    mutationFn: approveSubmission,
+    onSuccess: (result) => {
+      if (result.success) {
+        setExpandedId(null);
+        invalidateAll();
+      }
+    },
+  });
+
+  const rejectMutation = useMutation({
+    mutationFn: rejectSubmission,
+    onSuccess: (result) => {
+      if (result.success) {
+        setExpandedId(null);
+        invalidateAll();
+      }
+    },
+  });
+
+  const actionLoading = approveMutation.isPending || rejectMutation.isPending;
 
   // 탭 변경 시 초기화
-  useEffect(() => {
+  const handleTabChange = (newTab: Tab) => {
+    setTab(newTab);
     setPage(1);
     setExpandedId(null);
-    setDetail(null);
-  }, [tab]);
-
-  const handleToggle = async (id: number) => {
-    if (expandedId === id) {
-      setExpandedId(null);
-      setDetail(null);
-      return;
-    }
-    setExpandedId(id);
-    setDetailLoading(true);
-    const result = await getSubmissionForReview(id);
-    setDetail(result);
-    setDetailLoading(false);
   };
 
-  const handleApprove = async (id: number) => {
-    setActionLoading(true);
-    const result = await approveSubmission(id);
-    setActionLoading(false);
-    if (result.success) {
-      setExpandedId(null);
-      setDetail(null);
-      fetchList();
-      fetchCounts();
-    }
-  };
-
-  const handleReject = async (id: number) => {
-    setActionLoading(true);
-    const result = await rejectSubmission(id);
-    setActionLoading(false);
-    if (result.success) {
-      setExpandedId(null);
-      setDetail(null);
-      fetchList();
-      fetchCounts();
-    }
+  const handleToggle = (id: number) => {
+    setExpandedId(expandedId === id ? null : id);
   };
 
   const totalCount = counts.pending + counts.approved + counts.rejected;
@@ -123,7 +109,7 @@ export default function ExamApprovalPage() {
           return (
             <button
               key={t.key}
-              onClick={() => setTab(t.key)}
+              onClick={() => handleTabChange(t.key)}
               className={`flex items-center gap-1.5 border-b-2 px-4 py-2 text-sm font-medium transition-colors ${
                 isActive
                   ? "border-primary-500 text-primary-600"
@@ -200,8 +186,8 @@ export default function ExamApprovalPage() {
                       detail={detail}
                       showActions={tab === "pending"}
                       actionLoading={actionLoading}
-                      onApprove={() => handleApprove(row.id)}
-                      onReject={() => handleReject(row.id)}
+                      onApprove={() => approveMutation.mutate(row.id)}
+                      onReject={() => rejectMutation.mutate(row.id)}
                     />
                   ) : (
                     <p className="text-sm text-foreground-muted">데이터를 불러올 수 없습니다</p>

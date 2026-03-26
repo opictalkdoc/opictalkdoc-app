@@ -1,11 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { BarChart3, ClipboardCheck, FileText, TrendingUp } from "lucide-react";
 import { TabOverview } from "./tab-overview";
 import { TabDiagnosis } from "./tab-diagnosis";
 import { TabQuestions } from "./tab-questions";
-import { TabGrowth } from "./tab-growth";
+import dynamic from "next/dynamic";
+
+const TabGrowth = dynamic(
+  () => import("./tab-growth").then((mod) => ({ default: mod.TabGrowth })),
+  { loading: () => <div className="animate-pulse h-64 rounded-xl bg-surface-secondary" /> }
+);
 import type { DiagnosisTransformOutput } from "@/lib/mock-exam-result/diagnosis-transformer";
 import type { OverviewData } from "./tab-overview";
 import type { QuestionsData } from "./tab-questions";
@@ -83,7 +88,11 @@ export function ResultPage({
           {activeTab === "overview" && <TabOverview data={data?.overview} />}
           {activeTab === "diagnosis" && <TabDiagnosis data={data?.diagnosis} />}
           {activeTab === "questions" && <TabQuestions data={data?.questions} />}
-          {activeTab === "growth" && <TabGrowth data={data?.growth} />}
+          {activeTab === "growth" && (
+            <Suspense fallback={<div className="animate-pulse h-64 rounded-xl bg-surface-secondary" />}>
+              <TabGrowth data={data?.growth} />
+            </Suspense>
+          )}
         </div>
       </div>
     </div>

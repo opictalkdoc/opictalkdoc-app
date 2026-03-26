@@ -1,14 +1,17 @@
 "use client";
 
 import { useEffect } from "react";
+import dynamic from "next/dynamic";
 import { useShadowingStore } from "@/lib/stores/shadowing";
 import { ShadowingStepNav } from "./shadowing-step-nav";
-import { StepListen } from "./step-listen";
-import { StepShadow } from "./step-shadow";
-import { StepRecite } from "./step-recite";
-import { StepSpeak } from "./step-speak";
 import { TrialBanner } from "@/components/trial/trial-banner";
 import { TrialComplete } from "@/components/trial/trial-complete";
+
+const StepLoadingFallback = () => <div className="animate-pulse h-64 rounded-xl bg-surface-secondary" />;
+const StepListen = dynamic(() => import("./step-listen").then(m => ({ default: m.StepListen })), { loading: StepLoadingFallback });
+const StepShadow = dynamic(() => import("./step-shadow").then(m => ({ default: m.StepShadow })), { loading: StepLoadingFallback });
+const StepRecite = dynamic(() => import("./step-recite").then(m => ({ default: m.StepRecite })), { loading: StepLoadingFallback });
+const StepSpeak = dynamic(() => import("./step-speak").then(m => ({ default: m.StepSpeak })), { loading: StepLoadingFallback });
 import type { ShadowingData } from "@/lib/actions/scripts";
 import type { ShadowingStep } from "@/lib/types/scripts";
 import { SHADOWING_STEP_DESCRIPTIONS } from "@/lib/types/scripts";

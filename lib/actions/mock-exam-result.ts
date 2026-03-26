@@ -94,28 +94,29 @@ export async function getDiagnosisData(
   try {
     const { supabase, userId } = await requireUser();
 
-    const { data: report, error } = await supabase
-      .from("mock_test_reports")
-      .select(
-        "aggregated_checkboxes, final_level",
-      )
-      .eq("session_id", sessionId)
-      .single();
+    // 리포트 조회 + 세션 소유자 확인 병렬 실행
+    const [reportResult, sessionResult] = await Promise.all([
+      supabase
+        .from("mock_test_reports")
+        .select("aggregated_checkboxes, final_level")
+        .eq("session_id", sessionId)
+        .single(),
+      supabase
+        .from("mock_test_sessions")
+        .select("user_id")
+        .eq("session_id", sessionId)
+        .eq("user_id", userId)
+        .single(),
+    ]);
 
-    if (error || !report) {
+    if (reportResult.error || !reportResult.data) {
       return { error: "리포트 조회 실패" };
     }
-
-    // 세션 소유자 확인 (RLS가 처리하지만 명시적 확인)
-    const { data: session } = await supabase
-      .from("mock_test_sessions")
-      .select("user_id")
-      .eq("session_id", sessionId)
-      .eq("user_id", userId)
-      .single();
-    if (!session) {
+    if (!sessionResult.data) {
       return { error: "세션 접근 권한 없음" };
     }
+
+    const report = reportResult.data;
 
     const agg = (report.aggregated_checkboxes || {}) as Record<string, Record<string, { final_pass?: boolean; pass?: boolean; evidence?: string }>>;
 
@@ -175,36 +176,35 @@ export async function getQuestionsData(
       return { error: "v2 소견 데이터 없음" };
     }
 
-    // 소유자 확인
-    const { data: session } = await supabase
-      .from("mock_test_sessions")
-      .select("user_id")
-      .eq("session_id", sessionId)
-      .eq("user_id", userId)
-      .single();
-    if (!session) {
+    // 소유자 확인 + 질문 메타 + 답변 데이터 병렬 조회
+    const questionIds = consultsRes.data.map((e) => e.question_id);
+    const [sessionRes, questionsRes, answersRes] = await Promise.all([
+      supabase
+        .from("mock_test_sessions")
+        .select("user_id")
+        .eq("session_id", sessionId)
+        .eq("user_id", userId)
+        .single(),
+      supabase
+        .from("questions")
+        .select("id, question_short, question_type_eng, topic, category")
+        .in("id", questionIds),
+      supabase
+        .from("mock_test_answers")
+        .select("*")
+        .eq("session_id", sessionId)
+        .order("question_number"),
+    ]);
+
+    if (!sessionRes.data) {
       return { error: "세션 접근 권한 없음" };
     }
 
-    // 질문 메타 조회
-    const questionIds = consultsRes.data.map((e) => e.question_id);
-    const { data: questions } = await supabase
-      .from("questions")
-      .select("id, question_short, question_type_eng, topic, category")
-      .in("id", questionIds);
-
     const qMap = new Map(
-      (questions || []).map((q) => [q.id, q]),
+      (questionsRes.data || []).map((q) => [q.id, q]),
     );
 
-    // 답변 데이터 조회 (transcript, audio, speech meta)
-    const { data: answersRaw } = await supabase
-      .from("mock_test_answers")
-      .select("*")
-      .eq("session_id", sessionId)
-      .order("question_number");
-
-    const answers = answersRaw || [];
+    const answers = answersRes.data || [];
     const answerMap = new Map(
       answers.map((a) => [a.question_number, a]),
     );
@@ -292,9 +292,8 @@ export async function triggerEvalV2(
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
-    // 문항별 fire-and-forget 호출
-    let triggeredCount = 0;
-    for (const answer of answers) {
+    // 문항별 병렬 fire-and-forget 호출
+    const evalPromises = answers.map((answer) =>
       fetch(`${supabaseUrl}/functions/v1/mock-test-eval`, {
         method: "POST",
         headers: {
@@ -312,9 +311,11 @@ export async function triggerEvalV2(
           `[triggerEvalV2] Q${answer.question_number} EF 호출 실패:`,
           err,
         );
-      });
-      triggeredCount++;
-    }
+      })
+    );
+    // 모든 EF 호출이 네트워크에 발사될 때까지 대기 (응답은 기다리지 않음)
+    Promise.allSettled(evalPromises);
+    const triggeredCount = answers.length;
 
     console.log(
       `[triggerEvalV2] ${sessionId}: ${triggeredCount}개 문항 eval-v2 트리거`,
@@ -421,25 +422,33 @@ export async function getGrowthData(
   try {
     const { supabase, userId } = await requireUser();
 
-    // 소유자 확인 + 세션 정보
-    const { data: session } = await supabase
-      .from("mock_test_sessions")
-      .select("user_id, started_at")
-      .eq("session_id", sessionId)
-      .eq("user_id", userId)
-      .single();
+    // 소유자 확인 + 현재 리포트 + 전체 이력 병렬 조회
+    const [sessionRes, reportRes, allReportsRes] = await Promise.all([
+      supabase
+        .from("mock_test_sessions")
+        .select("user_id, started_at")
+        .eq("session_id", sessionId)
+        .eq("user_id", userId)
+        .single(),
+      supabase
+        .from("mock_test_reports")
+        .select("final_level, target_grade, growth")
+        .eq("session_id", sessionId)
+        .single(),
+      supabase
+        .from("mock_test_reports")
+        .select("session_id, final_level, completed_at")
+        .eq("user_id", userId)
+        .eq("status", "completed")
+        .order("completed_at"),
+    ]);
+
+    const session = sessionRes.data;
+    const report = reportRes.data;
+    const allReports = allReportsRes.data;
+
     if (!session) return { error: "세션 접근 권한 없음" };
-
-    // 현재 세션 report
-    const { data: report } = await supabase
-      .from("mock_test_reports")
-      .select("final_level, target_grade, growth")
-      .eq("session_id", sessionId)
-      .single();
-
-    if (!report?.growth) {
-      return { error: "성장 분석 데이터 미생성" };
-    }
+    if (!report?.growth) return { error: "성장 분석 데이터 미생성" };
 
     const growth = report.growth as {
       improvements: Array<{ area: string; detail: string; evidence_questions: number[] }>;
@@ -447,14 +456,6 @@ export async function getGrowthData(
       type_comparison: Array<{ type: string; type_ko: string; status: string; comment: string; fulfillment_rate: number }>;
       bottleneck_summary: string;
     };
-
-    // 전체 세션 이력 (등급 추이용)
-    const { data: allReports } = await supabase
-      .from("mock_test_reports")
-      .select("session_id, final_level, completed_at")
-      .eq("user_id", userId)
-      .eq("status", "completed")
-      .order("completed_at");
 
     const gradeHistory: GradeHistoryItem[] = (allReports || []).map((r, i) => ({
       session_count: i + 1,

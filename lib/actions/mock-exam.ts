@@ -585,27 +585,24 @@ export async function getHistory(): Promise<
       return { data: [] };
     }
 
-    // 리포트 조회 (V2 테이블)
+    // 리포트 + 주제 병렬 조회
     const sessionIds = sessions.map((s) => s.session_id);
-    const { data: reports } = await supabase
-      .from("mock_test_reports")
-      .select("session_id, final_level, overview")
-      .in("session_id", sessionIds);
+    const allQuestionIds = sessions.flatMap((s) => s.question_ids || []);
+    const uniqueIds = [...new Set(allQuestionIds)];
+
+    const [{ data: reports }, { data: questionTopics }] = await Promise.all([
+      supabase
+        .from("mock_test_reports")
+        .select("session_id, final_level, overview")
+        .in("session_id", sessionIds),
+      uniqueIds.length > 0
+        ? supabase.from("questions").select("id, topic").in("id", uniqueIds)
+        : Promise.resolve({ data: [] as { id: string; topic: string }[] }),
+    ]);
 
     const reportMap = new Map(
       (reports || []).map((r: Record<string, unknown>) => [r.session_id, r])
     );
-
-    // 주제 요약 (question_ids → topics)
-    const allQuestionIds = sessions.flatMap((s) => s.question_ids || []);
-    const uniqueIds = [...new Set(allQuestionIds)];
-
-    const { data: questionTopics } = uniqueIds.length > 0
-      ? await supabase
-          .from("questions")
-          .select("id, topic")
-          .in("id", uniqueIds)
-      : { data: [] };
 
     const topicMap = new Map(
       (questionTopics || []).map((q) => [q.id, q.topic])

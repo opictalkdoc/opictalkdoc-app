@@ -215,7 +215,7 @@ async function DashboardStatsLoader({ userId }: { userId: string }) {
   const supabase = await createServerSupabaseClient();
   const { data: credits } = await supabase
     .from("user_credits")
-    .select("*")
+    .select("current_plan, plan_mock_exam_credits, mock_exam_credits, plan_script_credits, script_credits, plan_tutoring_credits, tutoring_credits, plan_expires_at")
     .eq("user_id", userId)
     .single();
 
