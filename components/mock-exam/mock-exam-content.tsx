@@ -642,12 +642,12 @@ function HistoryTab({
               onViewResult(item.session_id);
             }
           }}
-          className={`mt-2.5 w-full rounded-xl border p-3 text-left transition-all sm:mt-3 sm:p-4 ${
+          className={`group mt-2.5 w-full rounded-xl border p-3 text-left transition-all sm:mt-3 sm:p-4 ${
             isLoading
               ? "border-primary-300 bg-primary-50/50 ring-1 ring-primary-200"
               : isClickable
-                ? "border-border bg-surface hover:border-primary-200 active:scale-[0.99] active:bg-primary-50/30"
-                : "border-border bg-surface opacity-60"
+                ? "cursor-pointer border-border bg-surface hover:border-primary-300 hover:bg-primary-50/40 hover:shadow-sm active:scale-[0.99]"
+                : "cursor-default border-border bg-surface opacity-60"
           }`}
         >
           <div className="flex items-center gap-3 sm:gap-4">
@@ -702,7 +702,7 @@ function HistoryTab({
               isLoading ? (
                 <Loader2 size={16} className="shrink-0 animate-spin text-primary-500" />
               ) : (
-                <ChevronRight size={16} className="hidden shrink-0 text-foreground-muted sm:block" />
+                <ChevronRight size={16} className="hidden shrink-0 text-foreground-muted transition-colors group-hover:text-primary-500 sm:block" />
               )
             )}
           </div>
