@@ -799,28 +799,27 @@ export async function getStatsAndFrequency(): Promise<{
 }> {
   const supabase = await createServerSupabaseClient();
 
-  // 3개 병렬: 후기 수(admin 포함) + (콤보+survey_type) + 참여자 user_id(사용자만)
-  const [reviewsResult, { combos, surveyTypeMap }, participantsResult] = await Promise.all([
+  // 3개 병렬: 후기 수(admin 포함) + (콤보+survey_type) + 분석 질문 수
+  const [reviewsResult, { combos, surveyTypeMap }, questionsResult] = await Promise.all([
     supabase
       .from("submissions")
       .select("id", { count: "exact", head: true })
       .eq("status", "complete"),
     fetchCombosAndSurveyTypes(supabase),
     supabase
-      .from("submissions")
-      .select("user_id")
-      .eq("status", "complete")
-      .neq("source", "admin"),
+      .from("submission_questions")
+      .select("question_id, submissions!inner(status)")
+      .eq("submissions.status", "complete"),
   ]);
 
   const uniqueTopics = new Set(combos.flatMap((t) => t.topic.split(","))).size;
-  const totalParticipants = new Set((participantsResult.data || []).map((r) => r.user_id)).size;
+  const uniqueQuestions = new Set((questionsResult.data || []).map((r) => r.question_id)).size;
 
   return {
     stats: {
       totalReviews: reviewsResult.count || 0,
       uniqueTopics,
-      totalParticipants,
+      uniqueQuestions,
     },
     frequency: buildFrequencyList(combos, surveyTypeMap),
   };

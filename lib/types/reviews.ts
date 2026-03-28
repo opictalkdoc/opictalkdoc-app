@@ -340,7 +340,7 @@ export const QUESTION_TYPE_COLORS: Record<string, string> = {
 export interface ReviewStats {
   totalReviews: number;
   uniqueTopics: number;
-  totalParticipants: number;
+  uniqueQuestions: number;
 }
 
 // ── 빈도 분석 서브탭 ──
