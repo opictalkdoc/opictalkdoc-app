@@ -9,6 +9,7 @@ interface AudioPlaybackRowProps {
   blob?: Blob;            // Blob 기반 (녹음)
   startTime?: number;     // 구간 시작 (초) — URL 모드에서 사용
   endTime?: number;       // 구간 끝 (초) — URL 모드에서 사용
+  knownDuration?: number; // Blob의 실제 재생 시간 (초) — WebM duration 문제 해결용
   color?: "primary" | "blue";
 }
 
@@ -18,6 +19,7 @@ export function AudioPlaybackRow({
   blob,
   startTime,
   endTime,
+  knownDuration,
   color = "primary",
 }: AudioPlaybackRowProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -25,6 +27,7 @@ export function AudioPlaybackRow({
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const playStartRef = useRef(0); // 재생 시작 시점 (경과 시간 추적용)
 
   // Blob → URL
   useEffect(() => {
@@ -69,7 +72,6 @@ export function AudioPlaybackRow({
     const src = blob ? blobUrlRef.current : audioUrl;
     if (!src) return;
 
-    // 새 Audio 생성
     const audio = new Audio(src);
     audioRef.current = audio;
 
@@ -78,33 +80,42 @@ export function AudioPlaybackRow({
       audio.currentTime = startTime;
     }
 
-    const duration = endTime && startTime != null && !blob
+    // 재생 시간 결정
+    const segmentDuration = endTime && startTime != null && !blob
       ? endTime - startTime
       : undefined;
 
     audio.onended = cleanup;
     audio.onerror = cleanup;
 
-    // 진행률 업데이트
+    // 재생 시작 시점 기록 (Blob의 경과 시간 추적용)
+    playStartRef.current = Date.now();
+
     intervalRef.current = setInterval(() => {
       if (!audio) return;
-      if (duration && startTime != null) {
-        // 구간 재생 모드
+
+      if (segmentDuration && startTime != null) {
+        // 구간 재생 모드 (원어민)
         const elapsed = audio.currentTime - startTime;
-        setProgress(Math.min(1, elapsed / duration));
+        setProgress(Math.min(1, elapsed / segmentDuration));
         if (audio.currentTime >= (endTime ?? audio.duration)) {
           audio.pause();
           cleanup();
         }
-      } else if (audio.duration > 0) {
-        // 전체 재생 모드
+      } else if (blob && knownDuration && knownDuration > 0) {
+        // Blob 모드 — knownDuration으로 프로그레스 바만 표시
+        // 재생 중지는 audio.onended에 맡김 (강제 pause 하지 않음)
+        const elapsed = (Date.now() - playStartRef.current) / 1000;
+        setProgress(Math.min(1, elapsed / (knownDuration + 1))); // +1초 여유
+      } else if (audio.duration > 0 && Number.isFinite(audio.duration)) {
+        // 일반 재생 모드
         setProgress(audio.currentTime / audio.duration);
       }
     }, 50);
 
     audio.play().catch(cleanup);
     setIsPlaying(true);
-  }, [isPlaying, audioUrl, blob, startTime, endTime, cleanup]);
+  }, [isPlaying, audioUrl, blob, startTime, endTime, knownDuration, cleanup]);
 
   const btnColor = color === "blue"
     ? "bg-blue-500 hover:bg-blue-600"

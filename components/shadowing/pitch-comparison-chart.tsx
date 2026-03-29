@@ -14,66 +14,68 @@ import type { PitchFrame } from "@/lib/audio/pitch-extractor";
 interface PitchComparisonChartProps {
   nativePitch: PitchFrame[];
   userPitch: PitchFrame[];
+  dtwPath?: [number, number][] | null;
 }
 
 interface ChartDataPoint {
-  time: number;
+  pct: number;         // 0-100% 진행률
   native: number | null;
   user: number | null;
 }
 
-const MIN_CONFIDENCE = 0.2;
+/**
+ * 시간축 정규화: 두 시퀀스를 동일한 0-100% 축에 맞춤
+ * - 둘 다 같은 시작/끝 지점
+ * - 유성음만 표시 (무성음 = null → 갭)
+ */
+function buildNormalizedData(
+  nativePitch: PitchFrame[],
+  userPitch: PitchFrame[],
+): ChartDataPoint[] {
+  const NUM_POINTS = 60;
+  const points: ChartDataPoint[] = [];
 
-// 데이터 간격을 균일하게 리샘플링 (20ms 간격)
-function resamplePitch(frames: PitchFrame[], stepMs: number): Map<number, number> {
-  const map = new Map<number, number>();
-  if (frames.length === 0) return map;
+  if (nativePitch.length === 0 && userPitch.length === 0) return points;
 
-  const step = stepMs / 1000;
-  const maxTime = frames[frames.length - 1].time;
+  for (let k = 0; k < NUM_POINTS; k++) {
+    const pct = (k / (NUM_POINTS - 1)) * 100;
+    const ratio = k / (NUM_POINTS - 1);
 
-  for (let t = 0; t <= maxTime; t += step) {
-    // 가장 가까운 프레임 찾기
-    let best: PitchFrame | null = null;
-    let bestDist = Infinity;
-    for (const f of frames) {
-      const d = Math.abs(f.time - t);
-      if (d < bestDist) {
-        bestDist = d;
-        best = f;
-      }
-      if (f.time > t + step) break;
-    }
-    if (best && best.f0 > 0 && best.confidence >= MIN_CONFIDENCE && bestDist < step * 2) {
-      map.set(Math.round(t * 100) / 100, best.f0);
-    }
+    // 원어민: 비율 기반 인덱스
+    const ni = Math.round(ratio * (nativePitch.length - 1));
+    const nf = nativePitch[ni];
+    const nativeVal = nf && nf.f0 > 0 ? Math.round(nf.f0) : null;
+
+    // 사용자: 비율 기반 인덱스
+    const ui = Math.round(ratio * (userPitch.length - 1));
+    const uf = userPitch[ui];
+    const userVal = uf && uf.f0 > 0 ? Math.round(uf.f0) : null;
+
+    points.push({ pct, native: nativeVal, user: userVal });
   }
-  return map;
+
+  return points;
 }
 
 export function PitchComparisonChart({
   nativePitch,
   userPitch,
 }: PitchComparisonChartProps) {
-  const data = useMemo(() => {
-    const nativeMap = resamplePitch(nativePitch, 20);
-    const userMap = resamplePitch(userPitch, 20);
-
-    const allTimes = new Set([...nativeMap.keys(), ...userMap.keys()]);
-    const sortedTimes = [...allTimes].sort((a, b) => a - b);
-
-    return sortedTimes.map((t) => ({
-      time: t,
-      native: nativeMap.get(t) ?? null,
-      user: userMap.get(t) ?? null,
-    }));
-  }, [nativePitch, userPitch]);
+  const data = useMemo(
+    () => buildNormalizedData(nativePitch, userPitch),
+    [nativePitch, userPitch],
+  );
 
   if (data.length === 0) return null;
 
+  // Y축 범위 자동 계산
+  const allValues = data.flatMap((d) => [d.native, d.user]).filter((v): v is number => v !== null);
+  const minY = allValues.length > 0 ? Math.max(50, Math.min(...allValues) - 20) : 50;
+  const maxY = allValues.length > 0 ? Math.max(...allValues) + 20 : 400;
+
   return (
     <div className="relative">
-      {/* 범례 — 차트 위 */}
+      {/* 범례 */}
       <div className="mb-2 flex items-center justify-center gap-5">
         <div className="flex items-center gap-1.5">
           <div className="h-[3px] w-4 rounded-full bg-primary-500" />
@@ -85,35 +87,32 @@ export function PitchComparisonChart({
         </div>
       </div>
 
-      <div className="h-[130px] w-full">
+      <div className="h-[140px] w-full">
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={data} margin={{ top: 5, right: 8, left: -15, bottom: 0 }}>
+          <AreaChart data={data} margin={{ top: 5, right: 8, left: 0, bottom: 0 }}>
             <defs>
               <linearGradient id="nativeGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#D4835E" stopOpacity={0.25} />
+                <stop offset="0%" stopColor="#D4835E" stopOpacity={0.3} />
                 <stop offset="100%" stopColor="#D4835E" stopOpacity={0.02} />
               </linearGradient>
               <linearGradient id="userGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#3B82F6" stopOpacity={0.2} />
+                <stop offset="0%" stopColor="#3B82F6" stopOpacity={0.25} />
                 <stop offset="100%" stopColor="#3B82F6" stopOpacity={0.02} />
               </linearGradient>
             </defs>
             <XAxis
-              dataKey="time"
-              tick={{ fontSize: 9, fill: "#B5A99D" }}
-              tickFormatter={(v) => `${Number(v).toFixed(1)}s`}
+              dataKey="pct"
+              tick={false}
               stroke="transparent"
               tickLine={false}
-              interval="preserveStartEnd"
             />
             <YAxis
-              domain={[50, "auto"]}
+              domain={[minY, maxY]}
               tick={{ fontSize: 9, fill: "#B5A99D" }}
               tickFormatter={(v) => `${Math.round(Number(v))}`}
               stroke="transparent"
               tickLine={false}
-              width={32}
-              allowDataOverflow
+              width={36}
             />
             <Tooltip
               contentStyle={{
@@ -128,7 +127,7 @@ export function PitchComparisonChart({
                 `${Math.round(Number(value))} Hz`,
                 name === "native" ? "원어민" : "내 발음",
               ]}
-              labelFormatter={(label) => `${Number(label).toFixed(1)}초`}
+              labelFormatter={(label) => `${Math.round(Number(label))}%`}
             />
             <Area
               type="monotone"
@@ -137,7 +136,7 @@ export function PitchComparisonChart({
               strokeWidth={2.5}
               fill="url(#nativeGrad)"
               dot={false}
-              connectNulls={false}
+              connectNulls
               isAnimationActive={false}
             />
             <Area
@@ -148,11 +147,17 @@ export function PitchComparisonChart({
               strokeDasharray="4 2"
               fill="url(#userGrad)"
               dot={false}
-              connectNulls={false}
+              connectNulls
               isAnimationActive={false}
             />
           </AreaChart>
         </ResponsiveContainer>
+      </div>
+
+      {/* X축 라벨 */}
+      <div className="mt-1 flex justify-between px-9">
+        <span className="text-[9px] text-foreground-muted">시작</span>
+        <span className="text-[9px] text-foreground-muted">끝</span>
       </div>
     </div>
   );

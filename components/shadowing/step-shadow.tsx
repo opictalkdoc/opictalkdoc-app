@@ -47,6 +47,7 @@ export function StepShadow() {
     setShadowComparisonResult,
     markStepComplete,
     setStep,
+    setCurrentTime,
   } = useShadowingStore();
 
   // 모바일 여부
@@ -67,11 +68,14 @@ export function StepShadow() {
   const [recordingDuration, setRecordingDuration] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const abortRef = useRef<AbortController | null>(null);
-  const MAX_RECORDING_DURATION = 30; // 문장 단위 최대 30초
+  const karaokeTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const countdownRef = useRef<ReturnType<typeof setTimeout> | null>(null); // 녹음 딜레이 타이머
+  const MAX_RECORDING_DURATION = 30;
 
   // 분석 결과 캐시
   const [nativePitchData, setNativePitchData] = useState<PitchFrame[] | null>(null);
   const [userPitchData, setUserPitchData] = useState<PitchFrame[] | null>(null);
+  const [dtwPath, setDtwPath] = useState<[number, number][] | null>(null);
   const [recordingBlob, setRecordingBlob] = useState<Blob | null>(null);
 
   const currentSentence = shadowIndex >= 0 && shadowIndex < sentences.length
@@ -80,14 +84,39 @@ export function StepShadow() {
 
   const playCount = shadowPlayCounts[shadowIndex] ?? 0;
 
-  // 문장 재생 완료 → 녹음 준비 상태로 전환
+  // 녹음 정지 (handleSentenceEnd보다 먼저 선언)
+  const stopRecording = useCallback(() => {
+    const recorder = mediaRecorderRef.current;
+    if (recorder && recorder.state !== "inactive") {
+      recorder.stop(); // timeslice 없이 start()했으므로 stop()만으로 완전한 Blob 생성
+    }
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    if (karaokeTimerRef.current) {
+      clearInterval(karaokeTimerRef.current);
+      karaokeTimerRef.current = null;
+    }
+    if (countdownRef.current) {
+      clearTimeout(countdownRef.current);
+      countdownRef.current = null;
+    }
+    setIsRecording(false);
+  }, []);
+
+  // 문장 재생 완료 → 녹음 준비 또는 녹음 자동 중지
   const handleSentenceEnd = useCallback(() => {
     incrementShadowPlayCount(shadowIndex);
-    // 첫 재생 후 녹음 준비 상태로 전환
+
     if (shadowComparisonState === "idle") {
+      // 첫 재생 후 녹음 준비 상태로 전환
       setShadowComparisonState("ready_to_record");
+    } else if (shadowComparisonState === "recording" && isRecording) {
+      // 녹음 중 문장 끝 도달 → 자동 녹음 중지
+      stopRecording();
     }
-  }, [shadowIndex, incrementShadowPlayCount, shadowComparisonState, setShadowComparisonState]);
+  }, [shadowIndex, incrementShadowPlayCount, shadowComparisonState, setShadowComparisonState, isRecording, stopRecording]);
 
   // Step 완료 체크
   useEffect(() => {
@@ -106,15 +135,61 @@ export function StepShadow() {
     setShadowComparisonResult(null);
     setNativePitchData(null);
     setUserPitchData(null);
+    setDtwPath(null);
     setRecordingBlob(null);
     setRecordingDuration(0);
   }, [shadowIndex, setShadowComparisonState, setShadowComparisonResult]);
 
-  // 녹음 시작
+  // 녹음 시작: 카라오케 즉시 → 0.5초 후 녹음 ON → 카라오케 끝 → 0.5초 후 녹음 OFF
+  const RECORD_DELAY = 500; // 카라오케 대비 녹음 시작/종료 딜레이 (ms)
+
   const startRecording = useCallback(async () => {
+    let stream: MediaStream;
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
+    } catch {
+      alert("마이크 접근 권한을 허용해주세요.");
+      return;
+    }
+
+    setShadowComparisonState("recording");
+
+    // 1. 카라오케 즉시 시작
+    if (currentSentence) {
+      const sentStart = currentSentence.start;
+      const sentEnd = currentSentence.end;
+      const karaokeStart = Date.now();
+
+      karaokeTimerRef.current = setInterval(() => {
+        const elapsed = (Date.now() - karaokeStart) / 1000;
+        const simTime = sentStart + elapsed;
+        if (simTime >= sentEnd) {
+          setCurrentTime(sentEnd);
+          if (karaokeTimerRef.current) {
+            clearInterval(karaokeTimerRef.current);
+            karaokeTimerRef.current = null;
+          }
+          // 카라오케 끝 → UI 즉시 종료 + 녹음은 0.5초 백그라운드 후 종료
+          setIsRecording(false);
+          setTimeout(() => {
+            const rec = mediaRecorderRef.current;
+            if (rec && rec.state !== "inactive") {
+              rec.stop();
+            }
+            if (timerRef.current) {
+              clearInterval(timerRef.current);
+              timerRef.current = null;
+            }
+          }, RECORD_DELAY);
+        } else {
+          setCurrentTime(simTime);
+        }
+      }, 30);
+    }
+
+    // 2. 0.5초 후 녹음 시작
+    countdownRef.current = setTimeout(() => {
       const recorder = new MediaRecorder(stream, {
         mimeType: MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
           ? "audio/webm;codecs=opus"
@@ -136,12 +211,11 @@ export function StepShadow() {
         await analyzeRecording(blob);
       };
 
-      recorder.start(100);
+      recorder.start(); // timeslice 없이 — stop() 시 완전한 WebM Blob 생성
       mediaRecorderRef.current = recorder;
       setIsRecording(true);
-      setShadowComparisonState("recording");
 
-      // 타이머 + 최대 시간 제한
+      // 최대 녹음 시간 제한
       const startTime = Date.now();
       timerRef.current = setInterval(() => {
         const elapsed = Math.floor((Date.now() - startTime) / 1000);
@@ -150,23 +224,8 @@ export function StepShadow() {
           stopRecording();
         }
       }, 200);
-    } catch {
-      alert("마이크 접근 권한을 허용해주세요.");
-    }
-  }, [setShadowComparisonState]);
-
-  // 녹음 정지
-  const stopRecording = useCallback(() => {
-    const recorder = mediaRecorderRef.current;
-    if (recorder && recorder.state !== "inactive") {
-      recorder.stop();
-    }
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-      timerRef.current = null;
-    }
-    setIsRecording(false);
-  }, []);
+    }, RECORD_DELAY);
+  }, [setShadowComparisonState, currentSentence, stopRecording, setCurrentTime]);
 
   // 녹음 분석 — AbortController로 경합 조건 방지
   const analyzeRecording = useCallback(async (blob: Blob) => {
@@ -213,6 +272,7 @@ export function StepShadow() {
       // 결과 저장
       setNativePitchData(nativePitch);
       setUserPitchData(userPitch);
+      setDtwPath(dtwResult.path);
       setShadowComparisonResult(score);
       setShadowComparisonState("showing_result");
     } catch (err) {
@@ -222,10 +282,12 @@ export function StepShadow() {
     }
   }, [currentSentence, audioUrl, shadowIndex, setShadowComparisonState, setShadowComparisonResult]);
 
-  // 정리 — 마이크 스트림 + 타이머 + 분석 취소
+  // 정리 — 마이크 스트림 + 타이머 + 카라오케 + 카운트다운 + 분석 취소
   useEffect(() => {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
+      if (karaokeTimerRef.current) clearInterval(karaokeTimerRef.current);
+      if (countdownRef.current) clearTimeout(countdownRef.current);
       abortRef.current?.abort();
       const recorder = mediaRecorderRef.current;
       if (recorder && recorder.state !== "inactive") recorder.stop();
@@ -250,6 +312,7 @@ export function StepShadow() {
     setShadowComparisonResult(null);
     setNativePitchData(null);
     setUserPitchData(null);
+    setDtwPath(null);
   }, [setShadowComparisonState, setShadowComparisonResult]);
 
   const handleNextFromResult = useCallback(() => {
@@ -359,8 +422,8 @@ export function StepShadow() {
           )}
         </div>
 
-        {/* 플레이어 — 데스크탑 (비교 UI가 아닐 때만) */}
-        {!isMobile && shadowComparisonState !== "showing_result" && (
+        {/* 플레이어 — 데스크탑 (결과 화면 때만 숨김, 녹음 중에는 카라오케 가이드로 표시) */}
+        {!isMobile && shadowComparisonState !== "showing_result" && shadowComparisonState !== "analyzing" && (
           <div className="border-t border-border px-4 py-3 sm:px-5">
             <ShadowingPlayer
               sentenceMode
@@ -373,56 +436,45 @@ export function StepShadow() {
         {/* 녹음 / 분석 / 결과 UI */}
         {showComparisonUI && (
           <div className="border-t border-border px-4 py-5 sm:px-5">
-            {/* 녹음 준비 or 녹음 중 */}
+            {/* 녹음 준비 / 녹음 중 */}
             {(shadowComparisonState === "ready_to_record" || shadowComparisonState === "recording") && (
               <div className="flex flex-col items-center gap-4">
-                {/* 안내 텍스트 */}
-                <div className="text-center">
-                  <p className="text-sm font-medium text-foreground">
-                    {isRecording ? "듣고 있어요..." : "이 문장을 따라 말해보세요"}
-                  </p>
-                  {isRecording && (
-                    <p className="mt-1 text-xs tabular-nums text-red-500">{recordingDuration}초 / {MAX_RECORDING_DURATION}초</p>
-                  )}
-                </div>
 
-                {/* 녹음 버튼 — 링 애니메이션 */}
-                <div className="relative">
-                  {isRecording && (
-                    <>
-                      <div className="absolute inset-0 animate-ping rounded-full bg-red-400/20" style={{ animationDuration: "1.5s" }} />
-                      <div className="absolute -inset-2 animate-pulse rounded-full border-2 border-red-300/40" />
-                    </>
-                  )}
-                  <button
-                    onClick={isRecording ? stopRecording : startRecording}
-                    className={`relative flex h-16 w-16 items-center justify-center rounded-full shadow-lg transition-all active:scale-95 ${
-                      isRecording
-                        ? "bg-red-500 text-white shadow-red-200"
-                        : "bg-gradient-to-br from-primary-500 to-primary-600 text-white shadow-primary-200 hover:shadow-xl"
-                    }`}
-                  >
-                    {isRecording ? <Square size={22} /> : <Mic size={24} />}
-                  </button>
-                </div>
+                {/* 녹음 대기 */}
+                {!isRecording && !karaokeTimerRef.current && (
+                  <>
+                    <p className="text-sm font-medium text-foreground">이 문장을 따라 말해보세요</p>
 
-                {/* 녹음 중일 때 타이머 바 */}
-                {isRecording && (
-                  <div className="h-1 w-32 overflow-hidden rounded-full bg-surface-secondary">
-                    <div
-                      className="h-1 rounded-full bg-red-500 transition-all duration-200"
-                      style={{ width: `${(recordingDuration / MAX_RECORDING_DURATION) * 100}%` }}
-                    />
-                  </div>
+                    <button
+                      onClick={startRecording}
+                      className="relative flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-primary-500 to-primary-600 text-white shadow-lg shadow-primary-200 transition-all hover:shadow-xl active:scale-95"
+                    >
+                      <Mic size={24} />
+                    </button>
+
+                    <button
+                      onClick={() => setShadowComparisonState("idle")}
+                      className="text-[11px] text-foreground-muted transition-colors hover:text-foreground-secondary"
+                    >
+                      건너뛰기
+                    </button>
+                  </>
                 )}
 
-                {!isRecording && (
-                  <button
-                    onClick={() => setShadowComparisonState("idle")}
-                    className="text-[11px] text-foreground-muted transition-colors hover:text-foreground-secondary"
-                  >
-                    건너뛰기
-                  </button>
+                {/* 녹음 중 (카라오케 진행 중 포함) */}
+                {(isRecording || karaokeTimerRef.current) && (
+                  <div className="flex items-center gap-3">
+                    <div className="relative">
+                      <div className="absolute inset-0 animate-ping rounded-full bg-red-400/20" style={{ animationDuration: "1.5s" }} />
+                      <button
+                        onClick={stopRecording}
+                        className="relative flex h-11 w-11 items-center justify-center rounded-full bg-red-500 text-white shadow-sm transition-all active:scale-95"
+                      >
+                        <Square size={16} />
+                      </button>
+                    </div>
+                    <span className="text-xs font-medium text-red-500">녹음 중</span>
+                  </div>
                 )}
               </div>
             )}
@@ -448,7 +500,9 @@ export function StepShadow() {
                 score={shadowComparisonResult}
                 nativePitch={nativePitchData}
                 userPitch={userPitchData}
+                dtwPath={dtwPath}
                 recordingBlob={recordingBlob}
+                recordingDuration={recordingDuration}
                 nativeAudioUrl={audioUrl}
                 sentenceStart={currentSentence?.start}
                 sentenceEnd={currentSentence?.end}
@@ -493,8 +547,8 @@ export function StepShadow() {
         </button>
       )}
 
-      {/* 모바일 고정 재생 바 */}
-      {isMobile && shadowComparisonState !== "showing_result" && (
+      {/* 모바일 고정 재생 바 (결과/분석 중 숨김, 녹음 중에는 카라오케 표시) */}
+      {isMobile && shadowComparisonState !== "showing_result" && shadowComparisonState !== "analyzing" && (
         <div className="fixed bottom-[68px] left-0 right-0 z-20 border-t border-border bg-surface px-4 py-3">
           <ShadowingPlayer
             sentenceMode

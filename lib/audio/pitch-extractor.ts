@@ -18,8 +18,8 @@ export interface PitchFrame {
 
 // 설정
 const HOP_MS = 10;           // 홉 크기 (ms)
-const FRAME_MS = 30;         // 분석 윈도우 크기 (ms)
-const SILENCE_RATIO = 0.02;  // 최대 에너지 대비 2% 이하면 무음
+const FRAME_MS = 100;        // 분석 윈도우 크기 (ms) — YIN은 2주기 이상 필요 (75Hz@16kHz=427샘플, 100ms=1600샘플)
+const SILENCE_RATIO = 0.01;  // 최대 에너지 대비 1% 이하면 무음 (더 관대하게)
 
 interface PitchExtractorOptions {
   hopMs?: number;
@@ -44,11 +44,12 @@ export function extractPitch(
   const hopSamples = Math.round((hopMs / 1000) * sampleRate);
   const frameSamples = Math.round((frameMs / 1000) * sampleRate);
 
-  // pitchfinder YIN 디텍터 초기화
-  const detectPitch = Pitchfinder.YIN({
+  // pitchfinder 디텍터 초기화 (YIN + ACF2PLUS 폴백)
+  const detectYIN = Pitchfinder.YIN({
     sampleRate,
-    threshold: 0.3,
+    threshold: 0.5,   // 마이크 녹음은 노이즈가 많으므로 관대하게
   });
+  const detectACF = Pitchfinder.ACF2PLUS({ sampleRate });
 
   // 전체 오디오 피크 에너지 (정규화용)
   let maxAmp = 0;
@@ -80,18 +81,24 @@ export function extractPitch(
     // 프레임 추출
     const frame = pcm.slice(start, start + frameSamples);
 
-    // pitchfinder로 피치 검출
-    const result = detectPitch(frame);
+    // YIN으로 먼저 시도, 실패 시 ACF2PLUS 폴백
+    let result = detectYIN(frame);
+    let usedFallback = false;
 
     if (result === null || result <= 0 || result < minF0 || result > maxF0) {
-      // 피치 검출 실패 → 무성음
+      result = detectACF(frame);
+      usedFallback = true;
+    }
+
+    if (result === null || result <= 0 || result < minF0 || result > maxF0) {
       frames.push({ time, f0: 0, confidence: 0.3, energy: normalizedEnergy });
       continue;
     }
 
-    // pitchfinder는 confidence를 직접 반환하지 않으므로
-    // 에너지 기반으로 추정 (에너지가 높을수록 confident)
-    const confidence = Math.min(1, normalizedEnergy * 3);
+    // confidence: YIN 성공이면 높게, 폴백이면 낮게
+    const confidence = usedFallback
+      ? Math.min(0.7, normalizedEnergy * 2)
+      : Math.min(1, normalizedEnergy * 3);
 
     frames.push({ time, f0: result, confidence, energy: normalizedEnergy });
   }
