@@ -75,11 +75,21 @@ export function DashboardStats({
   const totalScript =
     Number(credits?.plan_script_credits || 0) + Number(credits?.script_credits || 0);
 
+  const planMock = Number(credits?.plan_mock_exam_credits || 0);
+  const extraMock = Number(credits?.mock_exam_credits || 0);
+  const planScript = Number(credits?.plan_script_credits || 0);
+  const extraScript = Number(credits?.script_credits || 0);
+  const planTutoring = Number(credits?.plan_tutoring_credits || 0);
+  const extraTutoring = Number(credits?.tutoring_credits || 0);
+  const totalTutoring = planTutoring + extraTutoring;
+
   const stats = [
     {
       label: "현재 플랜",
       value: getPlanLabel(plan),
       sub: getPlanSub(plan),
+      planCredit: null as number | null,
+      extraCredit: null as number | null,
       icon: Crown,
       color: "bg-primary-50 text-primary-500",
       href: "/store",
@@ -87,12 +97,9 @@ export function DashboardStats({
     {
       label: "남은 모의고사",
       value: `${totalMockExam}회`,
-      sub:
-        totalMockExam === 0
-          ? "크레딧 없음"
-          : plan === "free"
-            ? "샘플"
-            : "사용 가능",
+      sub: null,
+      planCredit: planMock,
+      extraCredit: extraMock,
       icon: ClipboardList,
       color: "bg-secondary-50 text-secondary-600",
       href: null,
@@ -100,18 +107,19 @@ export function DashboardStats({
     {
       label: "스크립트 생성",
       value: totalScript === 0 ? "0회" : `${totalScript}회`,
-      sub: plan === "free" ? "크레딧 구매 필요" : "사용 가능",
+      sub: null,
+      planCredit: planScript,
+      extraCredit: extraScript,
       icon: BookOpen,
       color: "bg-accent-50 text-accent-500",
       href: null,
     },
     {
       label: "남은 튜터링",
-      value: `${Number(credits?.plan_tutoring_credits || 0) + Number(credits?.tutoring_credits || 0)}회`,
-      sub:
-        Number(credits?.plan_tutoring_credits || 0) + Number(credits?.tutoring_credits || 0) === 0
-          ? "크레딧 없음"
-          : "사용 가능",
+      value: `${totalTutoring}회`,
+      sub: null,
+      planCredit: planTutoring,
+      extraCredit: extraTutoring,
       icon: Calendar,
       color: "bg-primary-50 text-primary-500",
       href: "/tutoring",
@@ -133,7 +141,15 @@ export function DashboardStats({
             <p className="mt-1 text-xl font-bold text-foreground sm:text-2xl">
               {s.value}
             </p>
-            <p className="mt-0.5 text-xs text-foreground-muted">{s.sub}</p>
+            {s.sub ? (
+              <p className="mt-0.5 text-xs text-foreground-muted">{s.sub}</p>
+            ) : (
+              <div className="mt-1 flex items-center justify-center gap-1.5 text-[11px] text-foreground-muted">
+                <span>플랜 {s.planCredit}</span>
+                <span className="text-border">|</span>
+                <span>횟수권 {s.extraCredit}</span>
+              </div>
+            )}
           </div>
         );
 

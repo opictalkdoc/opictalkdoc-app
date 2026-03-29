@@ -202,8 +202,7 @@ function SidePanelContent({ targetGrade, currentGrade, examDate }: { targetGrade
           더 많은 학습이 필요하신가요?
         </p>
         <p className="mt-0.5 text-xs text-primary-600/80 sm:mt-1">
-          실전 플랜으로 업그레이드하면 실전 모의고사 3회 + 스크립트 15회를
-          이용할 수 있어요.
+          실전 플랜으로 업그레이드하여 모의고사 3회 + 스크립트 15회를 이용해보세요.
         </p>
         <div className="mt-3 flex gap-3">
           <Link

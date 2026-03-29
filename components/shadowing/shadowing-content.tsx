@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import dynamic from "next/dynamic";
+import { motion, AnimatePresence } from "framer-motion";
 import { useShadowingStore } from "@/lib/stores/shadowing";
 import { ShadowingStepNav } from "./shadowing-step-nav";
 import { TrialBanner } from "@/components/trial/trial-banner";
@@ -21,7 +22,47 @@ interface ShadowingContentProps {
   isTrialMode?: boolean;
 }
 
-const STEPS: ShadowingStep[] = ["listen", "shadow", "recite", "speak"];
+// 진행 상태에 따른 동적 가이드 메시지
+function useStepGuideMessage(isTrialMode: boolean): string {
+  const {
+    currentStep,
+    sentences,
+    listenedSentences,
+    shadowPlayCounts,
+    speakResult,
+  } = useShadowingStore();
+
+  return useMemo(() => {
+    if (currentStep === "speak" && isTrialMode) {
+      return "체험판에서는 발화 평가를 제공하지 않습니다.";
+    }
+
+    const total = sentences.length;
+
+    if (currentStep === "listen") {
+      const heard = listenedSentences.length;
+      if (heard === 0) return SHADOWING_STEP_DESCRIPTIONS.listen;
+      if (heard >= total * 0.8) return "모든 문장을 들었습니다 — 따라 읽기로 넘어가 보세요";
+      return `잘 듣고 계세요! ${heard}/${total} 문장 청취 완료`;
+    }
+
+    if (currentStep === "shadow") {
+      const mastered = Object.values(shadowPlayCounts).filter((c) => c >= 3).length;
+      if (mastered === 0) return SHADOWING_STEP_DESCRIPTIONS.shadow;
+      if (mastered >= total) return "모든 문장 연습 완료! 다음 단계로 넘어가 보세요";
+      return `${mastered}/${total} 문장 연습 중 — 3번 이상 반복해보세요`;
+    }
+
+    if (currentStep === "recite") return SHADOWING_STEP_DESCRIPTIONS.recite;
+
+    if (currentStep === "speak") {
+      if (speakResult) return "평가가 완료되었습니다. 결과를 확인해보세요!";
+      return SHADOWING_STEP_DESCRIPTIONS.speak;
+    }
+
+    return SHADOWING_STEP_DESCRIPTIONS[currentStep];
+  }, [currentStep, sentences.length, listenedSentences.length, shadowPlayCounts, speakResult, isTrialMode]);
+}
 
 export function ShadowingContent({ data, isTrialMode = false }: ShadowingContentProps) {
   const { currentStep, setStep, init, packageId } = useShadowingStore();
@@ -48,23 +89,7 @@ export function ShadowingContent({ data, isTrialMode = false }: ShadowingContent
     }
   }, [data, packageId, init]);
 
-  useEffect(() => {
-    function handleKeyDown(e: KeyboardEvent) {
-      if (
-        e.target instanceof HTMLInputElement ||
-        e.target instanceof HTMLTextAreaElement
-      ) {
-        return;
-      }
-      const num = parseInt(e.key);
-      if (num >= 1 && num <= 4) {
-        e.preventDefault();
-        setStep(STEPS[num - 1]);
-      }
-    }
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [setStep]);
+  const stepDescription = useStepGuideMessage(isTrialMode);
 
   const renderStepContent = () => {
     switch (currentStep) {
@@ -74,10 +99,6 @@ export function ShadowingContent({ data, isTrialMode = false }: ShadowingContent
       case "speak":   return isTrialMode ? <TrialComplete type="script" /> : <StepSpeak />;
     }
   };
-
-  const stepDescription = currentStep === "speak" && isTrialMode
-    ? "체험판에서는 발화 평가를 제공하지 않습니다."
-    : SHADOWING_STEP_DESCRIPTIONS[currentStep];
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -99,13 +120,23 @@ export function ShadowingContent({ data, isTrialMode = false }: ShadowingContent
               </div>
             )}
 
-            {/* 단계 설명 */}
+            {/* 단계 설명 — 동적 */}
             <p className="mb-5 text-center text-xs text-foreground-muted">
               {stepDescription}
             </p>
 
-            {/* 단계 콘텐츠 */}
-            {renderStepContent()}
+            {/* 단계 콘텐츠 — 전환 애니메이션 */}
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={currentStep}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
+              >
+                {renderStepContent()}
+              </motion.div>
+            </AnimatePresence>
           </div>
         </div>
       </div>

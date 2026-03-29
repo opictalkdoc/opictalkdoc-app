@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import {
   ChevronLeft,
   ChevronRight,
@@ -8,9 +8,19 @@ import {
   CaseSensitive,
   Type,
   RefreshCw,
+  Check,
+  Mic,
+  Square,
+  Loader2,
 } from "lucide-react";
 import { ShadowingPlayer } from "./shadowing-player";
+import { SentenceMasteryDots } from "./sentence-mastery-dots";
+import { SentenceComparisonResult } from "./sentence-comparison-result";
 import { useShadowingStore, type TextHintLevel } from "@/lib/stores/shadowing";
+import { extractSegment, blobToPCM } from "@/lib/audio/audio-segment";
+import { extractPitch, type PitchFrame } from "@/lib/audio/pitch-extractor";
+import { dtw } from "@/lib/audio/dtw";
+import { scorePronunciation, type PronunciationScore } from "@/lib/audio/pronunciation-scorer";
 
 const LANG_OPTIONS: { mode: TextHintLevel; label: string; icon: React.ElementType }[] = [
   { mode: "both", icon: Languages, label: "영/한" },
@@ -21,17 +31,24 @@ const LANG_OPTIONS: { mode: TextHintLevel; label: string; icon: React.ElementTyp
 export function StepShadow() {
   const {
     sentences,
+    audioUrl,
     shadowIndex,
     shadowHintLevel,
+    shadowPlayCounts,
+    shadowComparisonState,
+    shadowComparisonResult,
     currentTime,
+    stepCompletions,
     setShadowIndex,
     setShadowHintLevel,
+    incrementShadowPlayCount,
+    setShadowComparisonState,
+    setShadowComparisonResult,
+    markStepComplete,
+    setStep,
   } = useShadowingStore();
 
-  // 문장별 반복 재생 횟수 (로컬 상태 — 완료 개념 없음)
-  const [playCounts, setPlayCounts] = useState<Record<number, number>>({});
-
-  // 모바일 여부 — audio 요소 중복 방지
+  // 모바일 여부
   const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
     const mq = window.matchMedia("(max-width: 639px)");
@@ -41,18 +58,152 @@ export function StepShadow() {
     return () => mq.removeEventListener("change", handler);
   }, []);
 
+  // 녹음 상태
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingDuration, setRecordingDuration] = useState(0);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // 분석 결과 캐시
+  const [nativePitchData, setNativePitchData] = useState<PitchFrame[] | null>(null);
+  const [userPitchData, setUserPitchData] = useState<PitchFrame[] | null>(null);
+
   const currentSentence = shadowIndex >= 0 && shadowIndex < sentences.length
     ? sentences[shadowIndex]
     : null;
 
-  const playCount = playCounts[shadowIndex] ?? 0;
+  const playCount = shadowPlayCounts[shadowIndex] ?? 0;
 
+  // 문장 재생 완료 → 녹음 준비 상태로 전환
   const handleSentenceEnd = useCallback(() => {
-    setPlayCounts((prev) => ({
-      ...prev,
-      [shadowIndex]: (prev[shadowIndex] ?? 0) + 1,
-    }));
-  }, [shadowIndex]);
+    incrementShadowPlayCount(shadowIndex);
+    // 첫 재생 후 녹음 준비 상태로 전환
+    if (shadowComparisonState === "idle") {
+      setShadowComparisonState("ready_to_record");
+    }
+  }, [shadowIndex, incrementShadowPlayCount, shadowComparisonState, setShadowComparisonState]);
+
+  // Step 완료 체크
+  useEffect(() => {
+    if (
+      !stepCompletions.shadow &&
+      sentences.length > 0 &&
+      sentences.every((_, i) => (shadowPlayCounts[i] ?? 0) >= 3)
+    ) {
+      markStepComplete("shadow");
+    }
+  }, [shadowPlayCounts, sentences, stepCompletions.shadow, markStepComplete]);
+
+  // 문장 전환 시 비교 상태 리셋
+  useEffect(() => {
+    setShadowComparisonState("idle");
+    setShadowComparisonResult(null);
+    setNativePitchData(null);
+    setUserPitchData(null);
+    setRecordingDuration(0);
+  }, [shadowIndex, setShadowComparisonState, setShadowComparisonResult]);
+
+  // 녹음 시작
+  const startRecording = useCallback(async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream, {
+        mimeType: MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+          ? "audio/webm;codecs=opus"
+          : "audio/webm",
+      });
+
+      chunksRef.current = [];
+      setRecordingDuration(0);
+
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunksRef.current.push(e.data);
+      };
+
+      recorder.onstop = async () => {
+        stream.getTracks().forEach((t) => t.stop());
+        const blob = new Blob(chunksRef.current, { type: "audio/webm" });
+        await analyzeRecording(blob);
+      };
+
+      recorder.start(100);
+      mediaRecorderRef.current = recorder;
+      setIsRecording(true);
+      setShadowComparisonState("recording");
+
+      // 타이머
+      const startTime = Date.now();
+      timerRef.current = setInterval(() => {
+        setRecordingDuration(Math.floor((Date.now() - startTime) / 1000));
+      }, 200);
+    } catch {
+      alert("마이크 접근 권한을 허용해주세요.");
+    }
+  }, [setShadowComparisonState]);
+
+  // 녹음 정지
+  const stopRecording = useCallback(() => {
+    const recorder = mediaRecorderRef.current;
+    if (recorder && recorder.state !== "inactive") {
+      recorder.stop();
+    }
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    setIsRecording(false);
+  }, []);
+
+  // 녹음 분석
+  const analyzeRecording = useCallback(async (blob: Blob) => {
+    if (!currentSentence || !audioUrl) return;
+
+    setShadowComparisonState("analyzing");
+
+    try {
+      // 1. 원어민 오디오 구간 추출 + 피치 분석
+      const nativeSegment = await extractSegment(
+        audioUrl,
+        currentSentence.start,
+        currentSentence.end,
+        shadowIndex,
+      );
+      const nativePitch = extractPitch(nativeSegment.pcm, nativeSegment.sampleRate);
+
+      // 2. 사용자 녹음 PCM 변환 + 피치 분석
+      const userSegment = await blobToPCM(blob);
+      const userPitch = extractPitch(userSegment.pcm, userSegment.sampleRate);
+
+      // 3. F0 배열 추출 (DTW 입력)
+      const nativeF0 = nativePitch.map((f) => f.f0);
+      const userF0 = userPitch.map((f) => f.f0);
+
+      // 4. DTW 정렬
+      const dtwResult = dtw(nativeF0, userF0);
+
+      // 5. 점수 계산
+      const score = scorePronunciation(nativePitch, userPitch, dtwResult);
+
+      // 결과 저장
+      setNativePitchData(nativePitch);
+      setUserPitchData(userPitch);
+      setShadowComparisonResult(score);
+      setShadowComparisonState("showing_result");
+    } catch (err) {
+      console.error("발음 분석 실패:", err);
+      setShadowComparisonState("ready_to_record");
+    }
+  }, [currentSentence, audioUrl, shadowIndex, setShadowComparisonState, setShadowComparisonResult]);
+
+  // 정리
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+      const recorder = mediaRecorderRef.current;
+      if (recorder && recorder.state !== "inactive") recorder.stop();
+    };
+  }, []);
 
   const goPrev = useCallback(() => {
     if (shadowIndex > 0) setShadowIndex(shadowIndex - 1);
@@ -62,35 +213,75 @@ export function StepShadow() {
     if (shadowIndex < sentences.length - 1) setShadowIndex(shadowIndex + 1);
   }, [shadowIndex, sentences.length, setShadowIndex]);
 
+  const handleDotClick = useCallback((index: number) => {
+    setShadowIndex(index);
+  }, [setShadowIndex]);
+
+  const handleRetry = useCallback(() => {
+    setShadowComparisonState("ready_to_record");
+    setShadowComparisonResult(null);
+    setNativePitchData(null);
+    setUserPitchData(null);
+  }, [setShadowComparisonState, setShadowComparisonResult]);
+
+  const handleNextFromResult = useCallback(() => {
+    if (shadowIndex < sentences.length - 1) {
+      setShadowIndex(shadowIndex + 1);
+    } else {
+      setStep("recite");
+    }
+  }, [shadowIndex, sentences.length, setShadowIndex, setStep]);
+
   if (!currentSentence) return null;
 
-  // 가라오케: 현재 문장 재생 진행도를 단어 수로 선형 분할
+  // 카라오케: 단어 길이 가중치 기반 하이라이팅
   const words = currentSentence.english.split(" ");
   const isActiveSentence =
     currentTime >= currentSentence.start && currentTime <= currentSentence.end;
   const senProgress = isActiveSentence && currentSentence.duration > 0
     ? Math.max(0, Math.min(1, (currentTime - currentSentence.start) / currentSentence.duration))
     : 0;
-  const highlightedCount = isActiveSentence
-    ? Math.ceil(senProgress * words.length)
-    : 0;
+
+  let highlightedCount = 0;
+  if (isActiveSentence && senProgress > 0) {
+    const charLengths = words.map((w) => w.length);
+    const totalChars = charLengths.reduce((a, b) => a + b, 0);
+    let accumulated = 0;
+    for (const len of charLengths) {
+      accumulated += len;
+      if (accumulated / totalChars <= senProgress) highlightedCount++;
+      else break;
+    }
+    if (senProgress > 0.02 && highlightedCount === 0) highlightedCount = 1;
+  }
+
+  const playCountColor = playCount >= 3 ? "text-green-500" : playCount >= 1 ? "text-amber-500" : "text-foreground-muted/70";
+  const isShadowComplete = sentences.length > 0 && sentences.every((_, i) => (shadowPlayCounts[i] ?? 0) >= 3);
+  const showComparisonUI = shadowComparisonState !== "idle";
 
   return (
     <div className="space-y-3 pb-[220px] sm:pb-0">
+      {/* 문장 마스터리 도트 네비게이션 */}
+      <div className="rounded-[var(--radius-xl)] border border-border bg-surface px-3 py-2.5">
+        <SentenceMasteryDots onDotClick={handleDotClick} />
+      </div>
+
       {/* 문장 카드 */}
       <div className="rounded-[var(--radius-xl)] border border-border bg-surface">
-        {/* 카드 헤더: 문장 번호 + 반복 횟수 + 언어 토글 */}
+        {/* 카드 헤더 */}
         <div className="flex items-center justify-between border-b border-border px-4 py-2">
           <div className="flex items-center gap-2">
             <span className="text-xs text-foreground-muted">
               {shadowIndex + 1} / {sentences.length}
             </span>
-            {playCount > 0 && (
-              <span className="flex items-center gap-0.5 text-[11px] text-foreground-muted/70">
+            <span className={`flex items-center gap-0.5 text-[11px] ${playCountColor}`}>
+              {playCount >= 3 ? (
+                <Check size={10} strokeWidth={3} />
+              ) : (
                 <RefreshCw size={10} />
-                {playCount}회
-              </span>
-            )}
+              )}
+              {playCount}회
+            </span>
           </div>
           <div className="inline-flex rounded-lg border border-border bg-surface-secondary p-0.5">
             {LANG_OPTIONS.map(({ mode, label, icon: Icon }) => (
@@ -110,7 +301,7 @@ export function StepShadow() {
           </div>
         </div>
 
-        {/* 현재 문장 — 가라오케 */}
+        {/* 현재 문장 — 카라오케 */}
         <div className="p-5 text-center">
           {(shadowHintLevel === "both" || shadowHintLevel === "english") && (
             <p className="text-lg font-medium leading-relaxed sm:text-xl">
@@ -140,8 +331,8 @@ export function StepShadow() {
           )}
         </div>
 
-        {/* 오디오 플레이어 — 데스크탑 전용 (영역 구분선 포함) */}
-        {!isMobile && (
+        {/* 플레이어 — 데스크탑 (비교 UI가 아닐 때만) */}
+        {!isMobile && shadowComparisonState !== "showing_result" && (
           <div className="border-t border-border px-4 py-3 sm:px-5">
             <ShadowingPlayer
               sentenceMode
@@ -151,29 +342,95 @@ export function StepShadow() {
           </div>
         )}
 
-        {/* 문장 탐색 — 데스크탑 전용 */}
-        <div className="hidden items-center justify-center gap-4 border-t border-border px-4 py-2 sm:flex">
-          <button
-            onClick={goPrev}
-            disabled={shadowIndex === 0}
-            className="inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-sm font-medium text-foreground-secondary transition-colors hover:bg-surface-secondary disabled:opacity-30"
-          >
-            <ChevronLeft size={16} />
-            이전
-          </button>
-          <button
-            onClick={goNext}
-            disabled={shadowIndex >= sentences.length - 1}
-            className="inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-sm font-medium text-foreground-secondary transition-colors hover:bg-surface-secondary disabled:opacity-30"
-          >
-            다음
-            <ChevronRight size={16} />
-          </button>
-        </div>
+        {/* 녹음 / 분석 / 결과 UI */}
+        {showComparisonUI && (
+          <div className="border-t border-border px-4 py-4 sm:px-5">
+            {/* 녹음 준비 or 녹음 중 */}
+            {(shadowComparisonState === "ready_to_record" || shadowComparisonState === "recording") && (
+              <div className="flex flex-col items-center gap-3">
+                <p className="text-xs text-foreground-muted">
+                  {isRecording ? `녹음 중 ${recordingDuration}초` : "이 문장을 따라 말해보세요"}
+                </p>
+                <button
+                  onClick={isRecording ? stopRecording : startRecording}
+                  className={`flex h-14 w-14 items-center justify-center rounded-full transition-colors ${
+                    isRecording
+                      ? "animate-pulse bg-red-500 text-white"
+                      : "bg-primary-500 text-white hover:bg-primary-600"
+                  }`}
+                >
+                  {isRecording ? <Square size={22} /> : <Mic size={22} />}
+                </button>
+                {!isRecording && (
+                  <button
+                    onClick={() => setShadowComparisonState("idle")}
+                    className="text-[11px] text-foreground-muted hover:text-foreground-secondary"
+                  >
+                    건너뛰기
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* 분석 중 */}
+            {shadowComparisonState === "analyzing" && (
+              <div className="flex flex-col items-center gap-2 py-4">
+                <Loader2 size={24} className="animate-spin text-primary-500" />
+                <p className="text-xs text-foreground-secondary">발음 분석 중...</p>
+              </div>
+            )}
+
+            {/* 결과 표시 */}
+            {shadowComparisonState === "showing_result" && shadowComparisonResult && nativePitchData && userPitchData && (
+              <SentenceComparisonResult
+                sentenceIndex={shadowIndex}
+                totalSentences={sentences.length}
+                score={shadowComparisonResult}
+                nativePitch={nativePitchData}
+                userPitch={userPitchData}
+                onRetry={handleRetry}
+                onNext={handleNextFromResult}
+              />
+            )}
+          </div>
+        )}
+
+        {/* 문장 탐색 — 데스크탑 (결과 표시 중엔 숨김) */}
+        {shadowComparisonState !== "showing_result" && (
+          <div className="hidden items-center justify-center gap-4 border-t border-border px-4 py-2 sm:flex">
+            <button
+              onClick={goPrev}
+              disabled={shadowIndex === 0}
+              className="inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-sm font-medium text-foreground-secondary transition-colors hover:bg-surface-secondary disabled:opacity-30"
+            >
+              <ChevronLeft size={16} />
+              이전
+            </button>
+            <button
+              onClick={goNext}
+              disabled={shadowIndex >= sentences.length - 1}
+              className="inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-sm font-medium text-foreground-secondary transition-colors hover:bg-surface-secondary disabled:opacity-30"
+            >
+              다음
+              <ChevronRight size={16} />
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* 모바일 고정 재생 바 (이전/다음 바 위) */}
-      {isMobile && (
+      {/* 완료 시 다음 단계 안내 */}
+      {isShadowComplete && (
+        <button
+          onClick={() => setStep("recite")}
+          className="flex w-full items-center justify-center gap-2 rounded-xl border border-green-200 bg-green-50/50 px-4 py-3 text-sm font-medium text-green-700 transition-colors hover:bg-green-50"
+        >
+          모든 문장 연습 완료! 구조로 말하기로 이동
+          <ChevronRight size={16} />
+        </button>
+      )}
+
+      {/* 모바일 고정 재생 바 */}
+      {isMobile && shadowComparisonState !== "showing_result" && (
         <div className="fixed bottom-[68px] left-0 right-0 z-20 border-t border-border bg-surface px-4 py-3">
           <ShadowingPlayer
             sentenceMode
@@ -183,30 +440,32 @@ export function StepShadow() {
         </div>
       )}
 
-      {/* 모바일 고정 하단 바: 이전/다음 (1행) */}
-      <div className="fixed bottom-0 left-0 right-0 z-20 border-t border-border bg-surface px-5 py-3 sm:hidden">
-        <div className="flex items-center justify-between">
-          <button
-            onClick={goPrev}
-            disabled={shadowIndex === 0}
-            className="inline-flex h-11 items-center gap-1 rounded-lg px-4 text-sm font-medium text-foreground-secondary transition-colors hover:bg-surface-secondary disabled:opacity-30"
-          >
-            <ChevronLeft size={16} />
-            이전
-          </button>
-          <span className="text-xs text-foreground-muted">
-            {shadowIndex + 1} / {sentences.length}
-          </span>
-          <button
-            onClick={goNext}
-            disabled={shadowIndex >= sentences.length - 1}
-            className="inline-flex h-11 items-center gap-1 rounded-lg px-4 text-sm font-medium text-foreground-secondary transition-colors hover:bg-surface-secondary disabled:opacity-30"
-          >
-            다음
-            <ChevronRight size={16} />
-          </button>
+      {/* 모바일 고정 하단 바 */}
+      {shadowComparisonState !== "showing_result" && (
+        <div className="fixed bottom-0 left-0 right-0 z-20 border-t border-border bg-surface px-5 py-3 sm:hidden">
+          <div className="flex items-center justify-between">
+            <button
+              onClick={goPrev}
+              disabled={shadowIndex === 0}
+              className="inline-flex h-11 items-center gap-1 rounded-lg px-4 text-sm font-medium text-foreground-secondary transition-colors hover:bg-surface-secondary disabled:opacity-30"
+            >
+              <ChevronLeft size={16} />
+              이전
+            </button>
+            <span className="text-xs text-foreground-muted">
+              {shadowIndex + 1} / {sentences.length}
+            </span>
+            <button
+              onClick={goNext}
+              disabled={shadowIndex >= sentences.length - 1}
+              className="inline-flex h-11 items-center gap-1 rounded-lg px-4 text-sm font-medium text-foreground-secondary transition-colors hover:bg-surface-secondary disabled:opacity-30"
+            >
+              다음
+              <ChevronRight size={16} />
+            </button>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

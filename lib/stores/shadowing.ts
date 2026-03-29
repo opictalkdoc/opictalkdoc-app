@@ -1,6 +1,10 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { TimestampItem, ShadowingStep, ShadowingEvaluation, StructureSummaryItem, KeySentence } from "@/lib/types/scripts";
+import type { PronunciationScore } from "@/lib/audio/pronunciation-scorer";
+
+// Step 2 비교 분석 상태
+export type ShadowComparisonState = "idle" | "ready_to_record" | "recording" | "analyzing" | "showing_result";
 
 // 표시 모드 (Step 1 듣기 + Step 2 따라읽기 공용)
 export type DisplayMode = "both" | "english" | "korean";
@@ -31,16 +35,22 @@ export interface ShadowingState {
   displayMode: DisplayMode;
   seekRequest: { time: number; id: number } | null; // 문장 클릭 → 재생 요청
   repeatTargetIndex: number | null; // null=OFF, 숫자=해당 문장 반복
+  listenedSentences: number[]; // 청취 완료 문장 인덱스
 
   // === Step 2: 따라읽기 ===
   shadowIndex: number;
   shadowHintLevel: TextHintLevel;
   shadowCompleted: number[];
+  shadowPlayCounts: Record<number, number>; // 문장별 재생 횟수 (persist)
+  shadowComparisonState: ShadowComparisonState;
+  shadowComparisonResult: PronunciationScore | null;
 
   // === Step 3: 혼자 말하기 ===
   reciteTimer: number;
   recitePeekCount: number;
   reciteShowPeek: boolean;
+  reciteHintLevel: 0 | 1 | 2; // 0=숨김, 1=구조만, 2=전체
+  reciteRecordingDone: boolean; // 녹음 완료 플래그
 
   // === Step 4: 실전 ===
   speakTimer: number;
@@ -49,6 +59,9 @@ export interface ShadowingState {
   // === 공통 녹음 ===
   isRecording: boolean;
   recordingDuration: number;
+
+  // === 진행 상태 ===
+  stepCompletions: Record<ShadowingStep, boolean>;
 
   // === Actions ===
   init: (data: {
@@ -68,29 +81,47 @@ export interface ShadowingState {
   setCurrentTime: (time: number) => void;
   setPlaybackRate: (rate: number) => void;
   setDisplayMode: (mode: DisplayMode) => void;
-  seekTo: (time: number) => void; // 특정 시간으로 이동 + 재생 요청
-  toggleRepeat: () => void; // 반복 토글 (현재 재생 문장 고정 or 해제)
-  setRepeatTarget: (index: number) => void; // 반복 대상 문장 변경
+  seekTo: (time: number) => void;
+  toggleRepeat: () => void;
+  setRepeatTarget: (index: number) => void;
+
+  // Step 1: 듣기
+  markSentenceListened: (index: number) => void;
 
   // Step 2: 따라읽기
   setShadowIndex: (index: number) => void;
   setShadowHintLevel: (level: TextHintLevel) => void;
   markShadowCompleted: (index: number) => void;
+  incrementShadowPlayCount: (index: number) => void;
+  setShadowComparisonState: (state: ShadowComparisonState) => void;
+  setShadowComparisonResult: (result: PronunciationScore | null) => void;
 
   // Step 3: 혼자 말하기
   setReciteTimer: (time: number) => void;
   incrementPeekCount: () => void;
   togglePeek: () => void;
+  setReciteHintLevel: (level: 0 | 1 | 2) => void;
+  setReciteRecordingDone: (done: boolean) => void;
 
   // Step 4: 실전
   setSpeakTimer: (time: number) => void;
   setSpeakResult: (result: ShadowingEvaluation | null) => void;
+
+  // 진행 상태
+  markStepComplete: (step: ShadowingStep) => void;
 
   // 공통
   setRecording: (recording: boolean) => void;
   setRecordingDuration: (duration: number) => void;
   reset: () => void;
 }
+
+const initialStepCompletions: Record<ShadowingStep, boolean> = {
+  listen: false,
+  shadow: false,
+  recite: false,
+  speak: false,
+};
 
 const initialState = {
   packageId: null,
@@ -110,16 +141,23 @@ const initialState = {
   displayMode: "both" as DisplayMode,
   seekRequest: null,
   repeatTargetIndex: null,
+  listenedSentences: [] as number[],
   shadowIndex: 0,
   shadowHintLevel: "both" as TextHintLevel,
   shadowCompleted: [],
+  shadowPlayCounts: {} as Record<number, number>,
+  shadowComparisonState: "idle" as ShadowComparisonState,
+  shadowComparisonResult: null as PronunciationScore | null,
   reciteTimer: 0,
   recitePeekCount: 0,
   reciteShowPeek: false,
+  reciteHintLevel: 2 as 0 | 1 | 2,
+  reciteRecordingDone: false,
   speakTimer: 0,
   speakResult: null,
   isRecording: false,
   recordingDuration: 0,
+  stepCompletions: { ...initialStepCompletions },
 };
 
 export const useShadowingStore = create<ShadowingState>()(
@@ -171,6 +209,14 @@ export const useShadowingStore = create<ShadowingState>()(
         }),
       setRepeatTarget: (index) => set({ repeatTargetIndex: index }),
 
+      // Step 1: 듣기
+      markSentenceListened: (index) =>
+        set((state) => ({
+          listenedSentences: state.listenedSentences.includes(index)
+            ? state.listenedSentences
+            : [...state.listenedSentences, index],
+        })),
+
       // Step 2: 따라읽기
       setShadowIndex: (index) => set({ shadowIndex: index }),
       setShadowHintLevel: (level) => set({ shadowHintLevel: level }),
@@ -180,6 +226,15 @@ export const useShadowingStore = create<ShadowingState>()(
             ? state.shadowCompleted
             : [...state.shadowCompleted, index],
         })),
+      incrementShadowPlayCount: (index) =>
+        set((state) => ({
+          shadowPlayCounts: {
+            ...state.shadowPlayCounts,
+            [index]: (state.shadowPlayCounts[index] ?? 0) + 1,
+          },
+        })),
+      setShadowComparisonState: (comparisonState) => set({ shadowComparisonState: comparisonState }),
+      setShadowComparisonResult: (result) => set({ shadowComparisonResult: result }),
 
       // Step 3: 혼자 말하기
       setReciteTimer: (time) => set({ reciteTimer: time }),
@@ -187,10 +242,18 @@ export const useShadowingStore = create<ShadowingState>()(
         set((state) => ({ recitePeekCount: state.recitePeekCount + 1 })),
       togglePeek: () =>
         set((state) => ({ reciteShowPeek: !state.reciteShowPeek })),
+      setReciteHintLevel: (level) => set({ reciteHintLevel: level }),
+      setReciteRecordingDone: (done) => set({ reciteRecordingDone: done }),
 
       // Step 4: 실전
       setSpeakTimer: (time) => set({ speakTimer: time }),
       setSpeakResult: (result) => set({ speakResult: result }),
+
+      // 진행 상태
+      markStepComplete: (step) =>
+        set((state) => ({
+          stepCompletions: { ...state.stepCompletions, [step]: true },
+        })),
 
       // 공통
       setRecording: (recording) => set({ isRecording: recording }),
@@ -207,6 +270,11 @@ export const useShadowingStore = create<ShadowingState>()(
         currentStep: state.currentStep,
         shadowCompleted: state.shadowCompleted,
         shadowHintLevel: state.shadowHintLevel,
+        listenedSentences: state.listenedSentences,
+        shadowPlayCounts: state.shadowPlayCounts,
+        reciteHintLevel: state.reciteHintLevel,
+        reciteRecordingDone: state.reciteRecordingDone,
+        // stepCompletions는 persist하지 않음 — 실시간 데이터로 재계산
       }),
     }
   )

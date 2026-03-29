@@ -6,9 +6,13 @@ import {
   AlertTriangle,
   Lightbulb,
   BarChart3,
+  RotateCcw,
+  Check,
+  X,
 } from "lucide-react";
 import type { ShadowingEvaluation } from "@/lib/types/scripts";
 import { TARGET_LEVEL_LABELS } from "@/lib/types/scripts";
+import { useShadowingStore } from "@/lib/stores/shadowing";
 
 interface EvaluationResultProps {
   evaluation: ShadowingEvaluation;
@@ -26,10 +30,19 @@ const SCORE_LABELS: { key: keyof Pick<
 ];
 
 export function EvaluationResult({ evaluation }: EvaluationResultProps) {
+  const { setStep, setSpeakResult } = useShadowingStore();
+
   const levelLabel =
     evaluation.estimated_level
       ? TARGET_LEVEL_LABELS[evaluation.estimated_level] || evaluation.estimated_level
       : "평가 불가";
+
+  const handleRestart = () => {
+    setSpeakResult(null);
+    setStep("listen");
+  };
+
+  const scriptAnalysis = evaluation.script_analysis;
 
   return (
     <div className="space-y-5">
@@ -82,6 +95,43 @@ export function EvaluationResult({ evaluation }: EvaluationResultProps) {
           <span className="text-sm font-bold text-primary-600">
             {Number(evaluation.script_utilization) || 0}%
           </span>
+        </div>
+      )}
+
+      {/* 스크립트 분석 — 핵심 문장/어휘 체크리스트 */}
+      {scriptAnalysis && (
+        <div className="rounded-[var(--radius-xl)] border border-border bg-surface p-4">
+          <p className="mb-3 text-sm font-semibold text-foreground">스크립트 활용 분석</p>
+
+          {/* 핵심 문장 사용 여부 */}
+          {scriptAnalysis.key_sentences_used && scriptAnalysis.key_sentences_used.length > 0 && (
+            <div className="mb-3">
+              <p className="mb-1.5 text-xs font-medium text-foreground-secondary">핵심 문장</p>
+              <div className="space-y-1">
+                {scriptAnalysis.key_sentences_used.map((sentence: string, i: number) => (
+                  <div key={i} className="flex items-start gap-1.5">
+                    <Check size={12} className="mt-0.5 shrink-0 text-green-500" strokeWidth={3} />
+                    <span className="text-xs text-foreground-secondary">{sentence}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* 미사용 요소 */}
+          {scriptAnalysis.missing_elements && scriptAnalysis.missing_elements.length > 0 && (
+            <div>
+              <p className="mb-1.5 text-xs font-medium text-foreground-secondary">놓친 부분</p>
+              <div className="space-y-1">
+                {scriptAnalysis.missing_elements.map((element: string, i: number) => (
+                  <div key={i} className="flex items-start gap-1.5">
+                    <X size={12} className="mt-0.5 shrink-0 text-red-400" strokeWidth={3} />
+                    <span className="text-xs text-foreground-muted">{element}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -147,6 +197,15 @@ export function EvaluationResult({ evaluation }: EvaluationResultProps) {
           </p>
         </details>
       )}
+
+      {/* 다시 연습하기 */}
+      <button
+        onClick={handleRestart}
+        className="flex w-full items-center justify-center gap-2 rounded-[var(--radius-lg)] border border-border bg-surface px-4 py-3 text-sm font-medium text-foreground-secondary transition-colors hover:bg-surface-secondary"
+      >
+        <RotateCcw size={16} />
+        처음부터 다시 연습하기
+      </button>
     </div>
   );
 }

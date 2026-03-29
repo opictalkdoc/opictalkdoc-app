@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect, useCallback } from "react";
+import { useRef, useEffect, useCallback, useState } from "react";
 import {
   Play,
   Pause,
@@ -47,6 +47,10 @@ export function ShadowingPlayer({
     setPlaybackRate,
     toggleRepeat,
   } = useShadowingStore();
+
+  // 드래그 시킹 상태
+  const [isDragging, setIsDragging] = useState(false);
+  const progressBarRef = useRef<HTMLDivElement>(null);
 
   // 문장 클릭 → seekRequest 처리
   const lastSeekId = useRef(0);
@@ -131,7 +135,7 @@ export function ShadowingPlayer({
   const skipForward = useCallback(() => {
     const audio = audioRef.current;
     if (!audio) return;
-    if (sentenceMode) return; // 문장별 모드에서는 비활성
+    if (sentenceMode) return;
     audio.currentTime = Math.min(audio.currentTime + 5, audio.duration);
   }, [sentenceMode]);
 
@@ -157,6 +161,31 @@ export function ShadowingPlayer({
   const duration = audioRef.current?.duration || 0;
   const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
 
+  // 드래그 시킹 핸들러
+  const seekToPosition = useCallback((clientX: number) => {
+    const audio = audioRef.current;
+    const bar = progressBarRef.current;
+    if (!audio || !bar || !duration) return;
+    const rect = bar.getBoundingClientRect();
+    const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+    audio.currentTime = ratio * duration;
+  }, [duration]);
+
+  const handlePointerDown = useCallback((e: React.PointerEvent) => {
+    setIsDragging(true);
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    seekToPosition(e.clientX);
+  }, [seekToPosition]);
+
+  const handlePointerMove = useCallback((e: React.PointerEvent) => {
+    if (!isDragging) return;
+    seekToPosition(e.clientX);
+  }, [isDragging, seekToPosition]);
+
+  const handlePointerUp = useCallback(() => {
+    setIsDragging(false);
+  }, []);
+
   function formatTime(sec: number): string {
     const m = Math.floor(sec / 60);
     const s = Math.floor(sec % 60);
@@ -169,69 +198,89 @@ export function ShadowingPlayer({
     setPlaybackRate(next);
   }, [playbackRate, setPlaybackRate]);
 
+  // 반복 중인 문장 텍스트
+  const repeatSentenceText = repeatTargetIndex != null && sentences[repeatTargetIndex]
+    ? sentences[repeatTargetIndex].english
+    : null;
+
   if (compact) {
     return (
-      <div className="flex items-center gap-3">
-        {audioUrl && <audio ref={audioRef} src={audioUrl} preload="auto" />}
+      <div className="space-y-1">
+        {/* 반복 문장 뱃지 */}
+        {repeatSentenceText && !sentenceMode && (
+          <div className="truncate text-center text-[10px] text-primary-500">
+            🔁 {repeatSentenceText}
+          </div>
+        )}
 
-        <button
-          onClick={togglePlay}
-          disabled={!audioUrl}
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-500 text-white transition-colors hover:bg-primary-600 disabled:opacity-50"
-        >
-          {isPlaying ? <Pause size={14} /> : <Play size={14} className="ml-px" />}
-        </button>
+        <div className="flex items-center gap-3">
+          {audioUrl && <audio ref={audioRef} src={audioUrl} preload="auto" />}
 
-        <div
-          className="h-1 flex-1 cursor-pointer rounded-full bg-surface-secondary"
-          onClick={(e) => {
-            const audio = audioRef.current;
-            if (!audio || !duration) return;
-            const rect = e.currentTarget.getBoundingClientRect();
-            const ratio = (e.clientX - rect.left) / rect.width;
-            audio.currentTime = ratio * duration;
-          }}
-        >
+          <button
+            onClick={togglePlay}
+            disabled={!audioUrl}
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-500 text-white transition-colors hover:bg-primary-600 disabled:opacity-50"
+          >
+            {isPlaying ? <Pause size={14} /> : <Play size={14} className="ml-px" />}
+          </button>
+
           <div
-            className="h-1 rounded-full bg-primary-500 transition-[width] duration-100"
-            style={{ width: `${progressPercent}%` }}
-          />
+            ref={progressBarRef}
+            className="group relative h-4 flex-1 cursor-pointer"
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+          >
+            <div className="absolute top-1/2 h-1 w-full -translate-y-1/2 rounded-full bg-surface-secondary">
+              <div
+                className="h-1 rounded-full bg-primary-500 transition-[width] duration-100"
+                style={{ width: `${progressPercent}%` }}
+              />
+            </div>
+            {/* 드래그 thumb — hover/drag 시 표시 */}
+            <div
+              className={`absolute top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary-500 shadow-sm transition-opacity ${
+                isDragging ? "opacity-100 scale-125" : "opacity-0 group-hover:opacity-100"
+              }`}
+              style={{ left: `${progressPercent}%` }}
+            />
+          </div>
+
+          <span className="shrink-0 text-[11px] tabular-nums text-foreground-muted">
+            {formatTime(currentTime)} / {formatTime(duration)}
+          </span>
+
+          {sentenceMode ? (
+            <button
+              onClick={restart}
+              title="다시 듣기"
+              className="shrink-0 rounded-md p-1 text-foreground-muted transition-colors hover:text-foreground-secondary"
+            >
+              <RotateCcw size={14} />
+            </button>
+          ) : (
+            <button
+              onClick={toggleRepeat}
+              title={repeatTargetIndex != null ? "반복 재생 끄기" : "문장 반복 재생"}
+              className={`shrink-0 rounded-md p-1 transition-colors ${
+                repeatTargetIndex != null
+                  ? "bg-primary-100 text-primary-700"
+                  : "text-foreground-muted hover:text-foreground-secondary"
+              }`}
+            >
+              <Repeat1 size={14} />
+            </button>
+          )}
+
+          {showSpeedControl && (
+            <button
+              onClick={cycleSpeed}
+              className="shrink-0 rounded-md bg-surface-secondary px-2 py-0.5 text-[11px] font-semibold tabular-nums text-foreground-secondary transition-colors hover:text-foreground"
+            >
+              {playbackRate.toFixed(2)}x
+            </button>
+          )}
         </div>
-
-        <span className="shrink-0 text-[11px] tabular-nums text-foreground-muted">
-          {formatTime(currentTime)} / {formatTime(duration)}
-        </span>
-
-        {sentenceMode ? (
-          <button
-            onClick={restart}
-            title="다시 듣기"
-            className="shrink-0 rounded-md p-1 text-foreground-muted transition-colors hover:text-foreground-secondary"
-          >
-            <RotateCcw size={14} />
-          </button>
-        ) : (
-          <button
-            onClick={toggleRepeat}
-            title={repeatTargetIndex != null ? "반복 재생 끄기" : "문장 반복 재생"}
-            className={`shrink-0 rounded-md p-1 transition-colors ${
-              repeatTargetIndex != null
-                ? "bg-primary-100 text-primary-700"
-                : "text-foreground-muted hover:text-foreground-secondary"
-            }`}
-          >
-            <Repeat1 size={14} />
-          </button>
-        )}
-
-        {showSpeedControl && (
-          <button
-            onClick={cycleSpeed}
-            className="shrink-0 rounded-md bg-surface-secondary px-2 py-0.5 text-[11px] font-semibold tabular-nums text-foreground-secondary transition-colors hover:text-foreground"
-          >
-            {playbackRate.toFixed(2)}x
-          </button>
-        )}
       </div>
     );
   }
@@ -241,21 +290,26 @@ export function ShadowingPlayer({
     <div className="p-4">
       {audioUrl && <audio ref={audioRef} src={audioUrl} preload="auto" />}
 
-      {/* 프로그레스 바 */}
+      {/* 프로그레스 바 — 드래그 지원 */}
       <div className="mb-3">
         <div
-          className="h-1.5 cursor-pointer rounded-full bg-surface-secondary"
-          onClick={(e) => {
-            const audio = audioRef.current;
-            if (!audio || !duration) return;
-            const rect = e.currentTarget.getBoundingClientRect();
-            const ratio = (e.clientX - rect.left) / rect.width;
-            audio.currentTime = ratio * duration;
-          }}
+          ref={progressBarRef}
+          className="group relative h-4 cursor-pointer"
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
         >
+          <div className="absolute top-1/2 h-1.5 w-full -translate-y-1/2 rounded-full bg-surface-secondary">
+            <div
+              className="h-1.5 rounded-full bg-primary-500 transition-[width] duration-100"
+              style={{ width: `${progressPercent}%` }}
+            />
+          </div>
           <div
-            className="h-1.5 rounded-full bg-primary-500 transition-[width] duration-100"
-            style={{ width: `${progressPercent}%` }}
+            className={`absolute top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary-500 shadow-sm transition-opacity ${
+              isDragging ? "opacity-100 scale-110" : "opacity-0 group-hover:opacity-100"
+            }`}
+            style={{ left: `${progressPercent}%` }}
           />
         </div>
         <div className="mt-1 flex justify-between text-xs text-foreground-muted">
@@ -269,6 +323,7 @@ export function ShadowingPlayer({
         {!sentenceMode && (
           <button
             onClick={skipBackward}
+            aria-label="5초 뒤로"
             className="text-foreground-secondary transition-colors hover:text-foreground"
           >
             <SkipBack size={18} />
@@ -300,6 +355,7 @@ export function ShadowingPlayer({
         {!sentenceMode && (
           <button
             onClick={skipForward}
+            aria-label="5초 앞으로"
             className="text-foreground-secondary transition-colors hover:text-foreground"
           >
             <SkipForward size={18} />
@@ -310,7 +366,7 @@ export function ShadowingPlayer({
       {/* 속도 조절 */}
       {showSpeedControl && (
         <div className="mt-3 flex items-center justify-center gap-2">
-          {[0.75, 1.0, 1.25, 1.5].map((rate) => (
+          {([0.75, 1.0, 1.25, 1.5] as const).map((rate) => (
             <button
               key={rate}
               onClick={() => setPlaybackRate(rate)}
