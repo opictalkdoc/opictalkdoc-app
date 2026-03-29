@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import ScrollReveal from "@/components/motion/ScrollReveal";
 
 /* ── 기능 미리보기 카드 데이터 ── */
@@ -36,8 +37,15 @@ function FeatureCard({ card }: { card: typeof FEATURE_CARDS[number] }) {
       <p className="mt-1 whitespace-pre-line text-center text-[0.7rem] leading-relaxed text-white/50 sm:text-[0.75rem]">
         {card.desc}
       </p>
-      <div className="mt-3 h-[480px] overflow-hidden rounded-xl border-2 border-white/10 shadow-lg sm:h-[582px]">
-        <img src={card.src} alt={card.title} className="w-full object-cover object-left-top" loading="lazy" />
+      <div className="relative mt-3 h-[480px] overflow-hidden rounded-xl border-2 border-white/10 shadow-lg sm:h-[582px]">
+        <Image
+          src={card.src}
+          alt={card.title}
+          fill
+          sizes="340px"
+          className="object-cover object-left-top"
+          quality={75}
+        />
       </div>
     </div>
   );
