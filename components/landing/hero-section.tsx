@@ -150,17 +150,17 @@ export default function HeroSection() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.65, ease: "easeOut" }}
-          className="mt-[clamp(12px,2.5vh,28px)] flex flex-col items-center gap-3 sm:flex-row"
+          className="mt-[clamp(12px,2.5vh,28px)] flex flex-row-reverse items-center justify-center gap-3"
         >
           <Link
             href="/signup"
-            className="inline-flex items-center gap-2 rounded-full bg-[#D4835E] px-[clamp(24px,2.5vw,32px)] py-[clamp(10px,1.2vh,15px)] text-[clamp(13px,1vw,15px)] font-bold text-white shadow-[0_4px_20px_rgba(212,131,94,0.25)] transition-all hover:-translate-y-px hover:bg-[#C07350]"
+            className="inline-flex items-center gap-1.5 rounded-full bg-[#D4835E] px-5 py-2.5 text-[13px] font-bold text-white shadow-[0_4px_20px_rgba(212,131,94,0.25)] transition-all hover:-translate-y-px hover:bg-[#C07350] sm:gap-2 sm:px-[clamp(24px,2.5vw,32px)] sm:py-[clamp(10px,1.2vh,15px)] sm:text-[clamp(13px,1vw,15px)]"
           >
-            무료로 시작하기 <ArrowRight className="h-4 w-4" />
+            시작하기 <ArrowRight className="h-4 w-4" />
           </Link>
           <a
             href="#pipeline"
-            className="inline-flex items-center gap-1.5 rounded-full border border-[#EAE0D5] px-6 py-[clamp(10px,1.2vh,15px)] text-[clamp(13px,1vw,15px)] font-semibold text-[#8B7E72] transition-all hover:border-[#D4C4B0] hover:text-[#3A2E25]"
+            className="inline-flex items-center gap-1.5 rounded-full border border-[#EAE0D5] px-4 py-2.5 text-[13px] font-semibold text-[#8B7E72] transition-all hover:border-[#D4C4B0] hover:text-[#3A2E25] sm:px-6 sm:py-[clamp(10px,1.2vh,15px)] sm:text-[clamp(13px,1vw,15px)]"
           >
             학습 과정 보기
           </a>
