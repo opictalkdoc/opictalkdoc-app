@@ -77,13 +77,15 @@ export function PitchComparisonChart({
             tickLine={false}
           />
           <YAxis
-            domain={["auto", "auto"]}
+            domain={[50, "auto"]}
             tick={{ fontSize: 10 }}
-            tickFormatter={(v) => `${v}`}
+            tickFormatter={(v) => `${Math.round(Number(v))}`}
             stroke="#B5A99D"
             axisLine={false}
             tickLine={false}
-            width={35}
+            width={40}
+            label={{ value: "Hz", position: "insideTopLeft", fontSize: 9, fill: "#B5A99D" }}
+            allowDataOverflow
           />
           <Tooltip
             contentStyle={{

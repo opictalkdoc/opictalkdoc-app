@@ -18,12 +18,10 @@ interface AudioRowState {
 
 function AudioRow({
   label,
-  audioRef,
   state,
   onToggle,
 }: {
   label: string;
-  audioRef: React.RefObject<HTMLAudioElement | null>;
   state: AudioRowState;
   onToggle: () => void;
 }) {
@@ -74,7 +72,6 @@ export function RecordingComparison({
 }: RecordingComparisonProps) {
   const originalAudioRef = useRef<HTMLAudioElement | null>(null);
   const recordingAudioRef = useRef<HTMLAudioElement | null>(null);
-  const recordingUrlRef = useRef<string | null>(null);
 
   const [originalState, setOriginalState] = useState<AudioRowState>({
     isPlaying: false,
@@ -88,14 +85,7 @@ export function RecordingComparison({
     duration: 0,
   });
 
-  // 녹음 Blob → URL
-  useEffect(() => {
-    const url = URL.createObjectURL(recordingBlob);
-    recordingUrlRef.current = url;
-    return () => URL.revokeObjectURL(url);
-  }, [recordingBlob]);
-
-  // 원본 오디오 초기화
+  // 원본 오디오 초기화 + 정리
   useEffect(() => {
     const audio = new Audio(originalUrl);
     originalAudioRef.current = audio;
@@ -113,16 +103,18 @@ export function RecordingComparison({
 
     return () => {
       audio.pause();
+      audio.src = "";
       audio.removeEventListener("timeupdate", onTime);
       audio.removeEventListener("loadedmetadata", onLoaded);
       audio.removeEventListener("ended", onEnded);
+      originalAudioRef.current = null;
     };
   }, [originalUrl]);
 
-  // 녹음 오디오 초기화
+  // 녹음 오디오 초기화 + 정리
   useEffect(() => {
-    if (!recordingUrlRef.current) return;
-    const audio = new Audio(recordingUrlRef.current);
+    const url = URL.createObjectURL(recordingBlob);
+    const audio = new Audio(url);
     recordingAudioRef.current = audio;
 
     const onTime = () =>
@@ -138,9 +130,12 @@ export function RecordingComparison({
 
     return () => {
       audio.pause();
+      audio.src = "";
       audio.removeEventListener("timeupdate", onTime);
       audio.removeEventListener("loadedmetadata", onLoaded);
       audio.removeEventListener("ended", onEnded);
+      recordingAudioRef.current = null;
+      URL.revokeObjectURL(url);
     };
   }, [recordingBlob]);
 
@@ -157,7 +152,7 @@ export function RecordingComparison({
       setOriginalState((s) => ({ ...s, isPlaying: false }));
     } else {
       audio.currentTime = 0;
-      audio.play().catch(() => {});
+      audio.play().catch(console.error);
       setOriginalState((s) => ({ ...s, isPlaying: true }));
     }
   }, [originalState.isPlaying]);
@@ -175,7 +170,7 @@ export function RecordingComparison({
       setRecordingState((s) => ({ ...s, isPlaying: false }));
     } else {
       audio.currentTime = 0;
-      audio.play().catch(() => {});
+      audio.play().catch(console.error);
       setRecordingState((s) => ({ ...s, isPlaying: true }));
     }
   }, [recordingState.isPlaying]);
@@ -188,13 +183,11 @@ export function RecordingComparison({
       <div className="space-y-3 p-4">
         <AudioRow
           label={originalLabel}
-          audioRef={originalAudioRef}
           state={originalState}
           onToggle={toggleOriginal}
         />
         <AudioRow
           label={recordingLabel}
-          audioRef={recordingAudioRef}
           state={recordingState}
           onToggle={toggleRecording}
         />

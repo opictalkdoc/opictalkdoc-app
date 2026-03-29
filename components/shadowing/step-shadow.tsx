@@ -60,10 +60,13 @@ export function StepShadow() {
 
   // 녹음 상태
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
+  const MAX_RECORDING_DURATION = 30; // 문장 단위 최대 30초
 
   // 분석 결과 캐시
   const [nativePitchData, setNativePitchData] = useState<PitchFrame[] | null>(null);
@@ -108,6 +111,7 @@ export function StepShadow() {
   const startRecording = useCallback(async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
       const recorder = new MediaRecorder(stream, {
         mimeType: MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
           ? "audio/webm;codecs=opus"
@@ -123,6 +127,7 @@ export function StepShadow() {
 
       recorder.onstop = async () => {
         stream.getTracks().forEach((t) => t.stop());
+        streamRef.current = null;
         const blob = new Blob(chunksRef.current, { type: "audio/webm" });
         await analyzeRecording(blob);
       };
@@ -132,10 +137,14 @@ export function StepShadow() {
       setIsRecording(true);
       setShadowComparisonState("recording");
 
-      // 타이머
+      // 타이머 + 최대 시간 제한
       const startTime = Date.now();
       timerRef.current = setInterval(() => {
-        setRecordingDuration(Math.floor((Date.now() - startTime) / 1000));
+        const elapsed = Math.floor((Date.now() - startTime) / 1000);
+        setRecordingDuration(elapsed);
+        if (elapsed >= MAX_RECORDING_DURATION) {
+          stopRecording();
+        }
       }, 200);
     } catch {
       alert("마이크 접근 권한을 허용해주세요.");
@@ -155,9 +164,14 @@ export function StepShadow() {
     setIsRecording(false);
   }, []);
 
-  // 녹음 분석
+  // 녹음 분석 — AbortController로 경합 조건 방지
   const analyzeRecording = useCallback(async (blob: Blob) => {
     if (!currentSentence || !audioUrl) return;
+
+    // 이전 분석 취소
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
 
     setShadowComparisonState("analyzing");
 
@@ -169,10 +183,14 @@ export function StepShadow() {
         currentSentence.end,
         shadowIndex,
       );
+      if (controller.signal.aborted) return;
+
       const nativePitch = extractPitch(nativeSegment.pcm, nativeSegment.sampleRate);
 
       // 2. 사용자 녹음 PCM 변환 + 피치 분석
       const userSegment = await blobToPCM(blob);
+      if (controller.signal.aborted) return;
+
       const userPitch = extractPitch(userSegment.pcm, userSegment.sampleRate);
 
       // 3. F0 배열 추출 (DTW 입력)
@@ -181,6 +199,7 @@ export function StepShadow() {
 
       // 4. DTW 정렬
       const dtwResult = dtw(nativeF0, userF0);
+      if (controller.signal.aborted) return;
 
       // 5. 점수 계산
       const score = scorePronunciation(nativePitch, userPitch, dtwResult);
@@ -191,17 +210,20 @@ export function StepShadow() {
       setShadowComparisonResult(score);
       setShadowComparisonState("showing_result");
     } catch (err) {
+      if (controller.signal.aborted) return;
       console.error("발음 분석 실패:", err);
       setShadowComparisonState("ready_to_record");
     }
   }, [currentSentence, audioUrl, shadowIndex, setShadowComparisonState, setShadowComparisonResult]);
 
-  // 정리
+  // 정리 — 마이크 스트림 + 타이머 + 분석 취소
   useEffect(() => {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
+      abortRef.current?.abort();
       const recorder = mediaRecorderRef.current;
       if (recorder && recorder.state !== "inactive") recorder.stop();
+      streamRef.current?.getTracks().forEach((t) => t.stop());
     };
   }, []);
 

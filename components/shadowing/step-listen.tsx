@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useMemo } from "react";
 import { Languages, CaseSensitive, Type, Star } from "lucide-react";
 import { ShadowingPlayer, useActiveSentenceIndex } from "./shadowing-player";
 import { useShadowingStore, type DisplayMode } from "@/lib/stores/shadowing";
@@ -31,12 +31,10 @@ export function StepListen() {
   const prevActiveRef = useRef(-1);
 
   // 핵심 문장 영어 텍스트 Set (빠른 검색)
-  const keySentenceTexts = useRef(new Set<string>());
-  useEffect(() => {
-    keySentenceTexts.current = new Set(
-      keySentences?.map((ks) => ks.english.toLowerCase().trim()) ?? []
-    );
-  }, [keySentences]);
+  const keySentenceTexts = useMemo(
+    () => new Set(keySentences?.map((ks) => ks.english.toLowerCase().trim()) ?? []),
+    [keySentences],
+  );
 
   // 청취 추적: 문장 끝을 지날 때 listened 마킹
   useEffect(() => {
@@ -118,7 +116,7 @@ export function StepListen() {
           {sentences.map((sent, i) => {
             const isActive = i === activeIndex;
             const isListened = listenedSentences.includes(i);
-            const isKeySentence = keySentenceTexts.current.has(
+            const isKeySentence = keySentenceTexts.has(
               sent.english.toLowerCase().trim()
             );
 

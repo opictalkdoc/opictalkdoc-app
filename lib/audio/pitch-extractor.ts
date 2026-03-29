@@ -18,20 +18,25 @@ export interface PitchFrame {
   energy: number;     // RMS 에너지 (0-1 정규화)
 }
 
+// 튜닝 상수
+const RMS_SILENCE_THRESHOLD = 0.005; // 무음 판정 임계값 (TTS는 에너지가 낮을 수 있음)
+const DEFAULT_YIN_THRESHOLD = 0.3;   // YIN 임계값 (0.15는 너무 엄격 → TTS에서 대부분 무성음 판정)
+const UNVOICED_FALLBACK_THRESHOLD = 0.6; // 임계값 이하 못 찾았을 때 폴백 허용 범위
+
 interface PitchExtractorOptions {
-  frameMs?: number;     // 프레임 크기 (기본: 20ms)
+  frameMs?: number;     // 프레임 크기 (기본: 30ms — 더 넓어야 저주파 검출 가능)
   hopMs?: number;       // 홉 크기 (기본: 10ms)
   minF0?: number;       // 최소 F0 Hz (기본: 75)
-  maxF0?: number;       // 최대 F0 Hz (기본: 600)
-  threshold?: number;   // YIN 임계값 (기본: 0.15)
+  maxF0?: number;       // 최대 F0 Hz (기본: 500)
+  threshold?: number;   // YIN 임계값 (기본: 0.3)
 }
 
 const DEFAULTS: Required<PitchExtractorOptions> = {
-  frameMs: 20,
+  frameMs: 30,
   hopMs: 10,
   minF0: 75,
-  maxF0: 600,
-  threshold: 0.15,
+  maxF0: 500,
+  threshold: DEFAULT_YIN_THRESHOLD,
 };
 
 /**
@@ -51,30 +56,41 @@ export function extractPitch(
   // W = 분석 윈도우 크기 (프레임 + 최대 래그)
   const W = frameSamples + maxLag;
 
+  // 전체 오디오의 최대 에너지 (정규화용)
+  let maxEnergy = 0;
+  for (let i = 0; i < pcm.length; i++) {
+    const v = Math.abs(pcm[i]);
+    if (v > maxEnergy) maxEnergy = v;
+  }
+  if (maxEnergy === 0) maxEnergy = 1; // 무음 방지
+
   const frames: PitchFrame[] = [];
 
   for (let start = 0; start + W <= pcm.length; start += hopSamples) {
     const time = start / sampleRate;
 
-    // RMS 에너지 계산
+    // RMS 에너지 계산 (0-1 정규화)
     let sumSq = 0;
-    for (let i = start; i < start + frameSamples; i++) {
+    for (let i = start; i < start + frameSamples && i < pcm.length; i++) {
       sumSq += pcm[i] * pcm[i];
     }
     const rms = Math.sqrt(sumSq / frameSamples);
+    const normalizedEnergy = rms / maxEnergy;
 
     // 에너지가 너무 낮으면 무성음 처리
-    if (rms < 0.01) {
-      frames.push({ time, f0: 0, confidence: 0, energy: rms });
+    if (rms < RMS_SILENCE_THRESHOLD) {
+      frames.push({ time, f0: 0, confidence: 0, energy: normalizedEnergy });
       continue;
     }
 
-    // 1. 차분 함수 (difference function)
+    // 1. 차분 함수 (difference function) — 범위 체크 포함
     const diff = new Float32Array(maxLag + 1);
     for (let tau = 0; tau <= maxLag; tau++) {
       let sum = 0;
       for (let j = 0; j < frameSamples; j++) {
-        const d = pcm[start + j] - pcm[start + j + tau];
+        const idx = start + j + tau;
+        if (idx >= pcm.length) break;
+        const d = pcm[start + j] - pcm[idx];
         sum += d * d;
       }
       diff[tau] = sum;
@@ -105,7 +121,7 @@ export function extractPitch(
       }
     }
 
-    // 임계값 이하를 못 찾으면 전체 최솟값 사용
+    // 임계값 이하를 못 찾으면 전체 최솟값 사용 (폴백 범위 내에서)
     if (bestTau < 0) {
       for (let tau = minLag; tau <= maxLag; tau++) {
         if (cmndf[tau] < bestVal) {
@@ -115,8 +131,9 @@ export function extractPitch(
       }
     }
 
-    if (bestTau < 0 || bestVal > 0.5) {
-      frames.push({ time, f0: 0, confidence: 1 - bestVal, energy: rms });
+    // 폴백 임계값도 넘으면 무성음
+    if (bestTau < 0 || bestVal > UNVOICED_FALLBACK_THRESHOLD) {
+      frames.push({ time, f0: 0, confidence: 1 - bestVal, energy: normalizedEnergy });
       continue;
     }
 
@@ -135,7 +152,7 @@ export function extractPitch(
     const f0 = sampleRate / refinedTau;
     const confidence = 1 - bestVal;
 
-    frames.push({ time, f0, confidence, energy: rms });
+    frames.push({ time, f0, confidence, energy: normalizedEnergy });
   }
 
   return frames;
@@ -146,7 +163,7 @@ export function extractPitch(
  */
 export function getVoicedFrames(
   frames: PitchFrame[],
-  minConfidence = 0.7,
+  minConfidence = 0.5,
 ): PitchFrame[] {
   return frames.filter((f) => f.f0 > 0 && f.confidence >= minConfidence);
 }
