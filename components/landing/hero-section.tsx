@@ -112,10 +112,10 @@ export default function HeroSection() {
           transition={{ duration: 0.6, delay: 0.5, ease: "easeOut" }}
           className="mt-[clamp(10px,1.5vh,20px)] text-[0.85rem] font-medium text-[#8B7E72] sm:text-[clamp(0.85rem,1vw,1rem)]"
         >
-          스크립트! 외우지 마세요.
+          하루오픽이 여러분과 함께 합니다.
           <br />
           <span className="font-semibold text-[#3A2E25]">
-            하루오픽이 당신의 경험을 최고의 OPIc전략으로 바꿔 드려요.
+            당신의 경험을 최고의 전략으로 바꿔 드릴게요.
           </span>
         </motion.p>
 
