@@ -40,7 +40,7 @@ export default function PipelineSection() {
             체화로 끝나는 학습
           </h2>
           <p className="mt-4 text-[0.95rem] leading-relaxed text-white/50 sm:text-[1.05rem]">
-            각 단계가 다음 단계의 입력이 됩니다. 빈 곳 없는 완결된 학습 사이클.
+            각 단계별 빈 곳 없는 완결된 학습 사이클.
           </p>
         </ScrollReveal>
 

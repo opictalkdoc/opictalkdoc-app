@@ -10,7 +10,7 @@ export const painCards = [
 /* Before/After 대비 */
 export const contrastItems = [
   { before: "서베이 대충 선택", after: "서베이 고정으로 출제 범위 한정" },
-  { before: "모든 주제 무작정 준비", after: "기출 데이터로 범위 압축" },
+  { before: "모든 주제 무작정 준비", after: "빈도 분석으로 준비범위 축소" },
   { before: "남의 모범답안 암기", after: "내 경험 기반 맞춤 스크립트" },
   { before: "감으로 연습, 점수만 확인", after: "유형별 정밀 분석 + 약점 자동 처방" },
   { before: "\"다음엔 되겠지\" 희망", after: "성장 리포트로 객관적 추적" },
