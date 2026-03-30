@@ -161,25 +161,25 @@ export function DrillPlayer({
   }, []);
 
   return (
-    <div className="flex h-dvh flex-col bg-background">
+    <div className="flex flex-1 min-h-0 flex-col bg-background">
       {/* ── 상단: 진행 상태 바 ── */}
       <div className="border-b border-border bg-surface px-4 pb-3 pt-4 sm:px-6">
         <div className="mx-auto max-w-2xl">
           {/* Q 라벨 + 힌트 레벨 */}
           <div className="mb-2 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="rounded-md bg-primary-500 px-2 py-0.5 text-xs font-bold text-white">
+              <span className="rounded-md bg-primary-500 px-2 py-0.5 text-[11px] font-bold text-white">
                 Q{drillIndex}
               </span>
-              <span className="text-sm font-medium text-foreground">{qLabel}</span>
+              <span className="text-[13px] font-medium text-foreground">{qLabel}</span>
             </div>
-            <span className="rounded-full border border-primary-200 bg-primary-50 px-2.5 py-0.5 text-xs font-medium text-primary-700">
+            <span className="rounded-full border border-primary-200 bg-primary-50 px-2.5 py-0.5 text-[11px] font-medium text-primary-700">
               {hintLabel}
             </span>
           </div>
 
           {/* 진행 바 */}
-          <div className="h-1.5 overflow-hidden rounded-full bg-surface-secondary">
+          <div className="h-1 overflow-hidden rounded-full bg-surface-secondary">
             <div
               className="h-full rounded-full bg-primary-500 transition-all duration-500"
               style={{ width: `${(drillIndex / totalDrills) * 100}%` }}
@@ -188,8 +188,8 @@ export function DrillPlayer({
 
           {/* 목표 */}
           {drill.goal && (
-            <p className="mt-2.5 text-sm text-foreground-secondary">
-              <Sparkles className="mr-1 inline h-3.5 w-3.5 text-primary-500" />
+            <p className="mt-2 text-xs text-foreground-secondary">
+              <Sparkles className="mr-1 inline h-3 w-3 text-primary-500" />
               {drill.goal}
             </p>
           )}
@@ -198,16 +198,16 @@ export function DrillPlayer({
 
       {/* ── 메인 콘텐츠 (스크롤 영역) ── */}
       <div className="relative h-0 flex-grow">
-        <div className="absolute inset-0 overflow-y-auto px-4 py-5 sm:px-6 max-md:[scrollbar-width:none] max-md:[&::-webkit-scrollbar]:hidden">
+        <div className="absolute inset-0 overflow-y-auto px-4 pb-24 pt-5 sm:px-6 max-md:[scrollbar-width:none] max-md:[&::-webkit-scrollbar]:hidden">
           <div className="mx-auto max-w-2xl space-y-4">
 
             {/* 질문 카드 */}
             <div className="rounded-[var(--radius-xl)] border border-border bg-surface p-4 sm:p-5">
-              <p className="text-base font-medium leading-relaxed text-foreground sm:text-lg">
+              <p className="text-[13px] font-medium leading-relaxed text-foreground sm:text-[15px]">
                 {drill.question_english}
               </p>
               {drill.topic && (
-                <span className="mt-2 inline-block rounded-full bg-surface-secondary px-2.5 py-0.5 text-xs text-foreground-muted">
+                <span className="mt-2 inline-block rounded-full bg-surface-secondary px-2 py-0.5 text-[11px] text-foreground-muted">
                   {drill.topic}
                 </span>
               )}
@@ -236,8 +236,8 @@ export function DrillPlayer({
             {/* Q3 규칙 1줄 */}
             {phase !== "slot_rescue" && drill.hint_level === "minimal" && drill.rule_only_hint && (
               <div className="rounded-[var(--radius-lg)] border border-primary-200 bg-primary-50/50 p-3 sm:p-4">
-                <p className="text-sm font-medium text-primary-700">
-                  <Sparkles className="mr-1 inline h-3.5 w-3.5" />
+                <p className="text-xs font-medium text-primary-700 sm:text-[13px]">
+                  <Sparkles className="mr-1 inline h-3 w-3" />
                   {drill.rule_only_hint}
                 </p>
               </div>
@@ -248,14 +248,14 @@ export function DrillPlayer({
               <div>
                 <button
                   onClick={() => setShowExample(!showExample)}
-                  className="flex items-center gap-1.5 text-xs font-medium text-foreground-secondary transition-colors hover:text-foreground"
+                  className="flex items-center gap-1.5 text-[11px] font-medium text-foreground-secondary transition-colors hover:text-foreground"
                 >
                   {showExample ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
                   예시 답변 보기
                 </button>
                 {showExample && (
                   <div className="mt-2 rounded-[var(--radius-lg)] border border-border bg-surface-secondary p-3 sm:p-4">
-                    <p className="text-sm italic leading-relaxed text-foreground-secondary">
+                    <p className="text-xs italic leading-relaxed text-foreground-secondary sm:text-[13px]">
                       {drill.sample_answer}
                     </p>
                   </div>
@@ -275,10 +275,10 @@ export function DrillPlayer({
 
             {/* PASS 전환 */}
             {phase === "passed" && (
-              <div className="rounded-[var(--radius-xl)] border border-green-200 bg-green-50 p-5 text-center">
-                <CheckCircle2 className="mx-auto mb-2 h-10 w-10 text-green-500" />
-                <p className="text-base font-semibold text-green-700">통과!</p>
-                <p className="mt-1 text-sm text-green-600">
+              <div className="rounded-[var(--radius-xl)] border border-green-200 bg-green-50 p-4 text-center">
+                <CheckCircle2 className="mx-auto mb-2 h-8 w-8 text-green-500" />
+                <p className="text-[13px] font-semibold text-green-700">통과!</p>
+                <p className="mt-1 text-xs text-green-600">
                   {drillIndex >= totalDrills
                     ? "모든 드릴을 완료했어요"
                     : "다음 문항으로 넘어갑니다..."}
@@ -291,15 +291,15 @@ export function DrillPlayer({
       </div>
 
       {/* ── 하단: 녹음 컨트롤 (고정) ── */}
-      <div className="border-t border-border bg-surface px-4 py-4 sm:px-6">
-        <div className="mx-auto flex max-w-2xl flex-col items-center gap-2">
+      <div className="fixed bottom-0 left-0 right-0 z-20 border-t border-border bg-surface px-4 py-[14px] sm:px-6">
+        <div className="mx-auto flex max-w-2xl items-center justify-center gap-3">
           {/* 녹음 버튼 — ready 상태 */}
           {phase === "ready" && (
             <button
               onClick={handleStartRecording}
-              className="flex w-full max-w-xs items-center justify-center gap-2 rounded-full bg-primary-500 py-3.5 text-sm font-semibold text-white shadow-lg transition-all hover:bg-primary-700 active:scale-[0.97] sm:max-w-sm sm:py-4"
+              className="flex h-10 flex-1 max-w-sm items-center justify-center gap-2 rounded-full bg-primary-500 text-[13px] font-semibold text-white transition-all hover:bg-primary-700 active:scale-[0.97]"
             >
-              <Mic className="h-5 w-5" />
+              <Mic className="h-4 w-4" />
               답변 녹음하기
             </button>
           )}
@@ -308,64 +308,71 @@ export function DrillPlayer({
           {phase === "slot_rescue" && (
             <button
               onClick={handleSlotRescueComplete}
-              className="flex w-full max-w-xs items-center justify-center gap-2 rounded-full bg-primary-500 py-3.5 text-sm font-semibold text-white shadow-lg transition-all hover:bg-primary-700 active:scale-[0.97] sm:max-w-sm sm:py-4"
+              className="flex h-10 flex-1 max-w-sm items-center justify-center gap-2 rounded-full bg-primary-500 text-[13px] font-semibold text-white transition-all hover:bg-primary-700 active:scale-[0.97]"
             >
-              <ArrowRight className="h-5 w-5" />
+              <ArrowRight className="h-4 w-4" />
               전체 답변으로 돌아가기
             </button>
           )}
 
           {/* 녹음 중 */}
           {phase === "recording" && (
-            <div className="flex w-full max-w-xs flex-col items-center gap-3 sm:max-w-sm">
-              <div className="flex items-center gap-2">
-                <div className="h-3 w-3 animate-pulse rounded-full bg-red-500" />
+            <>
+              <div className="flex items-center gap-1.5">
+                <div className="h-2.5 w-2.5 animate-pulse rounded-full bg-red-500" />
                 <span className="text-sm font-medium tabular-nums text-foreground-secondary">
                   {Math.floor(recorder.duration)}초
                 </span>
               </div>
               <button
                 onClick={handleStopAndSubmit}
-                className="flex w-full items-center justify-center gap-2 rounded-full bg-red-500 py-3.5 text-sm font-semibold text-white shadow-lg transition-all hover:bg-red-600 active:scale-[0.97] sm:py-4"
+                className="flex h-10 flex-1 max-w-sm items-center justify-center gap-2 rounded-full bg-red-500 text-[13px] font-semibold text-white transition-all hover:bg-red-600 active:scale-[0.97]"
               >
-                <Square className="h-4 w-4" />
+                <Square className="h-3.5 w-3.5" />
                 녹음 완료
               </button>
-            </div>
+            </>
           )}
 
           {/* 제출/분석 중 */}
           {phase === "submitting" && (
-            <div className="flex items-center gap-2 py-3 text-sm text-foreground-secondary">
-              <Loader2 className="h-5 w-5 animate-spin text-primary-500" />
+            <div className="flex items-center gap-2 text-sm text-foreground-secondary">
+              <Loader2 className="h-4 w-4 animate-spin text-primary-500" />
               답변을 분석하고 있어요...
             </div>
           )}
 
           {/* 피드백 후 다시 말하기 */}
           {phase === "feedback" && lastAttempt?.result !== "pass" && (
-            <button
-              onClick={handleRetry}
-              className="flex w-full max-w-xs items-center justify-center gap-2 rounded-full bg-primary-500 py-3.5 text-sm font-semibold text-white shadow-lg transition-all hover:bg-primary-700 active:scale-[0.97] sm:max-w-sm sm:py-4"
-            >
-              <RefreshCw className="h-4 w-4" />
-              다시 말하기
-            </button>
+            <>
+              <button
+                onClick={handleRetry}
+                className="flex h-10 flex-1 max-w-sm items-center justify-center gap-2 rounded-full bg-primary-500 text-[13px] font-semibold text-white transition-all hover:bg-primary-700 active:scale-[0.97]"
+              >
+                <RefreshCw className="h-3.5 w-3.5" />
+                다시 말하기
+              </button>
+              {retryCount > 0 && (
+                <span className="shrink-0 text-xs text-foreground-muted">
+                  {retryCount}회 시도
+                </span>
+              )}
+            </>
           )}
 
           {/* PASS 전환 중 */}
           {phase === "passed" && (
-            <div className="flex items-center gap-2 py-3 text-sm text-green-600">
-              <CheckCircle2 className="h-5 w-5" />
+            <div className="flex items-center gap-2 text-sm text-green-600">
+              <CheckCircle2 className="h-4 w-4" />
               다음으로 이동 중...
             </div>
           )}
 
-          {/* 시도 횟수 */}
-          {retryCount > 0 && phase !== "passed" && phase !== "submitting" && (
-            <p className="text-xs text-foreground-muted">
-              시도 {retryCount}회
-            </p>
+          {/* 시도 횟수 (ready 상태에서만) */}
+          {retryCount > 0 && phase === "ready" && (
+            <span className="shrink-0 text-xs text-foreground-muted">
+              {retryCount}회 시도
+            </span>
           )}
         </div>
       </div>
@@ -392,7 +399,7 @@ function FrameCards({
     <div className="rounded-[var(--radius-xl)] border border-border bg-surface">
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="flex w-full items-center justify-between px-4 py-3 text-sm font-semibold text-foreground"
+        className="flex w-full items-center justify-between px-4 py-3 text-xs font-semibold text-foreground"
       >
         <span>말하기 구조</span>
         {isExpanded ? <ChevronUp className="h-4 w-4 text-foreground-muted" /> : <ChevronDown className="h-4 w-4 text-foreground-muted" />}
@@ -406,7 +413,7 @@ function FrameCards({
             return (
               <div
                 key={slot.slot}
-                className={`flex items-start gap-3 rounded-[var(--radius-lg)] p-3 transition-colors ${
+                className={`flex items-center gap-3 rounded-[var(--radius-lg)] p-3 transition-colors ${
                   isFailed
                     ? "border border-accent-300 bg-accent-50"
                     : "bg-surface-secondary"
@@ -422,12 +429,12 @@ function FrameCards({
                   {idx + 1}
                 </span>
                 <div>
-                  <p className="text-sm font-medium text-foreground">{slot.frame_en}</p>
+                  <p className="text-xs font-medium text-foreground sm:text-[13px]">{slot.frame_en}</p>
                   {showKorean && (
-                    <p className="mt-0.5 text-xs text-foreground-secondary">{slot.label_ko}</p>
+                    <p className="mt-0.5 text-[11px] text-foreground-secondary">{slot.label_ko}</p>
                   )}
                   {isFailed && (
-                    <p className="mt-0.5 text-xs font-medium text-accent-600">← 이 부분이 빠졌어요</p>
+                    <p className="mt-0.5 text-[11px] font-medium text-accent-600">← 이 부분이 빠졌어요</p>
                   )}
                 </div>
               </div>
@@ -463,18 +470,18 @@ function SlotRescuePanel({
   return (
     <div className="rounded-[var(--radius-xl)] border-2 border-yellow-300 bg-yellow-50 p-4 sm:p-5">
       <div className="mb-3 flex items-center gap-2">
-        <Puzzle className="h-5 w-5 text-yellow-600" />
-        <h4 className="text-sm font-semibold text-yellow-800">빠진 부분 연습하기</h4>
+        <Puzzle className="h-4 w-4 text-yellow-600" />
+        <h4 className="text-xs font-semibold text-yellow-800">빠진 부분 연습하기</h4>
       </div>
-      <p className="mb-4 text-xs text-yellow-700">
+      <p className="mb-4 text-[11px] text-yellow-700">
         아래 구조를 머릿속에 넣고, 전체 답변으로 돌아가서 다시 말해보세요.
       </p>
       <div className="space-y-2">
         {rescueSlots.map((slot) => (
           <div key={slot.slot} className="rounded-[var(--radius-lg)] border border-yellow-200 bg-white p-3">
-            <p className="text-sm font-medium text-foreground">{slot.frame_en}</p>
+            <p className="text-xs font-medium text-foreground sm:text-[13px]">{slot.frame_en}</p>
             {showKorean && (
-              <p className="mt-0.5 text-xs text-foreground-secondary">{slot.label_ko}</p>
+              <p className="mt-0.5 text-[11px] text-foreground-secondary">{slot.label_ko}</p>
             )}
           </div>
         ))}
@@ -510,30 +517,30 @@ function FeedbackPanel({
           ) : (
             <AlertTriangle className="h-5 w-5 text-yellow-500" />
           )}
-          <span className={`text-sm font-semibold ${layer2.pass_or_retry === "pass" ? "text-green-700" : "text-yellow-700"}`}>
+          <span className={`text-xs font-semibold ${layer2.pass_or_retry === "pass" ? "text-green-700" : "text-yellow-700"}`}>
             {layer2.pass_or_retry === "pass" ? "PASS" : "다시 한번 해볼게요"}
           </span>
         </div>
-        <p className="text-sm text-foreground">{layer2.praise_one}</p>
+        <p className="text-xs text-foreground sm:text-[13px]">{layer2.praise_one}</p>
         {layer2.fix_one_or_two.length > 0 && (
           <div className="space-y-1.5">
             {layer2.fix_one_or_two.map((fix, i) => (
-              <p key={i} className="text-sm text-foreground-secondary">⚠️ {fix}</p>
+              <p key={i} className="text-xs text-foreground-secondary sm:text-[13px]">⚠️ {fix}</p>
             ))}
           </div>
         )}
         {layer2.correction_examples?.length > 0 && (
           <div className="rounded-[var(--radius-lg)] bg-surface-secondary p-3">
             {layer2.correction_examples.map((ex, i) => (
-              <p key={i} className="text-sm italic text-foreground-secondary">{ex}</p>
+              <p key={i} className="text-xs italic text-foreground-secondary sm:text-[13px]">{ex}</p>
             ))}
           </div>
         )}
         {layer2.target_connection_hint && (
-          <p className="text-xs text-primary-600">{layer2.target_connection_hint}</p>
+          <p className="text-[11px] text-primary-600">{layer2.target_connection_hint}</p>
         )}
         {layer2.pass_or_retry === "retry" && layer2.retry_instruction && (
-          <p className="text-sm font-medium text-foreground">👉 {layer2.retry_instruction}</p>
+          <p className="text-xs font-medium text-foreground sm:text-[13px]">👉 {layer2.retry_instruction}</p>
         )}
       </div>
     );
@@ -549,14 +556,14 @@ function FeedbackPanel({
           ) : (
             <RefreshCw className="h-5 w-5 text-yellow-500" />
           )}
-          <span className={`text-sm font-semibold ${isPassed ? "text-green-700" : "text-yellow-700"}`}>
+          <span className={`text-xs font-semibold ${isPassed ? "text-green-700" : "text-yellow-700"}`}>
             {layer1.student_feedback.status_label}
           </span>
         </div>
-        <p className="text-sm text-foreground">{layer1.student_feedback.praise}</p>
+        <p className="text-xs text-foreground sm:text-[13px]">{layer1.student_feedback.praise}</p>
         <div className="space-y-1.5">
           {layer1.student_feedback.checklist.map((item: ChecklistItem, i: number) => (
-            <div key={i} className="flex items-center gap-2 text-sm">
+            <div key={i} className="flex items-center gap-2 text-xs sm:text-[13px]">
               {item.status === "pass" ? (
                 <CheckCircle2 className="h-4 w-4 shrink-0 text-green-500" />
               ) : (

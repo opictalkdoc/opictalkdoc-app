@@ -16,7 +16,7 @@ export default async function TutoringDrillPage({ searchParams }: Props) {
   return (
     <>
       <ImmersiveHeader title="튜터링 드릴" backHref="/tutoring?tab=training" />
-      <main className="flex h-0 min-h-0 flex-grow flex-col md:h-auto md:flex-1">
+      <main className="flex h-0 min-h-0 flex-grow flex-col">
         {focusId ? (
           <DrillSessionWrapper focusId={focusId} />
         ) : (
