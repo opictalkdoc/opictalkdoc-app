@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "이용약관 | 하루오픽",
+  title: "이용약관",
   description: "하루오픽 서비스 이용약관",
 };
 

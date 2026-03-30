@@ -2,7 +2,7 @@ import { getAuthClaims } from "@/lib/auth";
 import { StoreContent } from "@/components/store/store-content";
 
 export const metadata = {
-  title: "스토어 | 하루오픽",
+  title: "스토어",
   description: "하루오픽 플랜 구매 및 횟수권 스토어",
 };
 

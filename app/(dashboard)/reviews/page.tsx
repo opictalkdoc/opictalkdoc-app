@@ -5,7 +5,7 @@ import { getUser } from "@/lib/auth";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 
 export const metadata = {
-  title: "시험후기 | 하루오픽",
+  title: "시험후기",
 };
 
 // 비동기 서버 컴포넌트: 통계 + 내 제출 이력 + 완료 후기 상세를 병렬 조회하여 전달

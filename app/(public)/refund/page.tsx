@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "환불 규정 | 하루오픽",
+  title: "환불 규정",
   description: "하루오픽 환불 규정 안내",
 };
 

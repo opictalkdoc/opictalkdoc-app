@@ -14,7 +14,7 @@ import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { DashboardStats } from "@/components/dashboard/dashboard-stats";
 
 export const metadata = {
-  title: "대시보드 | 하루오픽",
+  title: "대시보드",
 };
 
 /* ── 유틸 ── */

@@ -6,7 +6,7 @@ import { EvaluationResult } from "@/components/shadowing/evaluation-result";
 import { getShadowingSessionDetail } from "@/lib/actions/scripts";
 
 export const metadata = {
-  title: "쉐도잉 결과 | 하루오픽",
+  title: "쉐도잉 결과",
 };
 
 interface PageProps {

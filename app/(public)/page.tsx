@@ -10,7 +10,7 @@ import FaqSection from "@/components/landing/faq-section";
 import FinalCtaSection from "@/components/landing/final-cta-section";
 
 export const metadata: Metadata = {
-  title: "하루오픽 | 나의 하루로 준비하는 OPIc",
+  title: { absolute: "하루오픽 | 나의 하루로 준비하는 OPIc" },
   description:
     "471개 기출 빈도 분석 → 내 경험 기반 맞춤 스크립트 → 원어민 음성 쉐도잉 → 실전 모의고사 → 약점 튜터링. 외우지 않아도 말할 수 있는 OPIc, 하루오픽.",
 };

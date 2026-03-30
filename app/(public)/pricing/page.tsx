@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "요금제 | 하루오픽",
+  title: "요금제",
   description: "하루오픽 요금제 안내 - 체험, 실전, 올인원",
 };
 

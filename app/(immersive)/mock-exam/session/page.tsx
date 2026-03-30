@@ -2,7 +2,7 @@ import { ImmersiveHeader } from "@/components/layout/immersive-header";
 import { MockExamSessionWrapper } from "@/components/mock-exam/session/mock-exam-session-wrapper";
 
 export const metadata = {
-  title: "모의고사 세션 | 하루오픽",
+  title: "모의고사 세션",
 };
 
 interface Props {

@@ -8,7 +8,7 @@ import {
 import { getAuthClaims } from "@/lib/auth";
 
 export const metadata = {
-  title: "모의고사 | 하루오픽",
+  title: "모의고사",
 };
 
 // 서버에서 사전 조회 — getExamPool은 무거워(5~6쿼리) 클라이언트 백그라운드 로드

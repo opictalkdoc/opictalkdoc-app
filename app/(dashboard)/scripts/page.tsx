@@ -7,7 +7,7 @@ import {
 } from "@/lib/actions/scripts";
 
 export const metadata = {
-  title: "스크립트 | 하루오픽",
+  title: "스크립트",
 };
 
 // 서버에서 초기 데이터 병렬 조회 (3개 쿼리)
