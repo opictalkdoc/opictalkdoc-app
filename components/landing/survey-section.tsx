@@ -74,7 +74,7 @@ export default function SurveySection() {
           {/* 하단: 서베이 카드 */}
           <div className="md:mx-auto md:w-full md:max-w-[600px]">
             <ScrollReveal preset="fade-up" duration={0.5} delay={0.15}>
-              <div className="rounded-2xl border border-[#EAE0D5] bg-[#FAF6F1] p-5 sm:p-7">
+              <div className="rounded-2xl border border-[#EAE0D5] bg-[#FAF6F1] p-3.5 sm:p-7">
                 <div className="flex items-center justify-between">
                   <p className="text-[0.85rem] font-semibold text-[#3A2E25]">
                     하루오픽 권장 서베이
@@ -88,7 +88,7 @@ export default function SurveySection() {
                   {SURVEY_ITEMS.map((item) => (
                     <div
                       key={item.cat}
-                      className="flex items-center gap-3 rounded-xl bg-white px-3.5 py-2.5"
+                      className="flex items-center gap-2 rounded-xl bg-white px-2.5 py-2 sm:gap-3 sm:px-3.5 sm:py-2.5"
                     >
                       {/* 전략 아이콘 */}
                       {item.strategy === "차단" ? (
@@ -117,13 +117,13 @@ export default function SurveySection() {
                 </div>
 
                 {/* 하단 요약 */}
-                <div className="mt-4 rounded-xl bg-[#3A2E25] px-4 py-3">
+                <div className="mt-4 rounded-xl bg-[#3A2E25] px-3 py-2.5 sm:px-4 sm:py-3">
                   <div className="flex items-center justify-between">
                     <span className="text-[0.8rem] font-medium text-white/70">학습 주제</span>
                     <span className="font-serif text-[1.1rem] font-bold text-[#D4835E]">10개로 압축</span>
                   </div>
-                  <p className="mt-1 text-[0.7rem] text-white/40">
-                    권장 서베이 선택 → 출제 범위 고정 → 시험의 60% 이상 커버
+                  <p className="mt-1 text-[0.65rem] text-white/40 sm:text-[0.7rem]">
+                    서베이 고정 → 출제 범위 고정 → 60% 이상 커버
                   </p>
                 </div>
               </div>
