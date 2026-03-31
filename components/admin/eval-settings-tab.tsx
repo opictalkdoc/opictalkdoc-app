@@ -34,18 +34,15 @@ const RE_DEFAULTS: Record<string, number> = {
 
 // ── GPT 모델 기본값 ──
 const GPT_DEFAULTS: Record<string, string | number> = {
-  judge_model: "gpt-4.1-mini",
+  judge_model: "gpt-4.1",
   judge_temperature: 0.20,
-  judge_max_tokens: 6000,
+  judge_max_tokens: 8000,
   coach_model: "gpt-4.1",
-  coach_temperature: 0.40,
-  coach_max_tokens: 8000,
+  coach_temperature: 0.30,
+  coach_max_tokens: 4000,
   report_model: "gpt-4.1",
-  report_temperature: 0.40,
-  report_max_tokens: 12000,
-  growth_model: "gpt-4.1-mini",
-  growth_temperature: 0.50,
-  growth_max_tokens: 3000,
+  report_temperature: 0.30,
+  report_max_tokens: 4000,
 };
 
 const MODEL_OPTIONS = ["gpt-4.1", "gpt-4.1-mini", "gpt-4o-mini"];
@@ -269,10 +266,9 @@ function GptModelSection({
   };
 
   const cards = [
-    { prefix: "judge", label: "Judge (체크박스 평가)", desc: "gpt-4.1-mini 기본" },
-    { prefix: "coach", label: "Coach (코칭 생성)", desc: "gpt-4.1 기본" },
+    { prefix: "judge", label: "Judge (체크박스 평가)", desc: "gpt-4.1 기본" },
+    { prefix: "coach", label: "Coach (소견 생성)", desc: "gpt-4.1 기본" },
     { prefix: "report", label: "Report (종합 리포트)", desc: "gpt-4.1 기본" },
-    { prefix: "growth", label: "Growth (성장 분석)", desc: "gpt-4.1-mini 기본" },
   ];
 
   return (

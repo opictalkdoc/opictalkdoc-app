@@ -19,7 +19,7 @@ export async function getMockExamStats(): Promise<MockExamStats> {
     supabase
       .from("mock_test_answers")
       .select("*", { count: "exact", head: true })
-      .not("eval_status", "in", '("complete","skipped")'),
+      .not("eval_status", "in", '("completed","skipped")'),
     supabase
       .from("mock_test_answers")
       .select("*", { count: "exact", head: true })
