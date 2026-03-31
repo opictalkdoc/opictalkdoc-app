@@ -217,7 +217,7 @@ export function StepSpeak() {
       <div className="flex items-center justify-center gap-2 rounded-lg border border-amber-200 bg-amber-50/50 p-2.5 text-xs">
         <Coins size={14} className="text-amber-600" />
         <span className="text-amber-700">
-          <span className="font-semibold">스크립트 크레딧 1개</span> 차감
+          <span className="font-semibold">스크립트 생성권 1회</span> 차감
           {creditData && (
             <span className="ml-1">· 현재 {creditData.totalCredits}개 보유</span>
           )}
@@ -313,7 +313,7 @@ export function StepSpeak() {
                   <Upload size={14} className="sm:hidden" />
                   <Upload size={16} className="hidden sm:block" />
                   <span className="sm:hidden">평가</span>
-                  <span className="hidden sm:inline">평가 받기 (1크레딧)</span>
+                  <span className="hidden sm:inline">평가 받기 (1회 차감)</span>
                 </span>
               </button>
             )}

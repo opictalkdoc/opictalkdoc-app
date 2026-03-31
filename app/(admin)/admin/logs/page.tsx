@@ -9,7 +9,7 @@ import type { AuditLogEntry } from "@/lib/types/admin";
 
 const ACTION_OPTIONS = [
   { value: "all", label: "전체" },
-  { value: "credit_adjust", label: "크레딧 조정" },
+  { value: "credit_adjust", label: "이용권 조정" },
   { value: "import_review", label: "기출 입력" },
   { value: "prompt_update", label: "프롬프트 수정" },
   { value: "eval_prompt_update", label: "평가프롬프트 수정" },

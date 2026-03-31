@@ -672,7 +672,7 @@ export function ScriptWizard({
                   className="inline-flex items-center gap-1.5 text-sm text-foreground-secondary hover:text-foreground"
                 >
                   <RotateCcw size={14} />
-                  재생성 (1크레딧)
+                  재생성 (1회 차감)
                 </button>
                 <button
                   onClick={handleConfirm}
@@ -1977,7 +1977,7 @@ function RegenerateModal({
 
         <p className="mt-3 text-xs text-foreground-secondary">
           현재 스크립트가 삭제되고 새로 생성됩니다.{" "}
-          <span className="font-semibold text-primary-600">1크레딧</span>이
+          <span className="font-semibold text-primary-600">생성권 1회</span>가
           차감됩니다.
         </p>
 
@@ -2012,7 +2012,7 @@ function RegenerateModal({
             ) : (
               <RotateCcw size={14} />
             )}
-            재생성 (1크레딧)
+            재생성 (1회 차감)
           </button>
         </div>
 

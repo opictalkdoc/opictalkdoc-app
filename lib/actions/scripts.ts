@@ -54,7 +54,7 @@ export async function checkScriptCredit(): Promise<ActionResult<CreditCheckResul
       .single();
 
     if (error || !data) {
-      return { error: "크레딧 정보를 조회할 수 없습니다" };
+      return { error: "이용권 정보를 조회할 수 없습니다" };
     }
 
     const planCredits = data.plan_script_credits ?? 0;

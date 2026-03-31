@@ -706,7 +706,7 @@ function AccountTab({ user }: { user: UserData }) {
               정말 탈퇴하시겠습니까?
             </p>
             <p className="mt-1 text-xs text-foreground-secondary">
-              모든 학습 기록, 결제 내역, 크레딧이 즉시 삭제되며 복구할 수
+              모든 학습 기록, 결제 내역, 이용권이 즉시 삭제되며 복구할 수
               없습니다.
             </p>
             {deleteError && (

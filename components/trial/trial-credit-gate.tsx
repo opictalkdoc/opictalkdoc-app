@@ -27,7 +27,7 @@ export function TrialCreditGate({ open, onClose, type }: TrialCreditGateProps) {
         </button>
 
         <h3 className="text-lg font-semibold text-foreground">
-          {title} 크레딧이 부족합니다
+          {title} 이용권이 부족합니다
         </h3>
         <p className="mt-1 text-sm text-foreground-secondary">
           아래 방법으로 {title}를 이용할 수 있습니다.
@@ -60,7 +60,7 @@ export function TrialCreditGate({ open, onClose, type }: TrialCreditGateProps) {
             </div>
             <div>
               <p className="text-sm font-semibold text-foreground">요금제 구매하기</p>
-              <p className="text-xs text-foreground-muted">크레딧을 구매하여 바로 이용</p>
+              <p className="text-xs text-foreground-muted">이용권을 구매하여 바로 이용</p>
             </div>
           </Link>
         </div>

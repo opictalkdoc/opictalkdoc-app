@@ -31,9 +31,9 @@ export function NoCreditCard({ type, credits = 0 }: NoCreditCardProps) {
     <div className="rounded-[var(--radius-xl)] border border-border bg-surface p-4 sm:p-5">
       {/* 크레딧 현황 */}
       <div className="flex items-center justify-center gap-2">
-        <span className="text-sm text-foreground-secondary">{label} 크레딧:</span>
+        <span className="text-sm text-foreground-secondary">{label}:</span>
         <span className="text-sm font-bold text-foreground">{credits}회</span>
-        <span className="text-xs text-accent-500">(크레딧이 부족합니다)</span>
+        <span className="text-xs text-accent-500">(이용권이 부족합니다)</span>
       </div>
 
       {/* 체험판 + 요금제 (체험판이 없으면 요금제만 표시) */}

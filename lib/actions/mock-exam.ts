@@ -215,7 +215,7 @@ export async function createSession(
     );
 
     if (creditErr || !creditOk) {
-      return { error: "모의고사 크레딧이 부족합니다" };
+      return { error: "모의고사 응시권이 부족합니다" };
     }
 
     // 기출 문제 ID 조회 (Q1~Q15, Q1 자기소개 포함)
@@ -762,7 +762,7 @@ export async function checkMockExamCredit(): Promise<
       .single();
 
     if (error || !data) {
-      return { error: "크레딧 정보를 조회할 수 없습니다" };
+      return { error: "이용권 정보를 조회할 수 없습니다" };
     }
 
     const planCredits = Number(data.plan_mock_exam_credits ?? 0);

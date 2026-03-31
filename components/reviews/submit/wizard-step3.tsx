@@ -73,7 +73,7 @@ export function WizardStep3({ submissionId, onComplete, onBack }: WizardStep3Pro
             후기를 완료하면 스크립트 패키지 생성권 2개를 드려요!
           </p>
           <p className="mt-0.5 text-[11px] text-foreground-secondary sm:text-xs">
-            OPIc 응시 주기(25일)에 맞춰 크레딧이 지급됩니다
+            OPIc 응시 주기(25일)에 맞춰 생성권이 지급됩니다
           </p>
         </div>
       </div>

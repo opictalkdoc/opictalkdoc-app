@@ -389,7 +389,7 @@ export default function AdminPaymentsPage() {
                           rows={2}
                         />
                         <p className="mt-1.5 text-[11px] text-red-500">
-                          환불 시 해당 크레딧이 자동 회수됩니다
+                          환불 시 해당 이용권이 자동 회수됩니다
                         </p>
                         <div className="mt-2 flex justify-end gap-2">
                           <button

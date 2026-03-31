@@ -27,7 +27,7 @@ export function TrialComplete({ type }: TrialCompleteProps) {
         <p className="mt-1.5 max-w-sm text-center text-xs text-foreground-secondary sm:mt-2 sm:text-sm">
           나만의 경험으로 만든 맞춤 스크립트를 직접 생성해보세요.
           <br />
-          시험 후기를 제출하면 스크립트 크레딧을 받을 수 있어요.
+          시험 후기를 제출하면 스크립트 생성권을 받을 수 있어요.
         </p>
 
         <div className="mt-6 flex w-full max-w-xs flex-col gap-3">

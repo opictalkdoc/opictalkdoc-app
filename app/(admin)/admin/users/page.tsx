@@ -193,7 +193,7 @@ export default function AdminUsersPage() {
   const handleAdjust = async (params: CreditAdjustParams) => {
     const result = await adjustCredit(params);
     if (!result.success) {
-      toast.error(result.error || "크레딧 조정 실패");
+      toast.error(result.error || "이용권 조정 실패");
       return;
     }
     // 목록 + 상세 캐시 모두 갱신
@@ -296,7 +296,7 @@ export default function AdminUsersPage() {
     },
     {
       key: "credits",
-      label: "크레딧 (모/스)",
+      label: "이용권 (모/스)",
       render: (row: AdminUser) => (
         <span className="text-xs">
           {row.mock_exam_credits + row.plan_mock_exam_credits} / {row.script_credits + row.plan_script_credits}
@@ -318,7 +318,7 @@ export default function AdminUsersPage() {
             e.stopPropagation();
             setCreditTarget({ id: row.id, name: row.display_name || row.email });
           }}
-          title="크레딧 조정"
+          title="이용권 조정"
           className="rounded-md p-1 text-foreground-muted hover:bg-surface-secondary hover:text-primary-600"
         >
           <Coins size={16} />
@@ -340,8 +340,8 @@ export default function AdminUsersPage() {
                 { key: "email", label: "이메일" },
                 { key: "display_name", label: "이름" },
                 { key: "current_plan", label: "플랜" },
-                { key: "mock_exam_credits", label: "모의고사 크레딧" },
-                { key: "script_credits", label: "스크립트 크레딧" },
+                { key: "mock_exam_credits", label: "모의고사 응시권" },
+                { key: "script_credits", label: "스크립트 생성권" },
                 { key: "created_at", label: "가입일" },
               ]);
               downloadCSV(csv, `users_${new Date().toISOString().split("T")[0]}.csv`);
@@ -503,7 +503,7 @@ function UserDetailView({
                 className="flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground-secondary hover:bg-surface-secondary hover:text-primary-600"
               >
                 <Coins size={14} />
-                크레딧 조정
+                이용권 조정
               </button>
               <button
                 onClick={() => onPlanChange(user.id, user.display_name || user.email, user.current_plan)}

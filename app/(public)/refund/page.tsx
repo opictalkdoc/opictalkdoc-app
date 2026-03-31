@@ -41,7 +41,7 @@ export default function RefundPage() {
               <span className="font-medium text-foreground">
                 기간제 이용권(플랜)
               </span>
-              : 일정 기간 동안 서비스를 이용할 수 있는 이용권으로, 모의고사·스크립트·튜터링 크레딧이 포함됩니다. 자동 갱신되지 않으며 기간 만료 시 자동 종료됩니다.
+              : 일정 기간 동안 서비스를 이용할 수 있는 이용권으로, 모의고사 응시권·스크립트 생성권·튜터링 훈련권이 포함됩니다. 자동 갱신되지 않으며 기간 만료 시 자동 종료됩니다.
             </li>
             <li>
               <span className="font-medium text-foreground">횟수권</span>
@@ -61,11 +61,11 @@ export default function RefundPage() {
               있습니다.
             </li>
             <li>
-              청약철회 시 서비스(크레딧)를 이용하지 않은 경우 결제 금액 전액을
+              청약철회 시 서비스(이용권)를 이용하지 않은 경우 결제 금액 전액을
               환불합니다.
             </li>
             <li>
-              서비스(크레딧)를 일부 이용한 경우 제4조에 따라 환불 금액을
+              서비스(이용권)를 일부 이용한 경우 제4조에 따라 환불 금액을
               산정합니다.
             </li>
           </ol>
@@ -97,13 +97,13 @@ export default function RefundPage() {
                   </thead>
                   <tbody className="divide-y divide-border">
                     <tr>
-                      <td className="px-4 py-3">결제 후 7일 이내, 크레딧 미사용</td>
+                      <td className="px-4 py-3">결제 후 7일 이내, 이용권 미사용</td>
                       <td className="px-4 py-3">전액 환불</td>
                     </tr>
                     <tr>
-                      <td className="px-4 py-3">결제 후 7일 이내, 크레딧 일부 사용</td>
+                      <td className="px-4 py-3">결제 후 7일 이내, 이용권 일부 사용</td>
                       <td className="px-4 py-3">
-                        결제금액 - (사용 크레딧 x 개별 정가)*
+                        결제금액 - (사용 이용권 x 개별 정가)*
                       </td>
                     </tr>
                     <tr>
@@ -115,7 +115,7 @@ export default function RefundPage() {
               </div>
               <p className="mt-2 text-xs text-foreground-muted">
                 * 개별 정가: 모의고사 7,900원/회, 스크립트 780원/회(5회 3,900원 기준), 튜터링 5,900원/회.
-                사용 크레딧 차감액이 결제금액을 초과하는 경우 환불금액은 0원입니다.
+                사용 이용권 차감액이 결제금액을 초과하는 경우 환불금액은 0원입니다.
               </p>
             </div>
 
@@ -136,15 +136,15 @@ export default function RefundPage() {
                   </thead>
                   <tbody className="divide-y divide-border">
                     <tr>
-                      <td className="px-4 py-3">결제 후 7일 이내, 크레딧 미사용</td>
+                      <td className="px-4 py-3">결제 후 7일 이내, 이용권 미사용</td>
                       <td className="px-4 py-3">전액 환불</td>
                     </tr>
                     <tr>
-                      <td className="px-4 py-3">크레딧 1회라도 사용</td>
+                      <td className="px-4 py-3">이용권 1회라도 사용</td>
                       <td className="px-4 py-3">환불 불가</td>
                     </tr>
                     <tr>
-                      <td className="px-4 py-3">결제 후 7일 초과, 크레딧 미사용</td>
+                      <td className="px-4 py-3">결제 후 7일 초과, 이용권 미사용</td>
                       <td className="px-4 py-3">환불 불가</td>
                     </tr>
                   </tbody>
@@ -161,23 +161,23 @@ export default function RefundPage() {
           </h2>
           <p className="mt-2">
             본 서비스는 AI가 생성하는 디지털 콘텐츠(스크립트, 평가 리포트,
-            튜터링 피드백 등)를 제공합니다. 다음의 경우 해당 크레딧은
+            튜터링 피드백 등)를 제공합니다. 다음의 경우 해당 이용권은
             사용된 것으로 간주합니다.
           </p>
           <ul className="mt-2 list-disc space-y-1 pl-5">
             <li>
-              스크립트 크레딧: AI 스크립트 생성이 요청된 시점
+              스크립트 생성권: AI 스크립트 생성이 요청된 시점
             </li>
             <li>
-              모의고사 크레딧: 모의고사 세션이 시작된 시점
+              모의고사 응시권: 모의고사 세션이 시작된 시점
             </li>
             <li>
-              튜터링 크레딧: 튜터링 진단이 요청된 시점
+              튜터링 훈련권: 튜터링 진단이 요청된 시점
             </li>
           </ul>
           <p className="mt-2">
             디지털 콘텐츠는 그 성질상 제공 즉시 소비가 이루어지므로,
-            콘텐츠이용자보호지침에 따라 사용된 크레딧에 대한 청약철회가
+            콘텐츠이용자보호지침에 따라 사용된 이용권에 대한 청약철회가
             제한될 수 있습니다.
           </p>
         </section>
@@ -190,16 +190,16 @@ export default function RefundPage() {
           <ul className="mt-2 list-disc space-y-1 pl-5">
             <li>결제일로부터 7일이 초과한 경우</li>
             <li>
-              횟수권의 크레딧을 1회라도 사용한 경우
+              횟수권을 1회라도 사용한 경우
             </li>
             <li>
               회원의 귀책사유로 서비스 이용이 불가능해진 경우 (계정 정지 등)
             </li>
             <li>
-              이벤트, 프로모션 등 무료로 제공된 크레딧 및 서비스
+              이벤트, 프로모션 등 무료로 제공된 이용권 및 서비스
             </li>
             <li>
-              후기 제출 보상으로 지급된 무료 크레딧
+              후기 제출 보상으로 지급된 무료 이용권
             </li>
           </ul>
         </section>
@@ -237,8 +237,8 @@ export default function RefundPage() {
               자동 갱신(정기결제)되지 않습니다.
             </li>
             <li>
-              플랜 만료 시 잔여 플랜 크레딧은 소멸되며, 별도 구매한 횟수권
-              크레딧은 유지됩니다.
+              플랜 만료 시 잔여 플랜 이용권은 소멸되며, 별도 구매한 횟수권은
+              유지됩니다.
             </li>
             <li>
               플랜 재구매는 언제든지 가능합니다.
