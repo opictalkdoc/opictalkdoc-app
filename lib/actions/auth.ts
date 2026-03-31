@@ -183,12 +183,23 @@ export async function updateProfile(formData: FormData): Promise<AuthResult> {
 
   try {
     const supabase = await createServerSupabaseClient();
-    const { error } = await supabase.auth.updateUser({
-      data: { display_name: name.trim() },
+    const trimmed = name.trim();
+
+    // user_metadata 업데이트 (네비바 표시용)
+    const { data: { user }, error } = await supabase.auth.updateUser({
+      data: { display_name: trimmed },
     });
 
     if (error) {
       return { error: "프로필 업데이트에 실패했습니다" };
+    }
+
+    // profiles 테이블 동기화
+    if (user) {
+      await supabase
+        .from("profiles")
+        .update({ display_name: trimmed })
+        .eq("id", user.id);
     }
   } catch (err) {
     console.error("updateProfile 오류:", err);
@@ -208,7 +219,7 @@ export async function updateGoals(formData: FormData): Promise<AuthResult> {
 
   try {
     const supabase = await createServerSupabaseClient();
-    const { error } = await supabase.auth.updateUser({
+    const { data: { user }, error } = await supabase.auth.updateUser({
       data: {
         current_grade: currentGrade || null,
         target_grade: targetGrade || null,
@@ -219,6 +230,14 @@ export async function updateGoals(formData: FormData): Promise<AuthResult> {
 
     if (error) {
       return { error: "목표 설정 저장에 실패했습니다" };
+    }
+
+    // profiles 테이블 동기화 (target_grade)
+    if (user) {
+      await supabase
+        .from("profiles")
+        .update({ target_grade: targetGrade || null })
+        .eq("id", user.id);
     }
   } catch (err) {
     console.error("updateGoals 오류:", err);
