@@ -2,6 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import {
   runRuleEngine,
   DEFAULT_PARAMS,
+  type RuleEngineParams,
   type EvaluationInput,
   type RuleEngineResult,
 } from "../_shared/rule-engine.ts";
@@ -339,7 +340,32 @@ Deno.serve(async (req: Request) => {
     let finalLevel: string;
 
     try {
-      ruleEngineResult = runRuleEngine(ruleEngineInputs, DEFAULT_PARAMS);
+      // DB에서 평가엔진 설정 조회 (없으면 DEFAULT_PARAMS 사용)
+      const { data: settingsRow } = await supabase
+        .from("mock_test_eval_settings")
+        .select("*")
+        .limit(1)
+        .single();
+
+      const params: RuleEngineParams = settingsRow
+        ? {
+            checkbox_pass_threshold: Number(settingsRow.re_checkbox_pass_threshold) || DEFAULT_PARAMS.checkbox_pass_threshold,
+            floor_nh: Number(settingsRow.re_floor_nh) || DEFAULT_PARAMS.floor_nh,
+            floor_il: Number(settingsRow.re_floor_il) || DEFAULT_PARAMS.floor_il,
+            floor_im1: Number(settingsRow.re_floor_im1) || DEFAULT_PARAMS.floor_im1,
+            floor_im2: Number(settingsRow.re_floor_im2) || DEFAULT_PARAMS.floor_im2,
+            ceiling_broke_down: Number(settingsRow.re_ceiling_broke_down) || DEFAULT_PARAMS.ceiling_broke_down,
+            ceiling_respond: Number(settingsRow.re_ceiling_respond) || DEFAULT_PARAMS.ceiling_respond,
+            sympathetic_low: Number(settingsRow.re_sympathetic_low) || DEFAULT_PARAMS.sympathetic_low,
+            sympathetic_mid: Number(settingsRow.re_sympathetic_mid) || DEFAULT_PARAMS.sympathetic_mid,
+            sympathetic_at_times: Number(settingsRow.re_sympathetic_at_times) || DEFAULT_PARAMS.sympathetic_at_times,
+            al_pass_threshold: Number(settingsRow.re_al_pass_threshold) || DEFAULT_PARAMS.al_pass_threshold,
+            q12_gatekeeper_threshold: Number(settingsRow.re_q12_gatekeeper_threshold) || DEFAULT_PARAMS.q12_gatekeeper_threshold,
+            sympathetic_pron_weight: Number(settingsRow.re_sympathetic_pron_weight) || DEFAULT_PARAMS.sympathetic_pron_weight,
+          }
+        : DEFAULT_PARAMS;
+
+      ruleEngineResult = runRuleEngine(ruleEngineInputs, params);
       finalLevel = ruleEngineResult.final_level;
       console.log(
         `[report] Rule Engine: ${finalLevel} ` +
