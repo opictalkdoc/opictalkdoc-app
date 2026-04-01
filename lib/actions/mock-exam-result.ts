@@ -19,7 +19,8 @@ type ActionResult<T = null> = {
 };
 
 type ViewerContext = {
-  supabase: Awaited<ReturnType<typeof createServerSupabaseClient>> | ReturnType<typeof createClient>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: any;
   userId: string;
   isAdmin: boolean;
 };
@@ -65,8 +66,7 @@ async function requireViewer(): Promise<ViewerContext> {
   }
 
   const isAdmin = user.app_metadata?.role === "admin";
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase: any = isAdmin
+  const supabase = isAdmin
     ? createClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -95,7 +95,7 @@ async function requireSessionAccess<TSession extends Record<string, unknown>>(
     query = query.eq("user_id", context.userId);
   }
 
-  const { data, error } = await query.single<TSession>();
+  const { data, error } = await query.single();
 
   if (error || !data) {
     throw new Error("세션 접근 권한이 없습니다.");
@@ -224,7 +224,7 @@ export async function getQuestionsData(
       return { error: "문항별 코칭 데이터가 없습니다." };
     }
 
-    const questionIds = consultsRes.data.map((consult) => consult.question_id);
+    const questionIds = consultsRes.data.map((consult: any) => consult.question_id);
     const [questionsRes, answersRes] = await Promise.all([
       supabase
         .from("questions")
@@ -237,12 +237,12 @@ export async function getQuestionsData(
         .order("question_number"),
     ]);
 
-    const questionMap = new Map((questionsRes.data || []).map((question) => [question.id, question]));
-    const answerMap = new Map((answersRes.data || []).map((answer) => [answer.question_number, answer]));
+    const questionMap = new Map((questionsRes.data || []).map((question: any) => [question.id, question]));
+    const answerMap = new Map((answersRes.data || []).map((answer: any) => [answer.question_number, answer]));
 
-    const evaluations: QuestionEvalV2Real[] = consultsRes.data.map((consult) => {
-      const questionMeta = questionMap.get(consult.question_id);
-      const answer = answerMap.get(consult.question_number);
+    const evaluations: QuestionEvalV2Real[] = consultsRes.data.map((consult: any) => {
+      const questionMeta: any = questionMap.get(consult.question_id);
+      const answer: any = answerMap.get(consult.question_number);
       const pronunciation = (answer?.pronunciation_assessment || null) as Record<string, number> | null;
 
       return {
@@ -309,7 +309,7 @@ export async function triggerEvalV2(
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
-    const evalPromises = answers.map((answer) =>
+    const evalPromises = answers.map((answer: any) =>
       fetch(`${supabaseUrl}/functions/v1/mock-test-eval`, {
         method: "POST",
         headers: {
@@ -426,9 +426,10 @@ export async function getGrowthData(
         fulfillment_rate: number;
       }>;
       bottleneck_summary: string;
+      focus_point?: { area_label: string; observation: string };
     };
 
-    const gradeHistory: GradeHistoryItem[] = allReports.map((history, index) => ({
+    const gradeHistory: GradeHistoryItem[] = allReports.map((history: any, index: number) => ({
       session_count: index + 1,
       grade: history.final_level || "IM1",
       date: history.completed_at || "",
@@ -437,7 +438,7 @@ export async function getGrowthData(
     const currentSessionCount = gradeHistory.length;
     const previousReport = allReports
       .filter(
-        (history) =>
+        (history: any) =>
           history.session_id !== sessionId &&
           (history.completed_at || "") < (session.started_at || ""),
       )
@@ -490,7 +491,10 @@ export async function getGrowthData(
               : `충족률 ${Math.round(rate * 100)}%로 추가 개선이 필요합니다.`,
         };
       }),
-      bottleneck_summary: growth.bottleneck_summary,
+      focus_point: {
+        area_label: growth.focus_point?.area_label || "",
+        observation: growth.focus_point?.observation || "",
+      },
     };
 
     return { data: result };
