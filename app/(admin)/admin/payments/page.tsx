@@ -50,6 +50,7 @@ function formatAmount(amount: number) {
 
 function formatDate(dateStr: string) {
   return new Date(dateStr).toLocaleString("ko-KR", {
+    timeZone: "Asia/Seoul",
     month: "short",
     day: "numeric",
     hour: "2-digit",

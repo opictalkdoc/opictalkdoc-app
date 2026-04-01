@@ -75,6 +75,7 @@ async function RecentActivityList() {
           </span>
           <span className="shrink-0 text-xs text-foreground-muted">
             {new Date(a.created_at).toLocaleString("ko-KR", {
+              timeZone: "Asia/Seoul",
               month: "short",
               day: "numeric",
               hour: "2-digit",
@@ -299,7 +300,7 @@ async function InactiveUsersSection() {
                 <div key={i} className="flex items-center justify-between text-xs">
                   <span className="truncate text-foreground">{l.email}</span>
                   <span className="shrink-0 text-foreground-muted">
-                    {new Date(l.last_login).toLocaleString("ko-KR", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                    {new Date(l.last_login).toLocaleString("ko-KR", { timeZone: "Asia/Seoul", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
                   </span>
                 </div>
               ))}

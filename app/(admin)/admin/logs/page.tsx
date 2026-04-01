@@ -51,6 +51,7 @@ export default function AdminLogsPage() {
       label: "일시",
       render: (row: AuditLogEntry) =>
         new Date(row.created_at).toLocaleString("ko-KR", {
+          timeZone: "Asia/Seoul",
           month: "short",
           day: "numeric",
           hour: "2-digit",

@@ -452,6 +452,7 @@ export default function AdminMockExamPage() {
                     </div>
                     <div className="mt-0.5 text-xs text-foreground-muted">
                       {new Date(row.started_at).toLocaleString("ko-KR", {
+                        timeZone: "Asia/Seoul",
                         month: "long",
                         day: "numeric",
                         hour: "2-digit",

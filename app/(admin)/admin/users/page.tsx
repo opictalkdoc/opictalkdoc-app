@@ -739,6 +739,7 @@ function ActivityLogSection({ userId }: { userId: string }) {
                 </div>
                 <span className="text-xs text-foreground-secondary">
                   {new Date(log.created_at).toLocaleString("ko-KR", {
+                    timeZone: "Asia/Seoul",
                     month: "short",
                     day: "numeric",
                     hour: "2-digit",
