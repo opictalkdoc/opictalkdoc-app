@@ -50,6 +50,9 @@ import {
   createPackage,
 } from "@/lib/actions/scripts";
 import { GradeSettingModal } from "@/components/ui/grade-setting-modal";
+import { ALL_PATTERNS } from "@/lib/data/patterns";
+import { PATTERN_TYPES, type PatternType, type UniversalPattern } from "@/lib/types/patterns";
+import { PatternTtsButton } from "@/components/patterns/pattern-tts-button";
 import dynamic from "next/dynamic";
 
 // Step 4에서만 사용 — 초기 번들에서 815줄 분리
@@ -1156,6 +1159,128 @@ function TipCard({
   );
 }
 
+/** 템플릿에서 [변수] 부분을 하이라이트 */
+function renderPatternTemplate(template: string) {
+  const parts = template.split(/(\[.*?\])/g);
+  return parts.map((part, i) =>
+    part.startsWith("[") && part.endsWith("]") ? (
+      <span key={i} className="inline-block rounded bg-primary-500/15 px-1 py-0.5 font-semibold text-primary-600">
+        {part}
+      </span>
+    ) : (
+      <span key={i}>{part}</span>
+    )
+  );
+}
+
+/** Phase 정보를 포함한 패턴 */
+interface PatternWithPhase {
+  pattern: UniversalPattern;
+  phaseTitle: string;
+  phaseDescription: string;
+}
+
+/** 패턴 목록 셔플 (Phase 정보 포함) */
+function shufflePatternsWithPhase(patternSet: { phases: { title: string; description: string; patterns: UniversalPattern[] }[] }): PatternWithPhase[] {
+  const arr: PatternWithPhase[] = [];
+  for (const phase of patternSet.phases) {
+    for (const p of phase.patterns) {
+      arr.push({ pattern: p, phaseTitle: phase.title, phaseDescription: phase.description });
+    }
+  }
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+/** 만능패턴 팁 카드 (Step 3 / Step 5 대기 화면 공통) */
+function PatternTipCard({
+  pattern,
+  patternType,
+  phaseTitle,
+  phaseDescription,
+  index,
+  total,
+  onPrev,
+  onNext,
+}: {
+  pattern: UniversalPattern;
+  patternType: string;
+  phaseTitle: string;
+  phaseDescription: string;
+  index: number;
+  total: number;
+  onPrev: () => void;
+  onNext: () => void;
+}) {
+  return (
+    <div className="mt-6 w-full">
+      {/* 헤더: Phase 제목 + 설명 + 네비게이션 */}
+      <div className="mb-3 text-center">
+        <div className="flex items-center justify-center gap-2">
+          <span className="text-sm font-bold text-foreground">{phaseTitle}</span>
+          <span className="text-sm text-foreground-muted">·</span>
+          <span className="text-sm font-medium text-primary-600">{index + 1} / {total}</span>
+          <div className="flex items-center gap-0.5">
+            <button
+              onClick={onPrev}
+              className="rounded-full p-1 text-foreground-muted transition-colors hover:bg-surface-secondary hover:text-foreground"
+            >
+              <ChevronLeft size={14} />
+            </button>
+            <button
+              onClick={onNext}
+              className="rounded-full p-1 text-foreground-muted transition-colors hover:bg-surface-secondary hover:text-foreground"
+            >
+              <ChevronRight size={14} />
+            </button>
+          </div>
+        </div>
+        <p className="mt-0.5 text-xs text-foreground-muted">{phaseDescription}</p>
+      </div>
+
+      {/* 카드 */}
+      <div className="overflow-hidden rounded-xl border border-border bg-surface shadow-sm">
+        {/* 템플릿 + 번역 */}
+        <div className="px-4 py-3.5">
+          <p className="text-[15px] font-bold leading-relaxed text-foreground">
+            {renderPatternTemplate(pattern.template)}
+          </p>
+          <p className="mt-1.5 text-[13px] leading-snug text-foreground-secondary">
+            {pattern.translation}
+          </p>
+        </div>
+
+        {/* 예시 3개 + TTS */}
+        <div className="divide-y divide-border/40 border-t border-border/50">
+          {pattern.examples.map((ex, i) => (
+            <div key={i} className="flex items-center gap-2.5 px-4 py-2.5">
+              <span className="inline-flex min-w-12 shrink-0 items-center justify-center rounded-full bg-primary-50 px-2 py-0.5 text-[11px] font-medium text-primary-700 whitespace-nowrap">
+                {ex.topic}
+              </span>
+              <p className="flex-1 text-[13px] leading-relaxed text-foreground">
+                {ex.sentence}
+              </p>
+              <PatternTtsButton
+                audioSrc={`/patterns-audio/${patternType}/${pattern.id}_${i}.mp3`}
+                size="sm"
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** questionType → PatternType 안전 변환 */
+function toPatternType(qt?: string): PatternType | null {
+  if (!qt) return null;
+  return PATTERN_TYPES.includes(qt as PatternType) ? (qt as PatternType) : null;
+}
+
 function Step3Loading({
   targetLevel,
   questionType,
@@ -1163,53 +1288,44 @@ function Step3Loading({
   targetLevel: string;
   questionType?: string;
 }) {
-  const [tipIndex, setTipIndex] = useState(0);
+  const patternType = toPatternType(questionType);
+  const shuffled = useMemo(() => {
+    if (!patternType) return [];
+    return shufflePatternsWithPhase(ALL_PATTERNS[patternType]);
+  }, [patternType]);
+
+  const [idx, setIdx] = useState(0);
   const intervalRef = useRef<ReturnType<typeof setInterval>>(null);
 
-  // opic_tips 조회
-  const { data: tips } = useQuery({
-    queryKey: ["opic-tips", targetLevel, questionType],
-    queryFn: async () => {
-      const result = await getOpicTips(targetLevel, questionType);
-      if (result.error) return [];
-      return result.data ?? [];
-    },
-    staleTime: Infinity,
-  });
-
-  const tipList = tips ?? [];
-
-  // 5초 자동 전환
   useEffect(() => {
-    if (tipList.length <= 1) return;
+    if (shuffled.length <= 1) return;
     intervalRef.current = setInterval(() => {
-      setTipIndex((prev) => (prev + 1) % tipList.length);
+      setIdx((prev) => (prev + 1) % shuffled.length);
     }, 5000);
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [tipList.length]);
+  }, [shuffled.length]);
 
-  const goToPrev = () => {
-    if (tipList.length <= 1) return;
-    setTipIndex((prev) => (prev - 1 + tipList.length) % tipList.length);
-    // 수동 조작 시 타이머 리셋
+  const resetTimer = useCallback(() => {
     if (intervalRef.current) clearInterval(intervalRef.current);
-    intervalRef.current = setInterval(() => {
-      setTipIndex((prev) => (prev + 1) % tipList.length);
-    }, 5000);
+    if (shuffled.length > 1) {
+      intervalRef.current = setInterval(() => {
+        setIdx((prev) => (prev + 1) % shuffled.length);
+      }, 5000);
+    }
+  }, [shuffled.length]);
+
+  const goPrev = () => {
+    setIdx((prev) => (prev - 1 + shuffled.length) % shuffled.length);
+    resetTimer();
+  };
+  const goNext = () => {
+    setIdx((prev) => (prev + 1) % shuffled.length);
+    resetTimer();
   };
 
-  const goToNext = () => {
-    if (tipList.length <= 1) return;
-    setTipIndex((prev) => (prev + 1) % tipList.length);
-    if (intervalRef.current) clearInterval(intervalRef.current);
-    intervalRef.current = setInterval(() => {
-      setTipIndex((prev) => (prev + 1) % tipList.length);
-    }, 5000);
-  };
-
-  const currentTip: OpicTip | undefined = tipList[tipIndex];
+  const current = shuffled[idx];
 
   return (
     <div className="flex flex-col items-center justify-center py-8">
@@ -1226,14 +1342,17 @@ function Step3Loading({
       </p>
       <p className="mt-1 text-xs text-foreground-muted">약 1~2분 소요</p>
 
-      {/* 학습 팁 카드 */}
-      {currentTip && (
-        <TipCard
-          tip={currentTip}
-          tipList={tipList}
-          tipIndex={tipIndex}
-          onPrev={goToPrev}
-          onNext={goToNext}
+      {/* 만능패턴 카드 */}
+      {current && patternType && (
+        <PatternTipCard
+          pattern={current.pattern}
+          patternType={patternType}
+          phaseTitle={current.phaseTitle}
+          phaseDescription={current.phaseDescription}
+          index={idx}
+          total={shuffled.length}
+          onPrev={goPrev}
+          onNext={goNext}
         />
       )}
     </div>
@@ -1502,33 +1621,27 @@ function Step5Complete({
   const [errorMsg, setErrorMsg] = useState("");
   const [packageId, setPackageId] = useState<string | null>(null);
 
-  // 팁 데이터 (패키지 생성 대기 중 표시)
-  const [tipIndex, setTipIndex] = useState(0);
-  const tipIntervalRef = useRef<ReturnType<typeof setInterval>>(null);
+  // 만능패턴 데이터 (패키지 생성 대기 중 표시)
+  const patternType5 = toPatternType(questionType);
+  const shuffledPatterns5 = useMemo(() => {
+    if (!patternType5) return [];
+    return shufflePatternsWithPhase(ALL_PATTERNS[patternType5]);
+  }, [patternType5]);
 
-  const { data: tips } = useQuery({
-    queryKey: ["opic-tips", targetLevel, questionType],
-    queryFn: async () => {
-      const result = await getOpicTips(targetLevel, questionType);
-      if (result.error) return [];
-      return result.data ?? [];
-    },
-    staleTime: Infinity,
-  });
+  const [patternIdx5, setPatternIdx5] = useState(0);
+  const patternIntervalRef = useRef<ReturnType<typeof setInterval>>(null);
 
-  const tipList = tips ?? [];
-
-  // 패키지 생성 중일 때만 팁 자동 전환
+  // 패키지 생성 중일 때만 자동 전환
   useEffect(() => {
     if (packageState !== "phase1" && packageState !== "phase2") return;
-    if (tipList.length <= 1) return;
-    tipIntervalRef.current = setInterval(() => {
-      setTipIndex((prev) => (prev + 1) % tipList.length);
+    if (shuffledPatterns5.length <= 1) return;
+    patternIntervalRef.current = setInterval(() => {
+      setPatternIdx5((prev) => (prev + 1) % shuffledPatterns5.length);
     }, 5000);
     return () => {
-      if (tipIntervalRef.current) clearInterval(tipIntervalRef.current);
+      if (patternIntervalRef.current) clearInterval(patternIntervalRef.current);
     };
-  }, [packageState, tipList.length]);
+  }, [packageState, shuffledPatterns5.length]);
 
   // 시뮬레이션 프로그레스 (20% → 85%까지 점진 증가, 완료 시 100%로 점프)
   useEffect(() => {
@@ -1641,24 +1754,25 @@ function Step5Complete({
 
   // 패키지 생성 중 (phase1/phase2)
   if (packageState === "phase1" || packageState === "phase2") {
-    const currentTip = tipList[tipIndex] as OpicTip | undefined;
+    const currentPattern5 = shuffledPatterns5[patternIdx5];
 
-    const goTipPrev = () => {
-      if (tipList.length <= 1) return;
-      setTipIndex((prev) => (prev - 1 + tipList.length) % tipList.length);
-      if (tipIntervalRef.current) clearInterval(tipIntervalRef.current);
-      tipIntervalRef.current = setInterval(() => {
-        setTipIndex((prev) => (prev + 1) % tipList.length);
-      }, 5000);
+    const resetPatternTimer5 = () => {
+      if (patternIntervalRef.current) clearInterval(patternIntervalRef.current);
+      if (shuffledPatterns5.length > 1) {
+        patternIntervalRef.current = setInterval(() => {
+          setPatternIdx5((prev) => (prev + 1) % shuffledPatterns5.length);
+        }, 5000);
+      }
     };
 
-    const goTipNext = () => {
-      if (tipList.length <= 1) return;
-      setTipIndex((prev) => (prev + 1) % tipList.length);
-      if (tipIntervalRef.current) clearInterval(tipIntervalRef.current);
-      tipIntervalRef.current = setInterval(() => {
-        setTipIndex((prev) => (prev + 1) % tipList.length);
-      }, 5000);
+    const goPatternPrev5 = () => {
+      setPatternIdx5((prev) => (prev - 1 + shuffledPatterns5.length) % shuffledPatterns5.length);
+      resetPatternTimer5();
+    };
+
+    const goPatternNext5 = () => {
+      setPatternIdx5((prev) => (prev + 1) % shuffledPatterns5.length);
+      resetPatternTimer5();
     };
 
     return (
@@ -1694,15 +1808,18 @@ function Step5Complete({
           </p>
         </div>
 
-        {/* 학습 팁 카드 */}
-        {currentTip && (
-          <TipCard
-            tip={currentTip}
-            tipList={tipList}
-            tipIndex={tipIndex}
-            onPrev={goTipPrev}
-            onNext={goTipNext}
-            />
+        {/* 만능패턴 카드 */}
+        {currentPattern5 && patternType5 && (
+          <PatternTipCard
+            pattern={currentPattern5.pattern}
+            patternType={patternType5}
+            phaseTitle={currentPattern5.phaseTitle}
+            phaseDescription={currentPattern5.phaseDescription}
+            index={patternIdx5}
+            total={shuffledPatterns5.length}
+            onPrev={goPatternPrev5}
+            onNext={goPatternNext5}
+          />
         )}
       </div>
     );

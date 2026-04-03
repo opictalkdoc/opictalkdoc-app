@@ -27,6 +27,7 @@ const appNav: NavItem[] = [
   { label: "스크립트", href: "/scripts" },
   { label: "모의고사", href: "/mock-exam" },
   { label: "튜터링", href: "/tutoring" },
+  { label: "만능패턴", href: "/patterns" },
   { label: "스토어", href: "/store" },
 ];
 

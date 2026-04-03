@@ -73,7 +73,7 @@ export function BetaApplyModal({ remaining, onClose, onSuccess }: BetaApplyModal
               type="text"
               value={nickname}
               onChange={(e) => setNickname(e.target.value)}
-              placeholder="카카오톡에서 사용 중인 닉네임"
+              placeholder="카카오톡에서 사용할 닉네임"
               maxLength={50}
               className="mt-1 w-full rounded-[var(--radius-md)] border border-border bg-white px-3 py-2 text-sm text-foreground placeholder:text-foreground-muted focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
             />
