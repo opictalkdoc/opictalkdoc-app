@@ -254,7 +254,7 @@ export default function PrivacyPage() {
           <p className="font-medium text-foreground">사업자 정보</p>
           <ul className="mt-2 space-y-0.5">
             <li>상호: 스투스 OPIc</li>
-            <li>대표자: 전다영</li>
+            <li>대표: 전다영</li>
             <li>사업자등록번호: 757-18-02318</li>
             <li>
               소재지: 경상북도 구미시 해마루공원로 80, 104동 1903호

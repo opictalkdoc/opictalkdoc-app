@@ -256,12 +256,15 @@ docs/
 ### Vercel
 - **팀**: OPIcTalkDoc (Pro)
 - **프로젝트**: opictalkdoc-app
-- **도메인**: haruopic.com, www.haruopic.com (구 opictalkdoc.com → 리다이렉트)
-- **자동 배포**: main 브랜치 푸시 시 자동 배포
+- **도메인**: ❌ 삭제됨 (2026-04-12 서비스 중단) — 기존: haruopic.com, www.haruopic.com
+- **자동 배포**: main 브랜치 푸시 시 자동 배포 (도메인 없어 접속 불가)
 
 ### DNS (Spaceship)
-- **A 레코드**: `@` → `216.198.79.1`
-- **CNAME**: `www` → `cname.vercel-dns.com`
+- **사이트**: https://www.spaceship.com/
+- **계정**: `opictalkdoc@gmail.com`
+- **비밀번호**: `Knrc44!!`
+- **A 레코드**: `@` → `216.198.79.1` (유지 중 — Vercel 도메인 삭제로 404 응답)
+- **CNAME**: `www` → `cname.vercel-dns.com` (유지 중)
 
 ### 테스트 계정 (심사/검수용)
 - **ID**: `test@opictalkdoc.com`
@@ -579,8 +582,8 @@ origin: https://opictalkdoc@github.com/opictalkdoc/opictalkdoc-app.git
 
 ## 🔮 현재 상태 & 다음 단계
 
-**현재**: Phase 3 완료 + 튜터링 Phase 1 구현 완료 + 리브랜딩(P-5) 완료
-**다음 작업**: 오픈 베타 준비 (피드백 채널, 에러 모니터링, 베타 크레딧 정책)
+**현재**: 서비스 중단 (2026-04-12) — Vercel 도메인 삭제, Spaceship DNS 유지, Supabase/GitHub 유지
+**상태**: 코드·DB·인프라 보존된 채 서비스만 중단. 복구 시 Vercel 도메인 재연결하면 됨
 
 ### 모의고사 평가 파이프라인 (현행)
 ```

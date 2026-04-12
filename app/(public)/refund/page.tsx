@@ -265,7 +265,7 @@ export default function RefundPage() {
           <ul className="mt-2 space-y-0.5">
             <li>이메일: haruopic@gmail.com</li>
             <li>상호: 스투스 OPIc</li>
-            <li>대표자: 전다영</li>
+            <li>대표: 전다영</li>
             <li>사업자등록번호: 757-18-02318</li>
           </ul>
         </section>

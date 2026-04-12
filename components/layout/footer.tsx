@@ -33,7 +33,7 @@ export function Footer() {
         <div className="mt-8 border-t border-white/10 pt-6 text-[13px] leading-relaxed text-[#8B7E72]">
           <div className="flex flex-col gap-0.5 sm:gap-0">
             <p>상호: 스투스 OPIc</p>
-            <p>대표자: 전다영</p>
+            <p>대표: 전다영</p>
             <p>사업자등록번호: 757-18-02318</p>
             <p>소재지: 경상북도 구미시 해마루공원로 80, 104동 1903호</p>
             <p>
